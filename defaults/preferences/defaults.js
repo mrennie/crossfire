@@ -1,0 +1,1 @@
+pref("extensions.firebug.DBG_CROSSFIRE", false);
