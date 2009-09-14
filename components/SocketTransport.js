@@ -13,8 +13,9 @@ const Packets = {};
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 /**
- * SocketTransport
- * Firefox Socket Transport for remote debug protocol.
+ * @name SocketTransport
+ * @constructor SocketTransport
+ * @description Firefox Socket Transport for remote debug protocol.
  * Opens a socket connection to a remote host and handles handshaking and
  * sending/receiving packets.
  */
@@ -26,6 +27,7 @@ function SocketTransport() {
 }
 	
 SocketTransport.prototype = 
+/** @lends SocketTransport */
 {
 	// ----- XPCOM -----
 		
@@ -38,9 +40,9 @@ SocketTransport.prototype =
 	// ----- external API ----
 		
 	/**
-	 * SocketTransport.addListener
-	 * 
-	 * Adds listener to be called when the transport receives requests.
+	 * @name SocketTransport.addListener
+	 * @function
+	 * @description Adds listener to be called when the transport receives requests.
 	 * The transport will pass a RequestPacket @see Packet.js
 	 * as an argument to the listener's "handleRequest" method.
 	 * 
@@ -51,8 +53,14 @@ SocketTransport.prototype =
 	},
 	
 	/**
-	 * Send a response packet. @see also Packet.js
-	 * 
+	 * @name SocketTransport.sendResponse
+	 * @function
+	 * @description Builds and sends a response packet. @see also Packet.js
+	 * @param command The name of the command for the response.
+	 * @param requestSeq Sequence number of the request that initiated the response.
+	 * @param body JSON body of the response
+	 * @param running boolean indicates if execution is continuing.
+	 * @param success boolean indicates whether the command was successful.
 	 */
 	sendResponse: function(command, requestSeq, body, running, success) {
 		if (running == null || running == undefined) running = true; // assume we are running unless explicitly told otherwise
@@ -62,22 +70,32 @@ SocketTransport.prototype =
 	},
 	
 	/**
-	 * Send an event packet. @see also Packet.js
+	 * @name SocketTransport.sendEvent
+	 * @function
+	 * @description Send an event packet. @see also Packet.js
+	 * @param event Event name
+	 * @param data optional JSON object containing additional data about the event.
 	 */
-	sendEvent: function( event, args) {
+	sendEvent: function( event, data) {
 		var self = this;
-		this._defer(function() { self._sendPacket(new Packets.EventPacket(event, args)); });
+		this._defer(function() { self._sendPacket(new Packets.EventPacket(event, data)); });
 	},
 	
 	/**
-	 * Open a connection to the specified host/port
+	 * @name SocketTransport.open
+	 * @function
+	 * @param host the hostname.
+	 * @param port the port.
+	 * @description Open a connection to the specified host/port
 	 */
 	open: function( host, port) {
 		this._createTransport(host, port);
 	},
 	
 	/**
-	 * close a previously opened connection.
+	 * @name SocketTransport.close
+	 * @function
+	 * @description close a previously opened connection.
 	 */
 	close: function() {
 		this.listeners = [];
@@ -94,7 +112,7 @@ SocketTransport.prototype =
 	},
 	
 	// ----- internal methods -----
-	
+	/** @ignore */
 	_createTransport: function (host, port) {
 
 		var transportService = Cc["@mozilla.org/network/socket-transport-service;1"]
@@ -140,6 +158,7 @@ SocketTransport.prototype =
 		this._sendHandshake();			
 	},
 	
+	/** @ignore */
 	_defer: function( callback, delay) {
 		if (!delay) delay = 1;
 		var timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
@@ -154,7 +173,8 @@ SocketTransport.prototype =
 			}
 		}, delay, timer.TYPE_ONE_SHOT);
 	},
-			
+	
+	/** @ignore */		
 	_sendHandshake: function() {
 		this._outputStream.asyncWait( {
 			QueryInterface: function( iid) { 
@@ -171,6 +191,7 @@ SocketTransport.prototype =
 		this._waitHandshake();
 	},
 	
+	/** @ignore */
 	_waitHandshake: function( timeout) {
 		var self = this;
 		this._defer(function() { 
@@ -186,6 +207,7 @@ SocketTransport.prototype =
 		}, timeout);
 	},
 	
+	/** @ignore */
 	_sendPacket: function( packet) {
 		this._outputStreamCallback.addPacket(packet);
 		if (this.connected) {
@@ -193,6 +215,7 @@ SocketTransport.prototype =
 		}
 	},
 	
+	/** @ignore */
 	_waitOnPacket: function() {
 		var self = this;
 		var avail;
@@ -211,7 +234,7 @@ SocketTransport.prototype =
 	},
 	
 
-	
+	/** @ignore */
 	_notifyListeners: function( requestPacket) {
 		for (var i = 0; i < this.listeners.length; ++i) {
 			var listener = this.listeners[i];				
@@ -226,6 +249,7 @@ SocketTransport.prototype =
 	}
 };
 
+/** @ignore */
 function NSGetModule(compMgr, fileSpec)
 {
   return XPCOMUtils.generateModule([SocketTransport]);

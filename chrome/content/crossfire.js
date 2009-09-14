@@ -8,7 +8,9 @@
 FBL.ns(function() { with(FBL) {
 	const SocketTransport = Components.classes["@almaden.ibm.com/crossfire/socket-transport;1"];
 	
-	/**
+	/** 	
+	 * @name CrossfireModule
+	 * @namespace CrossfireModule
 	 * @module Firebug Module for Crossfire. This module acts as a controller
 	 * between Firebug and the remote debug connection.  It is responsible for
 	 * opening a connection to the remote debug host and dispatching any
@@ -17,11 +19,11 @@ FBL.ns(function() { with(FBL) {
 	 * This module also adds context and debugger listeners and sends the
 	 * appropriate events to the remote host.
 	 */
-	var CrossfireModule = extend(Firebug.Module, {
+	var CrossfireModule = extend(Firebug.Module, /**@lends CrossfireModule */ {
 		contexts: [],
 		dispatchName: "Crossfire",
 		
-		// extends module
+		/** extends Firebug.Module */
 		initialize: function() {
 			var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
 			var host = commandLine.getHost();
@@ -36,6 +38,7 @@ FBL.ns(function() { with(FBL) {
 			
 			Firebug.Debugger.addListener(this);
 		    Firebug.Console.addListener(this);
+		    Firebug.Inspector.addListener(this);
 
 			this.running = true;
 		},
@@ -43,6 +46,7 @@ FBL.ns(function() { with(FBL) {
 		// ----- Crossfire transport listener -----
 		
 		/**
+		 * @description 
 		 * Listener function called by the transport when a request is
 		 * received.
 		 * 
@@ -83,37 +87,56 @@ FBL.ns(function() { with(FBL) {
 				this.transport.sendResponse(command, request.seq, response, this.running, true);
 			} else {
 				this.transport.sendResponse(command, request.seq, {}, this.running, false);
-			}			
+			}
 		},
 		
-		// ----- context listeners -----
+		// ----- firebug listeners -----
+		/*
+		onSourceFileCreated: function( context, sourceFile) {
+			if (FBTrace.DBG_CROSSFIRE)
+				FBTrace.sysout("CROSSFIRE:  onSourceFileCreated");
+			// send afterCompile event?
+		},
+		*/
 		
+		// ----- context listeners -----
+		/**
+		 * @description Add the new context to our list of contexts.
+		 * @param context
+		 */
 		initContext: function( context) {
 			if (FBTrace.DBG_CROSSFIRE)
 				FBTrace.sysout("CROSSFIRE:  initContext");
+			context.Crossfire = {};
 			this.contexts.push(context);
 		},
 		
 		/**
-		 * Create a new command adaptor for the context when it is loaded.
-		 * 
-		 * Send "navigated" event.
+		 * @description Create a new command adaptor for the context when it is loaded. Send "navigated" event.
+		 * @param context 
 		 */
 		loadedContext: function( context) {
 			if (FBTrace.DBG_CROSSFIRE)
 				FBTrace.sysout("CROSSFIRE:  loadedContext");
 			var contextId = context.window.location.href;
-			context.Crossfire = { "commandAdaptor": new Crossfire.FirebugCommandAdaptor(context) };
+			
+			context.Crossfire["commandAdaptor"] = new Crossfire.FirebugCommandAdaptor(context);
 			this.transport.sendEvent("navigated", { "data":  contextId });			
 		},
 		
+		/* @ignore 
 		showContext: function() {
 			
-		},
+		},	
+		*/	
 		
+		/**
+		 *  @description Remove the context from our list of contexts.
+		 *  @param context
+		 */
 		destroyContext: function( context) {
 			if (FBTrace.DBG_CROSSFIRE)
-				FBTrace.sysout("CROSSFIRE:  initContext");
+				FBTrace.sysout("CROSSFIRE: destroyContext");
 			var contextId = context.window.location.href;
 			for (var i = 0; i < this.contexts.length; i++) {
 				if (this.contexts[i].window.location.href == contextId) {
@@ -315,7 +338,7 @@ FBL.ns(function() { with(FBL) {
 		
 		/**
 		 * logFormatted listener.
-		 * Generates event packets based on the className (log,debug,info,warn,error).
+		 * @description Generates event packets based on the className (log,debug,info,warn,error).
 		 * The object or message logged is contained in the packet's "data" property.
 		 * The generated event names are:
 		 * 		onConsoleLog
@@ -339,6 +362,29 @@ FBL.ns(function() { with(FBL) {
 	    	}
 	    	
 	    	this.transport.sendEvent(eventName, { "context_id": contextId, "data": data });
+	    },
+		
+		// ----- Firebug.Inspector Listener -----
+	    onInspectNode: function(context, node) {
+	    	if (FBTrace.DBG_CROSSFIRE)
+	    		FBTrace.sysout("CROSSFIRE onInspectNode: node => " + node);
+	    	//try {
+	    		//node = node.getWrappedValue();
+	    	//} catch (exc) {
+	    	//	FBTrace.sysout("CROSSFIRE onInspectNode exception: " + exc);
+	    		node = node.toString();
+	    	//}
+	    		
+	    	var contextId = context.window.location.href;
+	    	this.transport.sendEvent("onInspectNode", { "context_id": contextId, "data": { "node": node } });
+	    },
+	    
+	    onStopInspecting: function(context, node) {
+	    	if (FBTrace.DBG_CROSSFIRE)
+	    		FBTrace.sysout("CROSSFIRE onStopInspecting");
+	    	
+	    	var contextId = context.window.location.href;
+	    	this.transport.sendEvent("onStopInspecting", { "context_id": contextId });
 	    }
 	});
 	

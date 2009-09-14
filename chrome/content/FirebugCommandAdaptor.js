@@ -1,16 +1,13 @@
 /* See license.txt for terms of usage */
-/**
- * FirebugCommandAdaptor
- * 
- */
 
 if (!Crossfire) var Crossfire = {};
 
-// FirebugCommandAdaptor
+// FirebugCommandAdaptor 
 FBL.ns(function() { with(FBL) {
 	
 	/**
-	 * FirebugCommandAdaptor is an object which accepts protocol
+	 * @name FirebugCommandAdaptor
+	 * @constructor FirebugCommandAdaptor An object which accepts protocol
 	 * commands and performs the appropriate Firebug actions, and serializes
 	 * runtime objects from Firebug into expected formats.
 	 *
@@ -29,15 +26,22 @@ FBL.ns(function() { with(FBL) {
 		this.breakpoints = [];
 	}
 
-	FirebugCommandAdaptor.prototype = {
-		
+
+	FirebugCommandAdaptor.prototype = 
+		/** 
+		 *  @lends FirebugCommandAdaptor
+		 */
+		{
+			
 		/**
+		 * @name FirebugCommandAdaptor.continue
+		 * @function
 		 * continue command. Continue execution of javascript if suspended.
 		 * if no <code>stepaction</code> is passed, simply resumes execution.
 		 * @param args Arguments object.
 		 * Supported arguments:
-         * 	 "stepaction": 'in', 'next', or 'out'.
-         *   "stepcount": currently ignored.
+         * 	 <code>"stepaction"</code>: 'in', 'next', or 'out'.
+         *   <code>"stepcount"</code>: currently ignored.
 		 */
 		"continue": function( args) {
 			 if (FBTrace.DBG_CROSSFIRE)
@@ -57,6 +61,8 @@ FBL.ns(function() { with(FBL) {
 		},
 		
 		/**
+		 * @name FirebugCommandAdaptor.suspend
+		 * @function
 		 * suspend command. Try to suspend any currently running Javascript.
 		 */
 		"suspend": function() {
@@ -66,6 +72,8 @@ FBL.ns(function() { with(FBL) {
 		},
 		
 		/**
+		 * @name FirebugCommandAdaptor.evaluate
+		 * @function
 		 * evaluate command. TODO
 		 */
 		"evaluate": function( args) {
@@ -78,6 +86,8 @@ FBL.ns(function() { with(FBL) {
 		},
 		
 		/**
+		 * @name FirebugCommandAdaptor.getbreakpoints
+		 * @function
 		 * getbreakpoints command. Return all the breakpoints in this context.
 		 */
 		"getbreakpoints": function() {
@@ -116,10 +126,12 @@ FBL.ns(function() { with(FBL) {
 		},
 		
 		/**
+		 * @name FirebugCommandAdaptor.getbreakpoint
+		 * @function
 		 * getbreakpoint command. Return the breakpoint object with the specified id.
 		 * @param args Arguments object.
 		 * Supported arguments:
-		 *   "breakpoint": the id of the breakpoint you want to get.
+		 *   <code>"breakpoint"</code>: the id of the breakpoint you want to get.
 		 */
 		"getbreakpoint": function( args) {
 			var bp;
@@ -136,11 +148,13 @@ FBL.ns(function() { with(FBL) {
 		},
 		
 		/**
+		 * @name FirebugCommandAdaptor.setbreakpoint
+		 * @function
 		 * setbreakpoint command. Set a breakpoint and return its id.
 		 * @param args Arguments object.
 		 * Supported arguments:
-		 *   "target": the url of the file to set the breakpoint in.
-		 *   "line": line number to set the breakpoint at.
+		 *   <code>"target"</code>: the url of the file to set the breakpoint in.
+		 *   <code>"line"</code>: line number to set the breakpoint at.
 		 */
 		"setbreakpoint": function( args) {
 			var url = args["target"];
@@ -179,10 +193,12 @@ FBL.ns(function() { with(FBL) {
 		},
 		
 		/**
+		 * @name FirebugCommandAdaptor.changebreakpoint
+		 * @function
 		 * changebreakpoint command. Return the breakpoint object with the specified id.
 		 * @param args Arguments object.
 		 * Supported arguments:
-		 *   "breakpoint": the id of the breakpoint you want to change.
+		 *   <code>"breakpoint"</code>: the id of the breakpoint you want to change.
 		 */
 		"changebreakpoint": function( args) {
 			var bp;
@@ -193,10 +209,12 @@ FBL.ns(function() { with(FBL) {
 		},
 		
 		/**
+		 * @name FirebugCommandAdaptor.clearbreakpoint
+		 * @function
 		 * clearbreakpoint command. Remove the breakpoint object with the specified id.
 		 * @param args Arguments object.
 		 * Supported arguments:
-		 *   "breakpoint": the id of the breakpoint you want to remove.
+		 *   <code>"breakpoint"</code>: the id of the breakpoint you want to remove.
 		 */
 		"clearbreakpoint": function( args) {
 			var breakpoint;
@@ -217,10 +235,12 @@ FBL.ns(function() { with(FBL) {
 		},
 		
 		/**
+		 * @name FirebugCommandAdaptor.frame
+		 * @function
 		 * frame commmand.  Returns a frame.
 		 * @param args Arguments object.
 		 * Supported arguments:
-		 *   "number": the number (index) of the requested frame. 
+		 *   <code>"number"</code>: the number (index) of the requested frame. 
 		 */
 		"frame": function( args) {
 			if (FBTrace.DBG_CROSSFIRE)
@@ -240,11 +260,11 @@ FBL.ns(function() { with(FBL) {
 				var locals = []; 
 				for (var l in frame.scope) {
 					if (l != "parent") { // ignore parent
-						locals.push({ "name": l, "value" : frame.scope[l] });
+						locals.push({ "name": l, "type": typeof(l), "value" : frame.scope[l] });
 					}
 				}
 				if (frame.thisValue) {
-					locals.push({"name": "this", "value": frame.thisValue});				
+					locals.push({"name": "this", "type": typeof(frame.thisValue), "value": frame.thisValue});				
 				}
 					
 				var scopes = (this.scopes({ "frameNumber": number })).scopes;
@@ -260,11 +280,13 @@ FBL.ns(function() { with(FBL) {
 		},
 		
 		/**
+		 * @name FirebugCommandAdaptor.backtrace
+		 * @function
 		 * backtrace command. Returns a backtrace (stacktrace) of frames.
 		 * @param args Arguments object.
 		 *   Supported arguments:
-		 *   	"fromFrame": the frame to start the trace from.
-		 *      "toFrame": the frame to to stop the trace at.
+		 *   	<code>"fromFrame"</code>: the frame to start the trace from.
+		 *      <code>"toFrame"</code>: the frame to to stop the trace at.
 		 */
 		"backtrace": function( args) {
 			if (FBTrace.DBG_CROSSFIRE) 
@@ -295,8 +317,14 @@ FBL.ns(function() { with(FBL) {
 			return false;
 		},
 		
-		/**
+		/**		 
+		 * @name FirebugCommandAdaptor.scope
+		 * @function
 		 * scope command.  Returns a particular scope for the specified frame.
+		 * @param args Arguments object.
+		 *   Supported arguments:
+		 *   	<code>"number"</code>: scope index
+		 *   	<code>"frameNumber"</code>: optional frame index. defaults to 0
 		 */
 		"scope": function( args) {
 			if (FBTrace.DBG_CROSSFIRE)
@@ -331,6 +359,8 @@ FBL.ns(function() { with(FBL) {
 		},
 		
 		/**
+		 * @name FirebugCommandAdaptor.scopes
+		 * @function
 		 * scopes command.  Returns all the scopes for a frame.  
 		 */
 		"scopes": function( args) {
@@ -357,20 +387,73 @@ FBL.ns(function() { with(FBL) {
 		},
 		
 		/**
-		 * scripts command. TODO
+		 * @name FirebugCommandAdaptor.scripts
+		 * @function
+		 * scripts command.
+		 * @param args Arguments object.
+		 *   Supported arguments:
+		 *   	<code>"includeSource"</code>: boolean
 		 */
 		"scripts": function( args) {
 			if (FBTrace.DBG_CROSSFIRE)
 				FBTrace.sysout("CROSSFIRE CommandAdaptor scripts");
+			
+			var lines, sourceFile, script;
+			var scripts = [];
+			var incSrc = args["includeSource"];
+			var srcMap = this.context.sourceFileMap;
+			for (var url in srcMap) {
+				sourceFile = srcMap[url];
+				lines = sourceFile.loadScriptLines();
+				script = {
+					"id": url,
+					"lineOffse": 0,
+					"columnOffset": 0,
+					"sourceStart": lines[0],
+					"sourceLength": sourceFile.getSourceLength(),
+					"lineCount": lines.length;
+					"compilationType": sourceFile.compilation_unit_type,
+				};
+				if (incSrc) {
+					script["source"] = lines.join('\n');
+				}
+				scripts.push( script );
+			}
+			
+			return false;
 		},
 		
 		/**
+		 * @name FirebugCommandAdaptor.source
+		 * @function
 		 * source command. TODO
 		 */
-		"source": function (args) {
+		"source": function ( args) {
 			if (FBTrace.DBG_CROSSFIRE)
 				FBTrace.sysout("CROSSFIRE CommandAdaptor source");
+		},
+		
+		/**
+		 * @ignore
+		 * @name FirebugCommandAdaptor.inspect
+		 * @function
+		 * inspect command.  Tells Firebug to enter 'inspect' mode.		 
+		 * @param args Arguments object.
+		 *   Supported arguments:
+		 *     "node": a specific node to inspect ( css selector)?
+		 */
+		"inspect": function( args) {
+			if (FBTrace.DBG_CROSSFIRE)
+				FBTrace.sysout("CROSSFIRE CommandAdaptor inspect");
+			//var node = args["node"];
+			//Firebug.Inspector.startInspecting(this.context);
+			Firebug.Inspector.toggleInspecting(this.context);
+			if (node) {
+				// TODO: we will actually have to lookup the node somehow
+				Firebug.Inspector.inspectNode(node);
+			}
 		}
+		
 	};
 	
 	// export constructor

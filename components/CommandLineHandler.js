@@ -8,14 +8,17 @@ const Cu = Components.utils;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 /**
- * CommandLineHandler
- * Processes command-line arguments to connect to a remote debug host and port.
+ * @name CommandLineHandler
+ * @constructor CommandLineHandler
+ * @description Processes command-line arguments to connect to a remote debug host and port.
  * 
  */
 function CommandLineHandler() {	
 	this.wrappedJSObject = this;
 }
-CommandLineHandler.prototype = {
+CommandLineHandler.prototype =
+/** @lends CommandLineHandler */
+{
 		
   	classDescription: "command line handler",
   	contractID: "@almaden.ibm.com/crossfire/command-line-handler;1",
@@ -33,7 +36,9 @@ CommandLineHandler.prototype = {
 	},
 	
 	/**
-	 * getPort
+	 * @name CommandLineHandler.getPort
+	 * @function
+	 * @description  getPort
 	 * @return the port that was specified on the command-line.
 	 */
 	getPort: function() {
@@ -41,7 +46,9 @@ CommandLineHandler.prototype = {
 	},
 	
 	/**
-	 * getHost
+	 * @name CommandLineHandler.getHost
+	 * @function
+	 * @description getHost
 	 * @return the host that was specified on the command-line.
 	 */
 	getHost: function() {
@@ -49,6 +56,7 @@ CommandLineHandler.prototype = {
 	}
 };
 
+/** @ignore */
 function NSGetModule(compMgr, fileSpec)
 {
   return XPCOMUtils.generateModule([CommandLineHandler]);

@@ -4,12 +4,11 @@
  * 
  */
 
-// for Firefox module usage:
+/** @ignore for Firefox module usage: */
 var EXPORTED_SYMBOLS = ["EventPacket", "RequestPacket", "ResponsePacket"];
 
-	/**
-	 * Packet
-	 * The prototype object for all other packet types.
+	/**	 
+	 * @description The prototype object for all other packet types.
 	 * Handles parsing packet strings and JSON, and generating sequence numbers.
 	 */
 	var Packet = {
@@ -57,19 +56,19 @@ var EXPORTED_SYMBOLS = ["EventPacket", "RequestPacket", "ResponsePacket"];
 	
 	// ----- EventPacket -----
 	/**
-	 * Creates a new Event Packet object.
+	 * @description Creates a new Event Packet object.
 	 * @param event name of the event.
-	 * @param args JSON object containing additional arguments for the event.
+	 * @param data JSON object containing additional arguments for the event.
 	 */
-	function EventPacket( event, args) {
+	function EventPacket( event, data) {
 		var sequence = Packet.seq++;
 		var packet = {
 				"seq": sequence,
 				"type":	"event",
 				"event": event,
 		};
-		for (var prop in args) {
-			packet[prop] = args[prop];
+		for (var prop in data) {
+			packet[prop] = data[prop];
 		}
 		var json = this.toJSON(packet);		
 		this.data = this.toPacketString(json);
@@ -80,7 +79,7 @@ var EXPORTED_SYMBOLS = ["EventPacket", "RequestPacket", "ResponsePacket"];
 	
 	// ----- RequestPacket -----
 	/**
-	 * Creates a Request Packet object.
+	 * @description Creates a Request Packet object.
 	 * @param packetString The unprocessed UTF-8 packet string.
 	 */
 	function RequestPacket( packetString) {
@@ -97,7 +96,7 @@ var EXPORTED_SYMBOLS = ["EventPacket", "RequestPacket", "ResponsePacket"];
 	
 	// ----- ResponsePacket -----
 	/**
-	 * Creates a new Response Packet object.
+	 * @description Creates a new Response Packet object.
 	 * 
 	 * @param command The name of the command that requested the response.
 	 * @param requestSeq The sequence number of the request that initiated this response.
