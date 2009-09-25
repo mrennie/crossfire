@@ -100,15 +100,19 @@ SocketTransport.prototype =
 	close: function() {
 		this.listeners = [];
 		
-		if (this._transport) {
-			this._transport.close(null);
-			delete this._transport;
-		}
-
-		if (this._outputStreamCallback)
-			delete this._outputStreamCallback;
+		this.sendEvent("closed");
 		
-		this.connected = false;
+		this._defer(function() {
+			if (this._transport) {
+				this._transport.close(null);
+				delete this._transport;
+			}
+		
+			if (this._outputStreamCallback)
+				delete this._outputStreamCallback;
+			
+			this.connected = false;
+		});
 	},
 	
 	// ----- internal methods -----
