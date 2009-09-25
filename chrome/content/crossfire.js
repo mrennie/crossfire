@@ -302,7 +302,7 @@ FBL.ns(function() { with(FBL) {
 			
 			context.Crossfire.commandAdaptor.currentFrame = copiedFrame;
 			
-			this.handleEvent("onBreak", href, lineno);
+			this.handleEvent(context, "onBreak", href, lineno);
 			this.running = false;
 		},
 		
