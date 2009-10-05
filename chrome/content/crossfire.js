@@ -289,7 +289,7 @@ FBL.ns(function() { with(FBL) {
 
       var frame = context.currentFrame;
       var lineno = 1;
-      var sourceFile = getSourceFileByScript(context, frame.script)
+      var sourceFile = Firebug.SourceFile.getSourceFileByScript(context, frame.script)
       if (sourceFile) {
         var analyzer = sourceFile.getScriptAnalyzer(frame.script);
         if (analyzer)
