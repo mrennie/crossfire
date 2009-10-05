@@ -397,13 +397,28 @@ FBL.ns(function() { with(FBL) {
 			var srcMap = this.context.sourceFileMap;
 			for (var url in srcMap) {
 				sourceFile = srcMap[url];
-				lines = sourceFile.loadScriptLines();
+				try {
+					lines = sourceFile.loadScriptLines();
+				} catch (ex) {
+					lines = [];
+					if (FBTrace.DBG_CROSSFIRE)
+						FBTrace.sysout("CROSSFIRE: failed to get source lines for script : " +ex);
+				}
+				var srcLen;
+				try {
+					srcLen =  sourceFile.getSourceLength();
+				} catch(exc) {
+					if (FBTrace.DBG_CROSSFIRE)
+						FBTrace.sysout("CROSSFIRE: failed to get source length for script : " +exc);
+					srcLen = 0;
+				}
+				
 				script = {
 					"id": url,
 					"lineOffse": 0,
 					"columnOffset": 0,
 					"sourceStart": lines[0],
-					"sourceLength": sourceFile.getSourceLength(),
+					"sourceLength":srcLen,
 					"lineCount": lines.length,
 					"compilationType": sourceFile.compilation_unit_type,
 				};
@@ -411,9 +426,9 @@ FBL.ns(function() { with(FBL) {
 					script["source"] = lines.join('\n');
 				}
 				scripts.push( script );
-			}
+			}						
 			
-			return false;
+			return { "context_id": this.contextId, "scripts": scripts };
 		},
 		
 		/**
