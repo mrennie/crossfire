@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" >
-  <script type="application/javascript" src="chrome://crossfire/content/FirebugEventAdaptor.js"/>
-  <script type="application/javascript" src="chrome://crossfire/content/FirebugCommandAdaptor.js"/>
-  <script type="application/javascript" src="chrome://crossfire/content/crossfire.js"/>
+    <script type="application/javascript" src="chrome://crossfire/content/FirebugEventAdaptor.js"/>
+    <script type="application/javascript" src="chrome://crossfire/content/FirebugCommandAdaptor.js"/>
+    <script type="application/javascript" src="chrome://crossfire/content/crossfire.js"/>
 </overlay>

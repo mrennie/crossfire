@@ -1,3 +1,3 @@
 content     crossfire   chrome/content/
-overlay     chrome://firebug/content/firebugOverlay.xul   chrome://crossfire/content/crossfireOverlay.xul
+overlay     chrome://firebug/content/firebugOverlay.xul     chrome://crossfire/content/crossfireOverlay.xul
 resource    crossfire   resources/
