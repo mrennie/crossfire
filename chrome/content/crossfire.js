@@ -162,7 +162,7 @@ FBL.ns(function() { with(FBL) {
                 FBTrace.sysout("CROSSFIRE: destroyContext");
             var contextId = context.window.location.href;
             for (var i = 0; i < this.contexts.length; i++) {
-                if (this.contexts[i].window.location.href == contextId) {
+                if (this.contexts[i].window && this.contexts[i].window.location.href == contextId) {
                     this.contexts.splice(i, 1);
                     break;
                 }
