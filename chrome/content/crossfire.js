@@ -31,16 +31,18 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE Got command-line args: host => " + host + " port => " + port);
 
-            this.transport = SocketTransport.createInstance().wrappedJSObject;
-            this.transport.open(host, port);
+            if (host && port) {
+                this.transport = SocketTransport.createInstance().wrappedJSObject;
+                this.transport.open(host, port);
 
-            this.transport.addListener(this);
+                this.transport.addListener(this);
 
-            Firebug.Debugger.addListener(this);
-            Firebug.Console.addListener(this);
-            Firebug.Inspector.addListener(this);
+                Firebug.Debugger.addListener(this);
+                Firebug.Console.addListener(this);
+                Firebug.Inspector.addListener(this);
 
-            this.running = true;
+                this.running = true;
+            }
         },
 
         // ----- Crossfire transport listener -----
