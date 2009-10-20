@@ -159,14 +159,15 @@ FBL.ns(function() { with(FBL) {
          *  @description Remove the context from our list of contexts.
          *  @param context
          */
-        destroyContext: function( context) {
+        destroyContext: function(context) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE: destroyContext");
             var contextId = context.window.location.href;
             for (var i = 0; i < this.contexts.length; i++) {
-                if (this.contexts[i].window)
+                var win = this.contexts[i].window;
+                if (win && !win.closed)
                 {
-                    var location = this.contexts[i].window.location;
+                    var location = win.location;
                     if (location && location.href == contextId) {
                         this.contexts.splice(i, 1);
                         break;
