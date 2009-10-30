@@ -24,6 +24,7 @@ FBL.ns(function() { with(FBL) {
             FBTrace.sysout("CROSSFIRE Creating new FirebugCommandAdaptor for context: " + this.contextId);
         this.breakpointIds = 0;
         this.breakpoints = [];
+        this.clearRefs();
     }
 
     FirebugCommandAdaptor.prototype =
@@ -242,22 +243,22 @@ FBL.ns(function() { with(FBL) {
             var number = args["number"];
 
             var frame;
-            if (this.currentFrame) {
+            if (this.context.Crossfire.currentFrame) {
                 if (!number) {
                     number = 0;
-                    frame = this.currentFrame;
+                    frame = this.context.Crossfire.currentFrame;
                 } else {
-                    frame = this.currentFrame.stack[number];
+                    frame = this.context.Crossfire.currentFrame.stack[number];
                 }
 
-                var locals = [];
+                var locals = {};
                 for (var l in frame.scope) {
                     if (l != "parent") { // ignore parent
-                        locals.push({ "name": l, "type": typeof(l), "value" : frame.scope[l] });
+                        locals[l] = this.serialize(frame.scope[l]);
                     }
                 }
                 if (frame.thisValue) {
-                    locals.push({"name": "this", "type": typeof(frame.thisValue), "value": frame.thisValue});
+                    locals["this"] = this.serialize(frame.thisValue);
                 }
 
                 var scopes = (this.scopes({ "frameNumber": number })).scopes;
@@ -288,11 +289,11 @@ FBL.ns(function() { with(FBL) {
             //var toFrame = args["toFrame"];
             //TODO: respect args
 
-            if (this.currentFrame && this.currentFrame.stack) {
+            if (this.context.Crossfire.currentFrame && this.context.Crossfire.currentFrame.stack) {
                 if (FBTrace.DBG_CROSSFIRE)
-                    FBTrace.sysout("CROSSFIRE CommandAdaptor backtrace currentFrame.stack => " + this.currentFrame.stack);
+                    FBTrace.sysout("CROSSFIRE CommandAdaptor backtrace currentFrame.stack => " + this.context.Crossfire.currentFrame.stack);
 
-                var stack = this.currentFrame.stack;
+                var stack = this.context.Crossfire.currentFrame.stack;
                 var frames = [];
                 for (var i = 0; i < stack.length; i++) {
                     frames.push(this.frame({ "number": i }));
@@ -323,13 +324,13 @@ FBL.ns(function() { with(FBL) {
 
             var scopeNo = args["number"];
             var frameNo = args["frameNumber"];
-            if (this.currentFrame) {
+            if (this.context.Crossfire.currentFrame) {
                 var frame;
                 if (!frameNo) {
                     frameNo = 0;
-                    frame = this.currentFrame;
+                    frame = this.context.Crossfire.currentFrame;
                 } else {
-                    frame = this.currentFrame.stack[frameNo];
+                    frame = this.context.Crossfire.currentFrame.stack[frameNo];
                 }
                 var scope = frame.scope;
                 for (var i = 0; i < scopeNo; i++) {
@@ -337,12 +338,13 @@ FBL.ns(function() { with(FBL) {
                     if (!scope) break;
                 }
                 if (scope) {
-                    delete scope.parent;
+                    //delete scope.parent;
+                    //scope.parent = this.getRef(scope.parent);
                     return {
                         "context_id": this.contextId,
                         "index": scopeNo,
                         "frameIndex": frameNo,
-                        "object": scope
+                        "object": this.serialize(scope)
                     };
                 }
             }
@@ -361,7 +363,7 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor scopes");
             var scopes = [];
-            if (this.currentFrame) {
+            if (this.context.Crossfire.currentFrame) {
                 var scope;
                 do {
                     scope = this.scope({"number": scopes.length, "frameNumber":  args["frameNumber"]});
@@ -406,7 +408,7 @@ FBL.ns(function() { with(FBL) {
                 }
                 var srcLen;
                 try {
-                    srcLen =  sourceFile.getSourceLength();
+                    srcLen = sourceFile.getSourceLength();
                 } catch(exc) {
                     if (FBTrace.DBG_CROSSFIRE)
                         FBTrace.sysout("CROSSFIRE: failed to get source length for script : " +exc);
@@ -446,7 +448,7 @@ FBL.ns(function() { with(FBL) {
          * @function
          * @description Tells Firebug to enter 'inspect' mode.
          * @param args Arguments object
-            * @param args.xpath <code>xpath</code>: optional xpath for the node to inspect.
+         * @param args.xpath <code>xpath</code>: optional xpath for the node to inspect.
          * @param args.selector <code>selector</code>: optional css selector for a specific node to inspect
          */
         "inspect": function( args) {
@@ -476,10 +478,107 @@ FBL.ns(function() { with(FBL) {
                     Firebug.Inspector.inspectNode(node);
                     FirebugChrome.select(node, 'html');
                 });
-
             }
-        }
+        },
 
+        /**
+         * @name FirebugCommandAdaptor.lookup
+         * @function
+         * @description Lookup an object by it's handle.
+         * @param args Arguments object
+         * @param args.handle the handle id to look up.
+         */
+        "lookup": function( args) {
+            var handle = args["handle"];
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CROSSFIRE CommandAdaptor lookup: handle => " + handle);
+            var obj;
+            if (handle) {
+                for (var i in this.refs) {
+                    if (i == handle) {
+                        obj = this.refs[i];
+                        if (FBTrace.DBG_CROSSFIRE)
+                            FBTrace.sysout("CROSSFIRE CommandAdaptor lookup found object for handle: " + handle, obj);
+                        break;
+                    }
+                }
+            }
+            return { "context_id": this.contextId, "type": typeof(obj), "value": this.serialize(obj) };
+        },
+
+        /**
+         * @function serialize
+         * @description prepare a javascript object to be serialized into JSON.
+         * @param thingy the javascript thing to serialize
+         */
+        serialize: function( thingy) {
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CROSSFIRE CommandAdaptor serialize => ", thingy);
+
+            var type = typeof(thingy);
+
+            var serialized = {
+                    "context_id": this.contextId,
+                    "type": type,
+                    "value": ""
+            }
+
+            if (type == "object") {
+                if (thingy == null) {
+                     serialized["value"] = "null";
+                } else {
+                    var o = {};
+                    for (var p in thingy) {
+                        if (thingy.hasOwnProperty(p)) {
+                            if (typeof(thingy[p]) == "object") {
+                                o[p] = this.getRef(thingy[p]);
+                            } else {
+                                o[p] = this.serialize(thingy[p]);
+                            }
+                        }
+                    }
+                    serialized["value"] = o;
+                }
+            } else if (type == "function") {
+                serialized["value"] =  thingy.name + "()";
+            } else if (type == "undefined") {
+                 serialized["value"] = "undefined";
+            } else {
+                serialized["value"] = thingy;
+            }
+            return serialized;
+        },
+
+        /*
+         * @ignore
+         */
+        getRef: function( obj) {
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CROSSFIRE CommandAdaptor getRef", obj);
+            var ref = { "context_id": this.contextId, "type":"ref", "handle": -1 };
+            for (var i in this.refs) {
+                if (this.refs[i] === obj) {
+                    if (FBTrace.DBG_CROSSFIRE)
+                        FBTrace.sysout("CROSSFIRE CommandAdaptor getRef ref exists with handle: " + i, obj);
+                    ref["handle"] = i;
+                    return ref;
+                }
+            }
+            var handle = ++this.refCount;
+            this.refs[handle] = obj;
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CROSSFIRE CommandAdaptor getRef new ref created with handle: " + handle, obj);
+            ref["handle"] = handle;
+            return ref;
+        },
+
+        /*
+         * @ignore
+         */
+        clearRefs: function() {
+            this.refCount = 0;
+            this.refs = [];
+        }
     };
 
     // export constructor

@@ -5,6 +5,8 @@
  *
  */
 
+const CROSSFIRE_VERSION = "0.8.1";
+
 FBL.ns(function() { with(FBL) {
     const SocketTransport = Components.classes["@almaden.ibm.com/crossfire/socket-transport;1"];
 
@@ -69,6 +71,8 @@ FBL.ns(function() { with(FBL) {
             var response;
             if (command == "listcontexts") {
                 response = this.listContexts();
+            } else if (command == "version") {
+                response =  { "version": CROSSFIRE_VERSION };
             } else {
                 var commandAdaptor;
                 var contextId = request.context_id;
@@ -307,7 +311,7 @@ FBL.ns(function() { with(FBL) {
 
             var copiedFrame = this.copyFrame(frame);
 
-            context.Crossfire.commandAdaptor.currentFrame = copiedFrame;
+            context.Crossfire.currentFrame = copiedFrame;
 
             this.handleEvent(context, "onBreak", href, lineno);
             this.running = false;
@@ -324,7 +328,10 @@ FBL.ns(function() { with(FBL) {
         onResume: function( context) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE: onResume");
-            context.Crossfire.commandAdaptor.currentFrame = null;
+
+            context.Crossfire.currentFrame = null;
+            context.Crossfire.commandAdaptor.clearRefs();
+
             this.handleEvent(context, "onResume");
             this.running = true;
         },

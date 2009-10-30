@@ -102,7 +102,7 @@ var EXPORTED_SYMBOLS = ["EventPacket", "RequestPacket", "ResponsePacket"];
      * @param requestSeq The sequence number of the request that initiated this response.
      * @param body The JSON body of the response.
      * @param running boolean indicating whether the context is still running after the command.
-     * @param success boolean indicating whether the command was succesful.
+     * @param success boolean indicating whether the command was successful.
      */
     function ResponsePacket( command, requestSeq, body, running, success) {
         var sequence = Packet.seq++;
@@ -115,7 +115,7 @@ var EXPORTED_SYMBOLS = ["EventPacket", "RequestPacket", "ResponsePacket"];
                 "running": running,
                 "success": success
         };
-
+        if (body.context_id) packet.context_id = body.context_id;
         var json = this.toJSON(packet);
         this.data = this.toPacketString(json);
         this.length = this.data.length;

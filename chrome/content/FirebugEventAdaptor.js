@@ -100,7 +100,7 @@ FBL.ns(function() { with(FBL) {
                     line = arguments[1];
                     url = arguments[0];
                 }
-               return { "url" : url, "line": line, "context_id": this.contextId };
+               return { "context_id": this.contextId, "data": { "url" : url, "line": line } };
             },
 
             /**
