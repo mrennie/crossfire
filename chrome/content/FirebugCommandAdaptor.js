@@ -417,7 +417,7 @@ FBL.ns(function() { with(FBL) {
 
                 script = {
                     "id": url,
-                    "lineOffse": 0,
+                    "lineOffset": 0,
                     "columnOffset": 0,
                     "sourceStart": lines[0],
                     "sourceLength":srcLen,
