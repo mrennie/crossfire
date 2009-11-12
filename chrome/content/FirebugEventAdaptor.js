@@ -24,6 +24,28 @@ FBL.ns(function() { with(FBL) {
           */
          {
              /**
+              * @name FirebugEventAdaptor.onContextCreated
+              * @function
+              * @return <code>context_id</code> of the created context.
+              */
+             "onContextCreated": function() {
+                 if (FBTrace.DBG_CROSSFIRE)
+                     FBTrace.sysout("CROSSFIRE EventAdaptor onContextCreated");
+                 return { "context_id": this.contextId };
+              },
+
+              /**
+               * @name FirebugEventAdaptor.onContextDestroyed
+               * @function
+               * @return <code>context_id</code> of the destroyed context.
+               */
+              "onContextDestroyed": function() {
+                   if (FBTrace.DBG_CROSSFIRE)
+                       FBTrace.sysout("CROSSFIRE EventAdaptor onContextDestroyed");
+                   return { "context_id": this.contextId };
+              },
+
+             /**
               * @name FirebugEventAdaptor.onConsoleDebug
               * @function
               * @param data the data that was logged to the console with this console event.
@@ -82,6 +104,20 @@ FBL.ns(function() { with(FBL) {
                      FBTrace.sysout("CROSSFIRE EventAdaptor onConsoleError");
                  return { "context_id": this.contextId, "data": data };
              },
+
+             /**
+              * @name FirebugEventAdaptor.onScript
+              * @function
+              * @description Event that is generated when a new script is compiled
+              * @param data
+              * @returns <code>context_id</code>, <code>data</code> script that was created
+              */
+             "onScript": function( data) {
+                  if (FBTrace.DBG_CROSSFIRE)
+                      FBTrace.sysout("CROSSFIRE EventAdaptor onScript");
+                  return {"context_id": this.contextId, "data": data };
+             },
+
 
            /**
             * @name FirebugEventAdaptor.onBreak
