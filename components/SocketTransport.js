@@ -65,8 +65,7 @@ SocketTransport.prototype =
     sendResponse: function(command, requestSeq, body, running, success) {
         if (running == null || running == undefined) running = true; // assume we are running unless explicitly told otherwise
         success = !!(success); // convert to boolean
-        var self = this;
-        this._defer(function() { self._sendPacket(new Packets.ResponsePacket(command, requestSeq, body, running, success)); });
+        this._defer(function() { this._sendPacket(new Packets.ResponsePacket(command, requestSeq, body, running, success)); });
     },
 
     /**
@@ -77,8 +76,7 @@ SocketTransport.prototype =
      * @param data optional JSON object containing additional data about the event.
      */
     sendEvent: function( event, data) {
-        var self = this;
-        this._defer(function() { self._sendPacket(new Packets.EventPacket(event, data)); });
+        this._defer(function() { this._sendPacket(new Packets.EventPacket(event, data)); });
     },
 
     /**
@@ -86,10 +84,22 @@ SocketTransport.prototype =
      * @function
      * @param host the hostname.
      * @param port the port.
-     * @description Open a connection to the specified host/port
+     * @description Open a connection to the specified host/port.
      */
     open: function( host, port) {
-        this._createTransport(host, port);
+        this._destroyTransport();
+        this._createTransport(host, port, false);
+    },
+
+    /**
+     * @name SocketTransport.listen
+     * @function
+     * @param port the port.
+     * @description Listen for connections on localhost to the specified port.
+     */
+    listen: function( port) {
+        this._destroyTransport();
+        this._createTransport("localhost", port, true);
     },
 
     /**
@@ -98,26 +108,31 @@ SocketTransport.prototype =
      * @description close a previously opened connection.
      */
     close: function() {
-        this.listeners = [];
-
         this.sendEvent("closed");
 
         this._defer(function() {
-            if (this._transport) {
-                this._transport.close(null);
-                delete this._transport;
+            this._notifyConnection("closed");
+            this.connected = false;
+
+            if (this._outputStream) {
+                this._outputStream.close();
             }
 
-            if (this._outputStreamCallback)
-                delete this._outputStreamCallback;
+            if (this._inputStream) {
+                this._inputStream.close(null);
+            }
 
-            this.connected = false;
+            if (this._transport) {
+                this._transport.close(null);
+            }
+
+            this._destroyTransport();
         });
     },
 
     // ----- internal methods -----
     /** @ignore */
-    _createTransport: function (host, port) {
+    _createTransport: function (host, port, listening) {
 
         var transportService = Cc["@mozilla.org/network/socket-transport-service;1"]
                                   .getService(Ci.nsISocketTransportService);
@@ -159,12 +174,27 @@ SocketTransport.prototype =
                 }
             };
 
-        this._sendHandshake();
+        if (listening) {
+            this._waitHandshake();
+        } else {
+            this._sendHandshake();
+        }
+    },
+
+    _destroyTransport: function() {
+        delete this._outputStreamCallback;
+        delete this._outputStream;
+
+        delete this._scriptableInputStream;
+        delete this._inputStream;
+
+        delete this._transport;
     },
 
     /** @ignore */
     _defer: function( callback, delay) {
         if (!delay) delay = 1;
+        var self = this;
         var timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
         timer.initWithCallback( {
             QueryInterface: function( iid) {
@@ -173,7 +203,7 @@ SocketTransport.prototype =
                 return this;
             },
             notify: function( aTimer) {
-                callback.call(null);
+                callback.apply(self);
             }
         }, delay, timer.TYPE_ONE_SHOT);
     },
@@ -192,22 +222,27 @@ SocketTransport.prototype =
             }
         }, 0, 0, null);
 
+        this._notifyConnection("waitOnHandshake");
         this._waitHandshake();
     },
 
     /** @ignore */
     _waitHandshake: function( timeout) {
-        var self = this;
         this._defer(function() {
-            if (self._inputStream.available() == 25) {
-                if (self._scriptableInputStream.read(25) == CROSSFIRE_HANDSHAKE) {
-                    self.connected = true;
-                    self._outputStream.asyncWait(self._outputStreamCallback,0,0,null);
-                    self._waitOnPacket();
-                    return;
+            try {
+                if (this._inputStream.available() == 25) {
+                    if (this._scriptableInputStream.read(25) == CROSSFIRE_HANDSHAKE) {
+                        this.connected = true;
+                        this._outputStream.asyncWait(this._outputStreamCallback,0,0,null);
+                        this._waitOnPacket();
+                        this._notifyConnection("handshakeComplete");
+                        return;
+                    }
                 }
+                this._waitHandshake(HANDSHAKE_RETRY);
+            } catch (e) {
+                //this.close();
             }
-            self._waitHandshake(HANDSHAKE_RETRY);
         }, timeout);
     },
 
@@ -221,7 +256,6 @@ SocketTransport.prototype =
 
     /** @ignore */
     _waitOnPacket: function() {
-        var self = this;
         var avail;
         try {
             avail = this._inputStream.available();
@@ -234,7 +268,23 @@ SocketTransport.prototype =
                 this._notifyListeners(new Packets.RequestPacket(response));
             }
         }
-        this._defer(function() { self._waitOnPacket();});
+        if (this.connected) {
+            this._defer(function() { this._waitOnPacket();});
+        }
+    },
+
+    /** @ignore */
+    _notifyConnection: function( status) {
+        for (var i = 0; i < this.listeners.length; ++i) {
+            var listener = this.listeners[i];
+            try {
+                 var handler = listener["onConnectionStatusChanged"];
+                 if (handler)
+                     handler.apply(listener, [status]);
+            } catch (e) {
+                //TODO: log exception
+            }
+        }
     },
 
 
