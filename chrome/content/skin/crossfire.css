@@ -1,0 +1,26 @@
+/* crossfire.css */
+
+#crossfireIcon {
+    width: 16px;
+    height: 16px;
+}
+
+#crossfireIcon.running {
+    list-style-image: url(chrome://crossfire/skin/crossfire-running.gif);
+}
+
+#crossfireIcon.connected {
+    list-style-image: url(chrome://crossfire/skin/crossfire-connected.gif);
+}
+
+#crossfireIcon.disconnected {
+    list-style-image: url(chrome://crossfire/skin/crossfire-disconnected.gif);
+}
+
+#crossfireIcon.listening {
+    list-style-image: url(chrome://crossfire/skin/crossfire-listening.gif);
+}
+
+menuitem.hidden {
+    display:none;
+}

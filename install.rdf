@@ -7,8 +7,7 @@
         <em:name>Crossfire</em:name>
         <em:version>@VERSION@</em:version>
         <em:description>Remote debugging for Firebug.</em:description>
-        <em:creator>Michael G. Collins (Firetoad)</em:creator>
-        <em:iconURL>chrome://crossfire/content/crossfire.png</em:iconURL>
+        <em:iconURL>chrome://crossfire/skin/crossfire.png</em:iconURL>
         <em:targetApplication>
             <Description>
                 <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
@@ -16,5 +15,7 @@
                 <em:maxVersion>3.*</em:maxVersion>
             </Description>
         </em:targetApplication>
+        <em:creator>Michael G. Collins (Firetoad)</em:creator>
+        <em:contributor>John J. Barton</em:contributor>
     </Description>
 </RDF>
