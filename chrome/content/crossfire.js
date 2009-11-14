@@ -443,10 +443,16 @@ FBL.ns(function() { with(FBL) {
                 FBTrace.sysout("CROSSFIRE logFormatted");
 
             var win = context.window;
-            var eventName = "onConsole" + className.substring(0,1).toUpperCase() + className.substring(1);
-            var data = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug.userObjects;
+            var winFB = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug;
+            if (winFB)
+            {
+                var data = winFB.userObjects;
 
-            this.handleEvent(context, eventName, data);
+                var eventName = "onConsole" + className.substring(0,1).toUpperCase() + className.substring(1);
+                var data = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug.userObjects;
+
+                this.handleEvent(context, eventName, data);
+            }
         },
 
         // ----- Firebug.Inspector Listener -----
