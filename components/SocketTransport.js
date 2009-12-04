@@ -4,8 +4,7 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
-const CROSSFIRE_HANDSHAKE        = "Fbug+CrossfireHandshake\r\n";
-const CHROME_DEV_TOOLS_HANDSHAKE = "ChromeDevToolsHandshake\r\n";
+const CROSSFIRE_HANDSHAKE        = "CrossfireHandshake\r\n";
 const HANDSHAKE_RETRY = 1007;
 
 const Packets = {};
@@ -82,8 +81,8 @@ SocketTransport.prototype =
     /**
      * @name SocketTransport.open
      * @function
-     * @param host the hostname.
-     * @param port the port.
+     * @param {String} host the hostname.
+     * @param {Number} port the port.
      * @description Open a connection to the specified host/port.
      */
     open: function( host, port) {
@@ -94,12 +93,14 @@ SocketTransport.prototype =
     /**
      * @name SocketTransport.listen
      * @function
-     * @param port the port.
+     * @param {String} host the hostname.
+     * @param {Number} port the port.
      * @description Listen for connections on localhost to the specified port.
      */
-    listen: function( port) {
+    listen: function( host, port) {
         this._destroyTransport();
-        this._createTransport("localhost", port, true);
+        this.listening = true;
+        this._createTransport(host, port);
     },
 
     /**
@@ -132,7 +133,7 @@ SocketTransport.prototype =
 
     // ----- internal methods -----
     /** @ignore */
-    _createTransport: function (host, port, listening) {
+    _createTransport: function (host, port) {
 
         var transportService = Cc["@mozilla.org/network/socket-transport-service;1"]
                                   .getService(Ci.nsISocketTransportService);
@@ -140,6 +141,7 @@ SocketTransport.prototype =
         this._transport = transportService.createTransport(null,0, host, port, null);
 
         this._outputStream = this._transport.openOutputStream(0, 0, 0);
+
 
         this._inputStream = this._transport.openInputStream(Ci.nsITransport.OPEN_BLOCKING, 0, 0);
 
@@ -174,7 +176,7 @@ SocketTransport.prototype =
                 }
             };
 
-        if (listening) {
+        if (this.listening) {
             this._waitHandshake();
         } else {
             this._sendHandshake();
@@ -217,25 +219,34 @@ SocketTransport.prototype =
                 return this;
             },
             onOutputStreamReady: function( outputStream) {
-                outputStream.write(CROSSFIRE_HANDSHAKE, 25);
+                outputStream.write(CROSSFIRE_HANDSHAKE, CROSSFIRE_HANDSHAKE.length);
                 outputStream.flush();
             }
         }, 0, 0, null);
 
-        this._notifyConnection("waitOnHandshake");
-        this._waitHandshake();
+        if (this.listening) {
+            this._waitOnPacket();
+            this._notifyConnection("handshakeComplete");
+        } else {
+            this._notifyConnection("waitOnHandshake");
+            this._waitHandshake();
+        }
     },
 
     /** @ignore */
     _waitHandshake: function( timeout) {
         this._defer(function() {
             try {
-                if (this._inputStream.available() == 25) {
-                    if (this._scriptableInputStream.read(25) == CROSSFIRE_HANDSHAKE) {
+                if (this._inputStream.available() == CROSSFIRE_HANDSHAKE.length) {
+                    if (this._scriptableInputStream.read(CROSSFIRE_HANDSHAKE.length) == CROSSFIRE_HANDSHAKE) {
                         this.connected = true;
                         this._outputStream.asyncWait(this._outputStreamCallback,0,0,null);
-                        this._waitOnPacket();
-                        this._notifyConnection("handshakeComplete");
+                        if (this.listening) {
+                            this._sendHandshake();
+                        } else {
+                            this._waitOnPacket();
+                            this._notifyConnection("handshakeComplete");
+                        }
                         return;
                     }
                 }
