@@ -13,7 +13,7 @@ FBL.ns(function() { with(FBL) {
      */
      function FirebugEventAdaptor( context) {
          this.context = context;
-         this.contextId = context.window.location.href;
+         this.contextId = context.Crossfire.crossfire_id;
          if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE Creating new FirebugEventAdaptor for context: " + this.contextId);
      }
@@ -31,7 +31,13 @@ FBL.ns(function() { with(FBL) {
              "onContextCreated": function() {
                  if (FBTrace.DBG_CROSSFIRE)
                      FBTrace.sysout("CROSSFIRE EventAdaptor onContextCreated");
-                 return { "context_id": this.contextId };
+                 var href;
+                 try {
+                     href = this.context.window.location.href;
+                 } catch(e) {
+                     href = "";
+                 }
+                 return { "context_id": this.contextId, "data": { "href": href } };
               },
 
               /**

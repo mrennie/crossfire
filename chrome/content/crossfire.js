@@ -6,6 +6,8 @@
  */
 
 const CROSSFIRE_VERSION = "0.1a";
+var CONTEXT_ID_SEED = Math.round(Math.random() * 10000000);
+
 var Crossfire = Crossfire || {};
 
 FBL.ns(function() { with(FBL) {
@@ -58,14 +60,16 @@ FBL.ns(function() { with(FBL) {
 
         /**
          * @description listen for incoming connections on a port.
+         * @param {String} host the host name.
          * @param {Number} port the port number to listen on.
          */
-        listen: function( port) {
+        listen: function( host, port) {
             if (FBTrace.DBG_CROSSFIRE)
-                FBTrace.sysout("CROSSFIRE listen: port => " + port);
+                FBTrace.sysout("CROSSFIRE listen: host => " + host + " port => " + port);
+            this.host = host;
             this.port = port;
             this.listening = true;
-            this.getTransport().listen(port);
+            this.getTransport().listen(host, port);
         },
 
         /**
@@ -107,7 +111,7 @@ FBL.ns(function() { with(FBL) {
             var command = request.command;
 
             if (FBTrace.DBG_CROSSFIRE)
-                FBTrace.sysout("CROSSFIRE handling command: " + command + ", with arguments: " + request.arguments );
+                FBTrace.sysout("CROSSFIRE handling command: " + command + ", with arguments: ",  request.arguments );
 
             var response;
             if (command == "listcontexts") {
@@ -119,7 +123,7 @@ FBL.ns(function() { with(FBL) {
                 var contextId = request.context_id;
                 for (var i = 0; i < this.contexts.length; i++) {
                     var context = this.contexts[i];
-                    if (contextId == context.window.location.href) {
+                    if (contextId == context.Crossfire.crossfire_id) {
                         commandAdaptor = context.Crossfire.commandAdaptor;
                         break;
                     }
@@ -147,6 +151,8 @@ FBL.ns(function() { with(FBL) {
                 this.setConnected(true);
             } else if (status == "closed") {
                 this.setConnected(false);
+            } else {
+                this.status = status;
             }
         },
 
@@ -191,18 +197,18 @@ FBL.ns(function() { with(FBL) {
         initContext: function( context) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  initContext");
-            context.Crossfire = {};
+            context.Crossfire = { "crossfire_id" : generateId() };
             this.contexts.push(context);
         },
 
         /**
-         * @description Create a new command adaptor for the context when it is loaded. Send "navigated" event.
+         * @description Create a new command adaptor for the context when it is loaded. Send "onContextCreated" event.
          * @param context
          */
         loadedContext: function( context) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  loadedContext");
-            var contextId = context.window.location.href;
+            var contextId =  context.Crossfire.crossfire_id;
 
             context.Crossfire["commandAdaptor"] = new Crossfire.FirebugCommandAdaptor(context);
             context.Crossfire["eventAdaptor"] = new Crossfire.FirebugEventAdaptor(context);
@@ -223,18 +229,18 @@ FBL.ns(function() { with(FBL) {
         destroyContext: function(context) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE: destroyContext");
-            var contextId = context.window.location.href;
+            var contextId = context.Crossfire.crossfire_id;
             for (var i = 0; i < this.contexts.length; i++) {
-                var win = this.contexts[i].window;
-                if (win && !win.closed)
-                {
-                    var location = win.location;
-                    if (location && location.href == contextId) {
+                //var win = this.contexts[i].window;
+                //if (win && !win.closed)
+                //{
+                //    var location = win.location;
+                    if (this.contexts[i].Crossfire.crossfire_id == contextId) {
                         this.handleEvent(this.contexts[i], "onContextDestroyed");
                         this.contexts.splice(i, 1);
                         break;
                     }
-                }
+                //}
             }
         },
 
@@ -251,11 +257,18 @@ FBL.ns(function() { with(FBL) {
         listContexts: function() {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE listing " + this.contexts.length + " contexts...");
-            var contextIds = [];
+            var contexts = [];
+            var context, href;
             for (var i = 0; i < this.contexts.length; i++) {
-                contextIds.push(this.contexts[i].window.location.href);
+                context = this.contexts[i];
+                href = "";
+                if (context.window && !context.window.closed) {
+                    href = context.window.location.href;
+                }
+                contexts.push( { "crossfire_id" : context.Crossfire.crossfire_id,
+                                   "href": href });
             }
-            return { "contexts": contextIds };
+            return { "contexts": contexts };
         },
 
         /**
@@ -365,7 +378,7 @@ FBL.ns(function() { with(FBL) {
                     lineno = analyzer.getSourceLineFromFrame(context, frame);
             }
             var href = sourceFile.href.toString();
-            var contextId = context.window.location.href;
+            var contextId = context.Crossfire.crossfire_id;
 
             var copiedFrame = this.copyFrame(frame);
 
@@ -472,7 +485,7 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE onStopInspecting");
 
-            var contextId = context.window.location.href;
+            var contextId = context.Crossfire.crossfire_id;
             this.transport.sendEvent("onStopInspecting", { "context_id": contextId });
         }
         */
@@ -562,16 +575,15 @@ FBL.ns(function() { with(FBL) {
     };
 
     Crossfire.listen = function() {
-        /* disabled for now...
         if (FBTrace.DBG_CROSSFIRE)
             FBTrace.sysout("Crossfire.listen");
-        var params = { "port": null };
-        window.openDialog("chrome://crossfire/content/connect-dialog.xul", "crossfire-connect","chrome,modal,dialog", params, "nohost");
+        var params = { "host": null, "port": null };
+        window.openDialog("chrome://crossfire/content/connect-dialog.xul", "crossfire-connect","chrome,modal,dialog", params);
 
-        if (params.port) {
-            CrossfireModule.listen(parseInt(params.port));
+        if (params.host && params.port) {
+            CrossfireModule.listen(params.host, parseInt(params.port));
         }
-        */
+
     }
 
     Crossfire.connect = function() {
@@ -591,6 +603,11 @@ FBL.ns(function() { with(FBL) {
 
         CrossfireModule.disconnect();
     };
+
+    // generate a unique id for newly created contexts.
+    function generateId() {
+        return "xf"+CROSSFIRE_VERSION + "::" + (++CONTEXT_ID_SEED);
+    }
 
 //end FBL.ns()
 }});

@@ -2,6 +2,7 @@
 
 if (!Crossfire) var Crossfire = {};
 
+
 // FirebugCommandAdaptor
 FBL.ns(function() { with(FBL) {
 
@@ -19,11 +20,11 @@ FBL.ns(function() { with(FBL) {
      */
     function FirebugCommandAdaptor( context) {
         this.context = context;
-        this.contextId = context.window.location.href;
+        this.contextId = context.Crossfire.crossfire_id;
         if (FBTrace.DBG_CROSSFIRE)
             FBTrace.sysout("CROSSFIRE Creating new FirebugCommandAdaptor for context: " + this.contextId);
-        this.breakpointIds = 0;
         this.breakpoints = [];
+        this.breakpointIds = 0;
         this.clearRefs();
     }
 
@@ -56,7 +57,7 @@ FBL.ns(function() { with(FBL) {
             } else {
                 Firebug.Debugger.resume(this.context);
             }
-            return {};
+            return true;
         },
 
         /**
@@ -68,12 +69,15 @@ FBL.ns(function() { with(FBL) {
              if (FBTrace.DBG_CROSSFIRE)
                  FBTrace.sysout("CROSSFIRE CommandAdaptor suspend");
             Firebug.Debugger.suspend(this.context);
+            return true;
         },
 
         /**
          * @name FirebugCommandAdaptor.evaluate
          * @function
-         * evaluate command. TODO
+         * @description evaluate a Javascript expression.
+         * @param {Object} args Arguments object.
+         * @param {String} args.expression A string of Javascript to be evaluated
          */
         "evaluate": function( args) {
              if (FBTrace.DBG_CROSSFIRE)
@@ -82,6 +86,33 @@ FBL.ns(function() { with(FBL) {
             var frameNo = args["frame"];
             var expression = args["expression"];
 
+            var frame;
+
+            if (this.currentFrame) {
+                if (frameNo == 0) {
+                    frame = this.currentFrame;
+                } else if (frameNo > 0) {
+                    frame = this.currentFrame.stack[frameNo];
+                }
+            }
+
+            var result = {};
+            //var result = Components.utils.evalInSandbox(expression, sandbox);
+
+            if (frame) {
+                if (FBTrace.DBG_CROSSFIRE)
+                    FBTrace.sysout("CROSSFIRE CommandAdaptor evaluating '" + expression + "' in frame ", frame);
+
+                if (frame.eval(expression, "crossfire_eval_" + this.contextId, 1, result)) {
+                    result = unwrapIValue(result.value);
+                }
+            } else {
+                if (FBTrace.DBG_CROSSFIRE)
+                    FBTrace.sysout("CROSSFIRE CommandAdaptor evaluating '" + expression + "' in sandbox.");
+               result = Firebug.CommandLine.evaluateInSandbox(expression, this.context);
+            }
+
+            return { "context_id": this.contextId, "result": result };
         },
 
         /**
@@ -102,21 +133,19 @@ FBL.ns(function() { with(FBL) {
                     for (var bp in self.breakpoints) {
                         if ( (bp.url == url)
                                 && (bp.line == line)) {
-
                             found = true;
                             bps.push(bp);
                             break;
                         }
                     }
                     if (!found) {
-                        var bpId = self.breakpointIds++;
-
-                        bps.push({
-                            "handle": bpId,
-                            "type": "line",
-                            "line": line,
-                            "target": url
-                        });
+                        var bp = {
+                                "handle": self.breakpointIds++,
+                                "type": "line",
+                                "line": line,
+                                "target": url
+                            };
+                        bps.push(bp);
                     }
                 }});
             }
@@ -129,7 +158,7 @@ FBL.ns(function() { with(FBL) {
          * @function
          * @description Return the breakpoint object with the specified id.
          * @param args Arguments object.
-         * @param args.breakpoint <code>breakpoint</code>: the id of the breakpoint you want to get.
+         * @param args.breakpoint <code>breakpoint</code>: the handle of the breakpoint you want to get.
          */
         "getbreakpoint": function( args) {
             var bp;
@@ -143,6 +172,7 @@ FBL.ns(function() { with(FBL) {
                     return bp;
                 }
             }
+            return false;
         },
 
         /**
@@ -159,34 +189,36 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor setbreakpoint: url => " + url + " line => " + line);
 
-            var bp;
+            var bp, breakpoint;
             var breakpoints = this.breakpoints;
             for (var i = 0; i < breakpoints.length; i++) {
                 bp = breakpoints[i];
                 if (bp.line == line
                     && bp.url == url) {
-                    return bp.id;
+                    breakpoint = bp;
+                    break;
                 }
             }
+            if (!breakpoint) {
+                var sourceFile = this.context.sourceFileMap[url];
+                if (sourceFile) {
+                    Firebug.Debugger.setBreakpoint(sourceFile, line);
 
-            var sourceFile = this.context.sourceFileMap[url];
-            if (sourceFile) {
-                Firebug.Debugger.setBreakpoint(sourceFile, line);
+                    if (FBTrace.DBG_CROSSFIRE)
+                        FBTrace.sysout("CROSSFIRE CommandAdaptor breakpoint set.");
 
-                if (FBTrace.DBG_CROSSFIRE)
-                    FBTrace.sysout("CROSSFIRE CommandAdaptor breakpoint set.");
+                    var breakpoint = {
+                            "handle": this.breakpointIds++,
+                            "type": "line",
+                            "line": line,
+                            "target": url
+                        };
+                    breakpoints.push(breakpoint);
 
-                var breakpoint = {
-                        "handle": bpId,
-                        "type": "line",
-                        "line": line,
-                        "target": url
-                    };
-                var bpId = this.breakpointIds++;
-                breakpoints.push(breakpoint);
-
-                return {"context_id": this.contextId, "ref": bpId };
+                }
             }
+            return {"context_id": this.contextId, "breakpoint": breakpoint  };
+
         },
 
         /**
@@ -202,6 +234,7 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor changebreakpoint id: " + bpId);
             //TODO:
+            return false;
         },
 
         /**
@@ -285,17 +318,18 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor backtrace");
 
-            //var fromFrame = args["fromFrame"];
-            //var toFrame = args["toFrame"];
-            //TODO: respect args
 
             if (this.context.Crossfire.currentFrame && this.context.Crossfire.currentFrame.stack) {
                 if (FBTrace.DBG_CROSSFIRE)
                     FBTrace.sysout("CROSSFIRE CommandAdaptor backtrace currentFrame.stack => " + this.context.Crossfire.currentFrame.stack);
 
                 var stack = this.context.Crossfire.currentFrame.stack;
+
+                var fromFrame = args["fromFrame"] || 0;
+                var toFrame = args["toFrame"] || stack.length;
+
                 var frames = [];
-                for (var i = 0; i < stack.length; i++) {
+                for (var i = fromFrame; i < toFrame; i++) {
                     frames.push(this.frame({ "number": i }));
                 }
 
@@ -322,6 +356,7 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor scope");
 
+            var scope;
             var scopeNo = args["number"];
             var frameNo = args["frameNumber"];
             if (this.context.Crossfire.currentFrame) {
@@ -332,22 +367,27 @@ FBL.ns(function() { with(FBL) {
                 } else {
                     frame = this.context.Crossfire.currentFrame.stack[frameNo];
                 }
-                var scope = frame.scope;
+                scope = frame.scope;
                 for (var i = 0; i < scopeNo; i++) {
                     scope = scope.parent;
                     if (!scope) break;
                 }
-                if (scope) {
-                    //delete scope.parent;
-                    //scope.parent = this.getRef(scope.parent);
-                    return {
-                        "context_id": this.contextId,
-                        "index": scopeNo,
-                        "frameIndex": frameNo,
-                        "object": this.serialize(scope)
-                    };
-                }
+            } else if (scopeNo == 0) {
+              scope = this.context.window.wrappedJSObject;
+              frameNo = -1;
             }
+
+            if (scope) {
+                //delete scope.parent;
+                //scope.parent = this.getRef(scope.parent);
+                return {
+                    "context_id": this.contextId,
+                    "index": scopeNo,
+                    "frameIndex": frameNo,
+                    "object": this.serialize(scope)
+                };
+            }
+
             return false;
         },
 
@@ -363,20 +403,21 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor scopes");
             var scopes = [];
-            if (this.context.Crossfire.currentFrame) {
-                var scope;
-                do {
-                    scope = this.scope({"number": scopes.length, "frameNumber":  args["frameNumber"]});
-                    if (scope) scopes.push(scope);
-                } while(scope);
 
-                return {
-                    "context_id": this.contextId,
-                    "fromScope": 0,
-                    "toScope": scopes.length-1,
-                    "totalScopes": scopes.length,
-                    "scopes": scopes
-                };
+            var scope;
+            do {
+                scope = this.scope({"number": scopes.length, "frameNumber":  args["frameNumber"]});
+                if (scope) scopes.push(scope);
+            } while(scope);
+
+            if (scopes.length > 0) {
+              return {
+                  "context_id": this.contextId,
+                  "fromScope": 0,
+                  "toScope": scopes.length-1,
+                  "totalScopes": scopes.length,
+                  "scopes": scopes
+              };
             }
 
             return false;
@@ -436,11 +477,13 @@ FBL.ns(function() { with(FBL) {
         /**
          * @name FirebugCommandAdaptor.source
          * @function
-         * @description source command. TODO
+         * @description source command. Return the source code for every script in this context.
          */
         "source": function ( args) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor source");
+
+            return this.scripts({"includeSource": true});
         },
 
         /**
@@ -510,52 +553,82 @@ FBL.ns(function() { with(FBL) {
          * @function serialize
          * @description prepare a javascript object to be serialized into JSON.
          * @param thingy the javascript thing to serialize
+         * @param {Boolean} incContext boolean indicates whether the context id field should be included.
          */
-        serialize: function( thingy) {
-            if (FBTrace.DBG_CROSSFIRE)
-                FBTrace.sysout("CROSSFIRE CommandAdaptor serialize => ", thingy);
+        serialize: function( thingy, incContext) {
+            try {
+                if (FBTrace.DBG_CROSSFIRE)
+                    FBTrace.sysout("CROSSFIRE CommandAdaptor serialize => ", thingy);
 
-            var type = typeof(thingy);
+                var type = typeof(thingy);
 
-            var serialized = {
-                    "context_id": this.contextId,
-                    "type": type,
-                    "value": ""
-            }
+                var serialized = {
+                        "type": type,
+                        "value": ""
+                }
 
-            if (type == "object") {
-                if (thingy == null) {
-                     serialized["value"] = "null";
-                } else {
-                    var o = {};
-                    for (var p in thingy) {
-                        if (thingy.hasOwnProperty(p)) {
-                            if (typeof(thingy[p]) == "object") {
-                                o[p] = this.getRef(thingy[p]);
-                            } else {
-                                o[p] = this.serialize(thingy[p]);
+                if (incContext) {
+                    serialized["context_id"] = this.contextId;
+                }
+
+                if (type == "object") {
+                    if (thingy == null) {
+                         serialized["value"] = "null";
+                    } else if (thingy instanceof Array) {
+                        var arr = "[";
+                        for (var i = 0; i < thingy.length; i++) {
+                            arr += this.serialize(thingy[i]);
+                            if (i < thingy.length-1) {
+                                arr += ',';
                             }
                         }
+                        serialized["value"] = arr + "]";
+                    } else {
+                        var ref = this.getRef(thingy);
+                        var o = {};
+                        for (var p in thingy) {
+                            if (thingy.hasOwnProperty(p) && !(p in ignoreVars)) {
+                                var prop = thingy[p];
+                                if (typeof(prop) == "object") {
+                                    if (prop == null) {
+                                        o[p] = "null";
+                                    } else if (prop && prop.type && prop.type == "ref" && prop.handle) {
+                                        o[p] = prop;
+                                    } else  {
+                                        o[p] = this.getRef(prop);
+                                    }
+                                } else if (p === thingy) {
+                                    o[p] = ref;
+                                } else {
+                                    o[p] = this.serialize(prop);
+                                }
+                            }
+                        }
+                        serialized["value"] = o;
                     }
-                    serialized["value"] = o;
+                } else if (type == "function") {
+                    serialized["value"] =  thingy.name ? thingy.name + "()" : "function()";
+                } else {
+                    serialized["value"] = thingy;
                 }
-            } else if (type == "function") {
-                serialized["value"] =  thingy.name + "()";
-            } else if (type == "undefined") {
-                 serialized["value"] = "undefined";
-            } else {
-                serialized["value"] = thingy;
+
+                return serialized;
+
+            } catch (e) {
+                return { "type": "string", "value": "crossfire serialization exception: " + e }
             }
-            return serialized;
         },
 
         /*
          * @ignore
          */
-        getRef: function( obj) {
+        getRef: function( obj, incContext) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor getRef", obj);
-            var ref = { "context_id": this.contextId, "type":"ref", "handle": -1 };
+            var ref = { "type":"ref", "handle": -1 };
+            if (incContext) {
+                ref["context_id"] = this.contextId;
+            }
             for (var i in this.refs) {
                 if (this.refs[i] === obj) {
                     if (FBTrace.DBG_CROSSFIRE)
@@ -579,6 +652,27 @@ FBL.ns(function() { with(FBL) {
             this.refCount = 0;
             this.refs = [];
         }
+    };
+
+ // ripped-off from Firebug dom.js
+    const ignoreVars =
+    {
+        "__firebug__": 1,
+        "eval": 1,
+
+        // We are forced to ignore Java-related variables, because
+        // trying to access them causes browser freeze
+        "java": 1,
+        "sun": 1,
+        "Packages": 1,
+        "JavaArray": 1,
+        "JavaMember": 1,
+        "JavaObject": 1,
+        "JavaClass": 1,
+        "JavaPackage": 1,
+        "_firebug": 1,
+        "_FirebugConsole": 1,
+        "_FirebugCommandLine": 1,
     };
 
     // export constructor
