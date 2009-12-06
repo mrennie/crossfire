@@ -24,7 +24,7 @@ FBL.ns(function() { with(FBL) {
         if (FBTrace.DBG_CROSSFIRE)
             FBTrace.sysout("CROSSFIRE Creating new FirebugCommandAdaptor for context: " + this.contextId);
         this.breakpoints = [];
-        this.breakpointIds = 0;
+        this.breakpointIds = 1;
         this.clearRefs();
     }
 
@@ -360,17 +360,22 @@ FBL.ns(function() { with(FBL) {
             var scopeNo = args["number"];
             var frameNo = args["frameNumber"];
             if (this.context.Crossfire.currentFrame) {
-                var frame;
-                if (!frameNo) {
-                    frameNo = 0;
-                    frame = this.context.Crossfire.currentFrame;
+                if (scopeNo == 0) {
+                    // only return a reference to the global scope
+                    scope = this.getRef(this.context.window.wrappedJSObject);
                 } else {
-                    frame = this.context.Crossfire.currentFrame.stack[frameNo];
-                }
-                scope = frame.scope;
-                for (var i = 0; i < scopeNo; i++) {
-                    scope = scope.parent;
-                    if (!scope) break;
+                    var frame;
+                    if (!frameNo) {
+                        frameNo = 0;
+                        frame = this.context.Crossfire.currentFrame;
+                    } else {
+                        frame = this.context.Crossfire.currentFrame.stack[frameNo];
+                    }
+                    scope = frame.scope;
+                    for (var i = 0; i < scopeNo; i++) {
+                        scope = scope.parent;
+                        if (!scope) break;
+                    }
                 }
             } else if (scopeNo == 0) {
               scope = this.context.window.wrappedJSObject;
@@ -378,8 +383,6 @@ FBL.ns(function() { with(FBL) {
             }
 
             if (scope) {
-                //delete scope.parent;
-                //scope.parent = this.getRef(scope.parent);
                 return {
                     "context_id": this.contextId,
                     "index": scopeNo,
