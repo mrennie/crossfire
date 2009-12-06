@@ -13,11 +13,11 @@
 # $> python crossfire_server.py [<host>] <port>
 #
 
-import json, socket, sys, threading
+import json, readline, socket, sys, threading, time
 
 current_seq = 0
 
-HANDSHAKE_STRING = "Fbug+CrossfireHandshake\r\n"
+HANDSHAKE_STRING = "CrossfireHandshake\r\n"
 
 class CrossfireServer:
 
@@ -31,7 +31,7 @@ class CrossfireServer:
       self.socket.bind((self.host, self.port))
     except socket.error as err:
       print err
-      sys.exit(1)
+      quit()
 
     self.socket.listen(1)
     self.conn, addr = self.socket.accept()
@@ -46,9 +46,10 @@ class CrossfireServer:
     try:
       self.conn.close()
       self.socket.close()
-      self.reader.join(0)
-      self.writer.join(0)
-    except AttributeError:
+      self.socketCondition.acquire()
+      self.reader.join(10)
+      self.writer.join(10)
+    except (AttributeError, KeyboardInterrupt):
       pass
 
   def restart(self):
@@ -58,14 +59,14 @@ class CrossfireServer:
   def waitHandshake(self):
     print 'Waiting for Crossfire handshake...'
     try:
-      shake = self.conn.recv(25)
+      shake = self.conn.recv(len(HANDSHAKE_STRING))
     except socket.error as err:
       print err
     if shake == HANDSHAKE_STRING:
       print 'Received Crossfire handshake.'
-      self.conn.settimeout(1)
+      self.conn.settimeout(10)
       self.conn.send(HANDSHAKE_STRING)
-      
+
       self.socketCondition.acquire()
       self.writer.start()
       self.reader.start()
@@ -96,16 +97,20 @@ class PacketReader(threading.Thread):
     global current_seq
 
     while True:
-      self.cv.acquire()
-      length = self.readPacketLength()
-      if length > 0:
-        packet = self.readPacket(length)
-        if packet:
-          obj = json.loads(packet)
-          current_seq = obj['seq'] +1
-          self.packetQueue.append(obj)
-      self.cv.notifyAll()
-      self.cv.wait()
+      try:
+        self.cv.acquire()
+        length = self.readPacketLength()
+        if length > 0:
+          packet = self.readPacket(length)
+          if packet:
+            obj = json.loads(packet)
+            current_seq = obj['seq'] +1
+            self.packetQueue.append(obj)
+        self.cv.notifyAll()
+        self.cv.wait()
+      except Exception as err:
+        print err
+        break
 
   def readPacketLength(self):
     length = 0
@@ -127,7 +132,16 @@ class PacketReader(threading.Thread):
     return length
 
   def readPacket(self, length):
-    return self.conn.recv(length)
+    packet = ""
+    read = offset = 0
+    while read < length:
+      if length-read < 4096:
+        offset = length-read
+      else:
+        offset = 4096
+      packet += self.conn.recv(offset)
+      read += offset
+    return packet
 
 
 class PacketWriter(threading.Thread):
@@ -143,15 +157,19 @@ class PacketWriter(threading.Thread):
 
   def run(self):
     while True:
-      self.cv.acquire()
-      if len(self.packetQueue) > 0:
-        packet = self.packetQueue.pop()
-        json_str = json.dumps(packet.packet)
-        packet_string = "Content-Length:" + str(len(json_str)) + "\r\n" + json_str
-        self.conn.send(packet_string)
+      try:
+        self.cv.acquire()
+        if len(self.packetQueue) > 0:
+          packet = self.packetQueue.pop()
+          json_str = json.dumps(packet.packet)
+          packet_string = "Content-Length:" + str(len(json_str)) + "\r\n" + json_str
+          self.conn.send(packet_string)
 
-      self.cv.notifyAll()
-      self.cv.wait()
+        self.cv.notifyAll()
+        self.cv.wait()
+      except Error as err:
+        print err
+        break
 
 
 class Command:
@@ -187,6 +205,8 @@ Commands = [
     "lookup"
 ]
 
+COMMAND_PROMPT = 'Crossfire x> '
+
 class CommandLine(threading.Thread):
   def __init__(self):
     threading.Thread.__init__(self)
@@ -200,37 +220,44 @@ class CommandLine(threading.Thread):
 
   def run(self):
     while True:
-      line = sys.stdin.readline()
-      if line:
-        line = line.strip()
-        space = line.find(' ')
-        argstr = None
-        if space == -1:
-          command = line
-        else:
-          command = line[:space].strip()
-          argstr = line[space:].strip()
-        if command in Commands:
-          if command == "entercontext":
-            self.current_context = argstr
-            print "Entering context: " + self.current_context + "\n"
+      try:
+        line = raw_input(COMMAND_PROMPT)
+        #line = sys.stdin.readline()
+        if line:
+          line = line.strip()
+          space = line.find(' ')
+          argstr = None
+          if space == -1:
+            command = line
           else:
-            args = {}
-            if argstr:
-              try:
-                args = json.loads(argstr)
-              except ValueError:
-                print "Failed to parse arguments."
-            self.commands.append(Command(self.current_context, command, arguments=args))
-        elif command:
-          print "Unknown command: " + command + "\n"
+            command = line[:space].strip()
+            argstr = line[space:].strip()
+          if command in Commands:
+            if command == "entercontext":
+              self.current_context = argstr
+              print "Entering context: " + self.current_context + "\n"
+            else:
+              args = {}
+              if argstr:
+                try:
+                  args = json.loads(argstr)
+                except ValueError:
+                  print "Failed to parse arguments."
+              self.commands.append(Command(self.current_context, command, arguments=args))
+          elif command:
+            print "Unknown command: " + command
+      except (ValueError, EOFError):
+        break
+    quit()
 
-  def stop(self):
-    self.join(0)
 
 if __name__ == "__main__":
+  server = None
+  commandLine = None
 
   def main():
+    global server
+    global commandLine
 
     host = None
     port = None
@@ -243,14 +270,14 @@ if __name__ == "__main__":
       port = sys.argv[2]
 
     if host and port:
-      print 'Starting Crossfire server on ' + host + ':' + port + " (Ctrl-C to stop)"
+      print 'Starting Crossfire server on ' + host + ':' + port
       server = CrossfireServer(host, int(port))
       commandLine = CommandLine()
 
       try:
-        commandLine.start()
         server.start()
-        
+        commandLine.start()
+
         print "Sending version command...\n"
         command = Command("", "version")
         server.sendPacket(command)
@@ -262,26 +289,51 @@ if __name__ == "__main__":
         while True:
             packet = server.getPacket()
             if packet:
+              print
               json.dump(packet, sys.stdout, sort_keys=True, indent=2)
-              print "\n"
+              print "\n" + COMMAND_PROMPT,
+
+              readline.redisplay()
+
               if 'event' in packet and packet['event'] == "closed":
                   server.restart()
 
             command = commandLine.getCommand()
             if command:
-              print "Sending command => " + command.command + "\n"
-              server.sendPacket(command)
+                print "\nSending command => " + command.command
+                server.sendPacket(command)
 
-      except KeyboardInterrupt:
-        print "\nStopping server...\n"
-        server.stop()
-        commandLine.stop()
+      except (KeyboardInterrupt):
+        pass
     else:
       print 'No host and/or port specified.'
       print 'Usage: $> python crossfire_server.py [<host>] <port>'
 
-    sys.exit(0)
+    quit()
 
+  def quit():
+    global server
+    global commandLine
+
+    print "\nStopping Server..."
+
+    try:
+      server.stop()
+    except Exception as e:
+      print e
+      pass
+
+    print "Stopped."
+
+    try:
+      sys.stdin.flush()
+      sys.stdin.close()
+      sys.stdout.close()
+      commandLine.join(1)
+
+    except Exception:
+      sys.exit(1)
+    sys.exit(0)
 
 # kickstart
   main()
