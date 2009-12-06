@@ -5,9 +5,11 @@
     <Description about="urn:mozilla:install-manifest">
         <em:id>crossfire@almaden.ibm.com</em:id>
         <em:name>Crossfire</em:name>
-        <em:version>@VERSION@</em:version>
+        <em:version>@VERSION@@RELEASE@</em:version>
         <em:description>Remote debugging for Firebug.</em:description>
         <em:iconURL>chrome://crossfire/skin/crossfire.png</em:iconURL>
+        <em:updateURL>http://getfirebug.com/releases/crossfire/@VERSION@/update.rdf</em:updateURL>
+        <em:updateKey>@PUBLICKKEY@</em:updateKey>
         <em:targetApplication>
             <Description>
                 <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
@@ -15,6 +17,11 @@
                 <em:maxVersion>3.*</em:maxVersion>
             </Description>
         </em:targetApplication>
+        <em:requires>
+          <!-- Firebug -->
+          <em:id>firebug@software.joehewitt.com</em:id>
+          <em:minVersion>1.5b5</em:minVersion</em:minVersion>
+        </em:requires>
         <em:creator>Michael G. Collins (Firetoad)</em:creator>
         <em:contributor>John J. Barton</em:contributor>
     </Description>

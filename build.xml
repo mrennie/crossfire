@@ -13,7 +13,7 @@
         <mkdir dir="${dist.dir}"/>
 
         <zip
-            destfile="${dist.dir}/${ant.project.name}-${VERSION}.xpi"
+            destfile="${dist.dir}/${ant.project.name}-${VERSION}${RELEASE}.xpi"
             basedir="${build.dir}" includes="**/*" />
     </target>
 
@@ -25,6 +25,17 @@
                 <filterchain>
                         <replacetokens>
                              <token key="VERSION" value="${VERSION}"/>
+                             <token key="RELEASE" value="${RELEASE}"/>
+                        </replacetokens>
+                </filterchain>
+        </copy>
+        <copy file="update.rdf"
+                tofile="${build.dir}/update.rdf"
+                overwrite="true">
+                <filterchain>
+                        <replacetokens>
+                             <token key="VERSION" value="${VERSION}"/>
+                             <token key="RELEASE" value="${RELEASE}"/>
                         </replacetokens>
                 </filterchain>
         </copy>
