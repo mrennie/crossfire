@@ -318,15 +318,22 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor backtrace");
 
-
-            if (this.context.Crossfire.currentFrame && this.context.Crossfire.currentFrame.stack) {
-                if (FBTrace.DBG_CROSSFIRE)
-                    FBTrace.sysout("CROSSFIRE CommandAdaptor backtrace currentFrame.stack => " + this.context.Crossfire.currentFrame.stack);
-
+            if (this.context.Crossfire.currentFrame) {
+                var fromFrame, toFrame;
                 var stack = this.context.Crossfire.currentFrame.stack;
 
-                var fromFrame = args["fromFrame"] || 0;
-                var toFrame = args["toFrame"] || stack.length;
+                if (FBTrace.DBG_CROSSFIRE)
+                    FBTrace.sysout("CROSSFIRE CommandAdaptor backtrace currentFrame.stack => " + stack);
+
+                if (stack) {
+                    fromFrame = args["fromFrame"] || 0;
+                    toFrame = args["toFrame"] || stack.length;
+                } else {
+                    // issue 2559: if there is only one frame, stack is undefined,
+                    // but we still want to return that frame.
+                    fromFrame = 0;
+                    toFrame = 1;
+                }
 
                 var frames = [];
                 for (var i = fromFrame; i < toFrame; i++) {
