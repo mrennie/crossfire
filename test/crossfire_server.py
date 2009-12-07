@@ -29,8 +29,8 @@ class CrossfireServer:
     self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
       self.socket.bind((self.host, self.port))
-    except socket.error as err:
-      print err
+    except socket.error:
+      print socket.error
       quit()
 
     self.socket.listen(1)
@@ -60,11 +60,11 @@ class CrossfireServer:
     print 'Waiting for Crossfire handshake...'
     try:
       shake = self.conn.recv(len(HANDSHAKE_STRING))
-    except socket.error as err:
-      print err
+    except socket.error:
+      print socket.error
     if shake == HANDSHAKE_STRING:
       print 'Received Crossfire handshake.'
-      self.conn.settimeout(10)
+      self.conn.settimeout(3)
       self.conn.send(HANDSHAKE_STRING)
 
       self.socketCondition.acquire()
@@ -108,8 +108,7 @@ class PacketReader(threading.Thread):
             self.packetQueue.append(obj)
         self.cv.notifyAll()
         self.cv.wait()
-      except Exception as err:
-        print err
+      except Exception:
         break
 
   def readPacketLength(self):
@@ -167,8 +166,8 @@ class PacketWriter(threading.Thread):
 
         self.cv.notifyAll()
         self.cv.wait()
-      except Error as err:
-        print err
+      except Error:
+        #print err
         break
 
 
@@ -319,8 +318,7 @@ if __name__ == "__main__":
 
     try:
       server.stop()
-    except Exception as e:
-      print e
+    except Exception:
       pass
 
     print "Stopped."
