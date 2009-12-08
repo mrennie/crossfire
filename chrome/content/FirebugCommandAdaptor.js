@@ -88,16 +88,15 @@ FBL.ns(function() { with(FBL) {
 
             var frame;
 
-            if (this.currentFrame) {
+            if (this.context.Crossfire.currentFrame) {
                 if (frameNo == 0) {
-                    frame = this.currentFrame;
+                    frame = this.context.Crossfire.currentFrame;
                 } else if (frameNo > 0) {
-                    frame = this.currentFrame.stack[frameNo];
+                    frame = this.context.Crossfire.currentFrame.stack[frameNo];
                 }
             }
 
             var result = {};
-            //var result = Components.utils.evalInSandbox(expression, sandbox);
 
             if (frame) {
                 if (FBTrace.DBG_CROSSFIRE)

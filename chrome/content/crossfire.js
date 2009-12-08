@@ -128,7 +128,12 @@ FBL.ns(function() { with(FBL) {
                         break;
                     }
                 }
-                response = commandAdaptor[command].apply(commandAdaptor, [ request.arguments ]);
+                try {
+                    response = commandAdaptor[command].apply(commandAdaptor, [ request.arguments ]);
+                } catch (e) {
+                    if (FBTrace.DBG_CROSSFIRE)
+                        FBTrace.sysout("CROSSFIRE exception while executing command " + e);
+                }
             }
 
             if (response) {
@@ -333,6 +338,11 @@ FBL.ns(function() { with(FBL) {
                 frameCopy["functionName"] = frame.functionName;
 
                 frameCopy["line"] = frame.line;
+
+                // copy eval so we can call it from 'evaluate' command
+                frameCopy["eval"] = function() { return frame.eval.apply(frame, arguments); };
+
+
 
                 // recursively copy all the frames in the stack
                 function copyStack( aFrame) {
