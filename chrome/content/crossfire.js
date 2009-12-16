@@ -190,7 +190,7 @@ FBL.ns(function() { with(FBL) {
         onSourceFileCreated: function( context, sourceFile) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  onSourceFileCreated");
-            this.handleEvent(context, "onScript", sourceFile.href)
+            this.handleEvent(context, "onScript", sourceFile.href);
         },
 
 
@@ -236,16 +236,11 @@ FBL.ns(function() { with(FBL) {
                 FBTrace.sysout("CROSSFIRE: destroyContext");
             var contextId = context.Crossfire.crossfire_id;
             for (var i = 0; i < this.contexts.length; i++) {
-                //var win = this.contexts[i].window;
-                //if (win && !win.closed)
-                //{
-                //    var location = win.location;
-                    if (this.contexts[i].Crossfire.crossfire_id == contextId) {
-                        this.handleEvent(this.contexts[i], "onContextDestroyed");
-                        this.contexts.splice(i, 1);
-                        break;
-                    }
-                //}
+                if (this.contexts[i].Crossfire.crossfire_id == contextId) {
+                    this.handleEvent(this.contexts[i], "onContextDestroyed");
+                    this.contexts.splice(i, 1);
+                    break;
+                }
             }
         },
 
@@ -281,9 +276,13 @@ FBL.ns(function() { with(FBL) {
          * but our protocol is asynchronous so the original frame object may
          * be gone by the time the remote host requests it.
          */
-        copyFrame: function copyFrame( frame) {
+        copyFrame: function copyFrame( frame, ctx, copyStack) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("copy frame => " + frame);
+
+            if (ctx) {
+                var context = ctx;
+            }
 
             var frameCopy = {};
 
@@ -309,40 +308,47 @@ FBL.ns(function() { with(FBL) {
                 } catch (ex) {
                     if (FBTrace.DBG_CROSSFIRE) FBTrace.sysout("Exception copying scope => " + e);
                 }
-                return copiedScope;
+                return context.Crossfire.commandAdaptor.serialize(copiedScope);
             }
-            frameCopy["scope"] =  copyScope(frame.scope);
 
             if (frame && frame.isValid) {
-                var thisObj = {};
+                frameCopy["scope"] =  copyScope(frame.scope);
 
-                try {
-                   var thisVal = frame.thisValue.getWrappedValue();
-                   for (var p in thisVal) {
-                       if (thisVal.hasOwnProperty(p)) {
-                           thisObj[p] = thisVal[p];
-                       }
-                   }
-                } catch( e) {
-                    if (FBTrace.DBG_CROSSFIRE) FBTrace.sysout("Exception copying thisValue => " + e);
-                     frameCopy["thisValue"] = frame.thisValue;
+                if (frame.thisValue) {
+                    try {
+                       var thisVal = frame.thisValue.getWrappedValue();
+                       frameCopy["thisValue"] = context.Crossfire.commandAdaptor.serialize(thisVal);
+                    } catch( e) {
+                        if (FBTrace.DBG_CROSSFIRE) FBTrace.sysout("Exception copying thisValue => " + e);
+                    }
                 }
-                frameCopy["thisValue"] = thisObj;
 
+                /* is 'callee' different from 'callingFrame'?
                 try {
                     frameCopy["callee"] = frame.callee.getWrappedValue();
                 } catch( e) {
                     frameCopy["callee"] = frame.callee;
                 }
+                */
 
                 frameCopy["functionName"] = frame.functionName;
 
-                frameCopy["line"] = frame.line;
+                try {
+                    var sourceFile = Firebug.SourceFile.getSourceFileByScript(context, frame.script)
+                    if (sourceFile) {
+                        var analyzer = sourceFile.getScriptAnalyzer(frame.script);
+                        if (analyzer) {
+                            lineno = analyzer.getSourceLineFromFrame(context, frame);
+                            frameCopy["line"] = lineno;
+                            frameCopy["script"] = sourceFile.href.toString();
+                        }
+                    }
+                } catch (x) {
+                    frameCopy["line"] = frame.line;
+                }
 
                 // copy eval so we can call it from 'evaluate' command
                 frameCopy["eval"] = function() { return frame.eval.apply(frame, arguments); };
-
-
 
                 // recursively copy all the frames in the stack
                 function copyStack( aFrame) {
@@ -350,20 +356,22 @@ FBL.ns(function() { with(FBL) {
                         FBTrace.sysout("CROSSFIRE copyStack: calling frame is => " + aFrame.callingFrame);
                     if (aFrame.callingFrame && aFrame.callingFrame.isValid) {
                         var stack = copyStack(aFrame.callingFrame);
-                        stack.push(copyFrame(aFrame));
+                        stack.splice(0,0,copyFrame(aFrame, context, false));
                         return stack;
                     } else {
-                        return [ copyFrame(aFrame) ];
+                        return [ copyFrame(aFrame, context, false) ];
                     }
                 }
-                if (frame.callingFrame) {
-                    var stack = copyStack(frame.callingFrame);
-                    frameCopy["stack"] = stack;
-                    frameCopy["frameIndex"] = stack.length -1;
-                } else {
-                    frameCopy["frameIndex"] = 0;
-                }
 
+                if (copyStack) {
+                    if (frame.callingFrame) {
+                        var stack = copyStack(frame.callingFrame);
+                        frameCopy["stack"] = stack;
+                        frameCopy["frameIndex"] = stack.length -1;
+                    } else {
+                        frameCopy["frameIndex"] = 0;
+                    }
+                }
             }
             return frameCopy;
         },
@@ -390,9 +398,7 @@ FBL.ns(function() { with(FBL) {
             var href = sourceFile.href.toString();
             var contextId = context.Crossfire.crossfire_id;
 
-            var copiedFrame = this.copyFrame(frame);
-
-            context.Crossfire.currentFrame = copiedFrame;
+            context.Crossfire.currentFrame = this.copyFrame(frame, context, true);
 
             this.handleEvent(context, "onBreak", href, lineno);
 
@@ -469,7 +475,7 @@ FBL.ns(function() { with(FBL) {
             var winFB = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug;
             if (winFB)
             {
-                var data = winFB.userObjects;
+                //var data = winFB.userObjects;
 
                 var eventName = "onConsole" + className.substring(0,1).toUpperCase() + className.substring(1);
                 var data = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug.userObjects;

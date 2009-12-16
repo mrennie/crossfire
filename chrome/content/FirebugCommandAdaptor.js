@@ -39,7 +39,7 @@ FBL.ns(function() { with(FBL) {
          * @function
          * @description Continue execution of javascript if suspended,
          * if no <code>stepaction</code> is passed, simply resumes execution.
-         * @param args Arguments object.
+         * @param {Object} args Arguments object.
          * @param args.stepaction <code>stepaction</code>: 'in', 'next', or 'out'.
          * @param args.stepcount <code>stepcount</code>: currently ignored.
          */
@@ -76,8 +76,11 @@ FBL.ns(function() { with(FBL) {
          * @name FirebugCommandAdaptor.evaluate
          * @function
          * @description evaluate a Javascript expression.
+         * If a frame argument is passed, evaluates the expression in that frame,
+         * otherwise the expression is evaluated in the context's global scope.
          * @param {Object} args Arguments object.
-         * @param {String} args.expression A string of Javascript to be evaluated
+         * @param {String} args.expression A string of Javascript to be evaluated.
+         * @param {Number} args.frame Optional frame to evaluate in.
          */
         "evaluate": function( args) {
              if (FBTrace.DBG_CROSSFIRE)
@@ -156,7 +159,7 @@ FBL.ns(function() { with(FBL) {
          * @name FirebugCommandAdaptor.getbreakpoint
          * @function
          * @description Return the breakpoint object with the specified id.
-         * @param args Arguments object.
+         * @param {Object} args Arguments object.
          * @param args.breakpoint <code>breakpoint</code>: the handle of the breakpoint you want to get.
          */
         "getbreakpoint": function( args) {
@@ -178,7 +181,7 @@ FBL.ns(function() { with(FBL) {
          * @name FirebugCommandAdaptor.setbreakpoint
          * @function
          * @description Set a breakpoint and return its id.
-         * @param args Arguments object
+         * @param {Object} args Arguments object
          * @param args.target <code>target</code>: the url of the file to set the breakpoint in.
          * @param args.line <code>line</code>: line number to set the breakpoint at.
          */
@@ -224,7 +227,7 @@ FBL.ns(function() { with(FBL) {
          * @name FirebugCommandAdaptor.changebreakpoint
          * @function
          * @description Return the breakpoint object with the specified id.
-         * @param args Arguments object
+         * @param {Object} args Arguments object
          * @param args.breakpoint <code>breakpoint</code>: the id of the breakpoint you want to change.
          */
         "changebreakpoint": function( args) {
@@ -240,7 +243,7 @@ FBL.ns(function() { with(FBL) {
          * @name FirebugCommandAdaptor.clearbreakpoint
          * @function
          * @description Remove the breakpoint object with the specified id.
-         * @param args Arguments object
+         * @param {Object} args Arguments object
          * @param args.breakpoint <code>breakpoint</code>: the id of the breakpoint you want to remove.
          */
         "clearbreakpoint": function( args) {
@@ -265,42 +268,52 @@ FBL.ns(function() { with(FBL) {
          * @name FirebugCommandAdaptor.frame
          * @function
          * @description Returns a frame.
-         * @param args Arguments object.
-         * @param args.number <code>number</code>: the number (index) of the requested frame.
+         * @param {Object} args Arguments object.
+         * @param {Number} args.number <code>number</code>: the number (index) of the requested frame.
+         * @param {Boolean} args.includeScopes <code>includeScopes</code> defaults to true.
          */
         "frame": function( args) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor frame");
 
             var number = args["number"];
+            var includeScopes = args["includeScopes"] || true;
 
             var frame;
             if (this.context.Crossfire.currentFrame) {
                 if (!number) {
                     number = 0;
                     frame = this.context.Crossfire.currentFrame;
-                } else {
+                } else if (this.context.Crossfire.currentFrame.stack) {
                     frame = this.context.Crossfire.currentFrame.stack[number];
                 }
 
-                var locals = {};
-                for (var l in frame.scope) {
-                    if (l != "parent") { // ignore parent
-                        locals[l] = this.serialize(frame.scope[l]);
+                try {
+                    var locals = {};
+                    for (var l in frame.scope) {
+                        if (l != "parent") { // ignore parent
+                            locals[l] = this.serialize(frame.scope[l]);
+                        }
                     }
-                }
-                if (frame.thisValue) {
-                    locals["this"] = this.serialize(frame.thisValue);
-                }
+                    if (frame.thisValue) {
+                        locals["this"] = this.serialize(frame.thisValue);
+                    }
 
-                var scopes = (this.scopes({ "frameNumber": number })).scopes;
+                    if (includeScopes) {
+                        var scopes = (this.scopes({ "frameNumber": number })).scopes;
+                    }
 
-                return { "context_id": this.contextId,
-                    "index": frame.frameIndex,
-                    "func": frame.functionName,
-                    "locals": locals,
-                    "line": frame.line,
-                    "scopes": scopes };
+                    return { "context_id": this.contextId,
+                        "index": frame.frameIndex,
+                        "func": frame.functionName,
+                        "script": frame.script,
+                        "locals": locals,
+                        "line": frame.line,
+                        "scopes": scopes };
+                } catch (exc) {
+                    if (FBTrace.DBG_CROSSFIRE)
+                        FBTrace.sysout("CROSSFIRE exception returning frame ", exc);
+                }
             }
             return false;
         },
@@ -309,13 +322,16 @@ FBL.ns(function() { with(FBL) {
          * @name FirebugCommandAdaptor.backtrace
          * @function
          * @description Returns a backtrace (stacktrace) of frames.
-         * @param args Arguments object
-         * @param args.fromFrame <code>fromFrame</code>: the frame to start the trace from.
-         * @param args.toFrame <code>toFrame</code>: the frame to to stop the trace at.
+         * @param {Object} args Arguments object
+         * @param {Number} args.fromFrame <code>fromFrame</code>: the frame to start the trace from.
+         * @param {Number} args.toFrame <code>toFrame</code>: the frame to to stop the trace at.
+         * @param {Boolean} args.includeScopes <code>includeScopes</code> defaults to false.
          */
         "backtrace": function( args) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor backtrace");
+
+            args = args || {};
 
             if (this.context.Crossfire.currentFrame) {
                 var fromFrame, toFrame;
@@ -324,9 +340,12 @@ FBL.ns(function() { with(FBL) {
                 if (FBTrace.DBG_CROSSFIRE)
                     FBTrace.sysout("CROSSFIRE CommandAdaptor backtrace currentFrame.stack => " + stack);
 
+                var includeScopes = args["includeScopes"] || false;
+
                 if (stack) {
                     fromFrame = args["fromFrame"] || 0;
-                    toFrame = args["toFrame"] || stack.length;
+                    // toFrame set to stack.length if not set, or if set to a number higher than the stack sizes
+                    toFrame = (args["toFrame"] && args["toFrame"] < stack.length) ? args["toFrame"] : stack.length;
                 } else {
                     // issue 2559: if there is only one frame, stack is undefined,
                     // but we still want to return that frame.
@@ -336,7 +355,7 @@ FBL.ns(function() { with(FBL) {
 
                 var frames = [];
                 for (var i = fromFrame; i < toFrame; i++) {
-                    frames.push(this.frame({ "number": i }));
+                    frames.push(this.frame({ "number": i, "includeScopes": includeScopes }));
                 }
 
                 return {
@@ -354,7 +373,7 @@ FBL.ns(function() { with(FBL) {
          * @name FirebugCommandAdaptor.scope
          * @function
          * @description Returns a particular scope for the specified frame.
-         * @param args Arguments object.
+         * @param {Object} args Arguments object.
          * @param args.number <code>number</code>: scope index
          * @param args.frameNumber <code>frameNumber</code>: optional frame index. defaults to 0
          */
@@ -405,7 +424,7 @@ FBL.ns(function() { with(FBL) {
          * @function
          * @description  Returns all the scopes for a frame.
          *
-         * @param args Arguments object.
+         * @param {Object} args Arguments object.
          * @param args.frameNumber <code>frameNumber</code>: optional frame index. defaults to 0
          */
         "scopes": function( args) {
@@ -436,7 +455,7 @@ FBL.ns(function() { with(FBL) {
          * @name FirebugCommandAdaptor.scripts
          * @function
          * @description Retrieve all known scripts.
-         * @param args Arguments object.
+         * @param {Object} args Arguments object.
          * @param args.includeSource <code>includeSource</code>: boolean
          */
         "scripts": function( args) {
@@ -499,7 +518,7 @@ FBL.ns(function() { with(FBL) {
          * @name FirebugCommandAdaptor.inspect
          * @function
          * @description Tells Firebug to enter 'inspect' mode.
-         * @param args Arguments object
+         * @param {Object} args Arguments object
          * @param args.xpath <code>xpath</code>: optional xpath for the node to inspect.
          * @param args.selector <code>selector</code>: optional css selector for a specific node to inspect
          */
@@ -537,7 +556,7 @@ FBL.ns(function() { with(FBL) {
          * @name FirebugCommandAdaptor.lookup
          * @function
          * @description Lookup an object by it's handle.
-         * @param args Arguments object
+         * @param {Object} args Arguments object
          * @param args.handle the handle id to look up.
          */
         "lookup": function( args) {
@@ -561,15 +580,15 @@ FBL.ns(function() { with(FBL) {
         /**
          * @function serialize
          * @description prepare a javascript object to be serialized into JSON.
-         * @param thingy the javascript thing to serialize
+         * @param {Object} obj the javascript thing to serialize
          * @param {Boolean} incContext boolean indicates whether the context id field should be included.
          */
-        serialize: function( thingy, incContext) {
+        serialize: function( obj, incContext) {
             try {
-                if (FBTrace.DBG_CROSSFIRE)
-                    FBTrace.sysout("CROSSFIRE CommandAdaptor serialize => ", thingy);
+                //if (FBTrace.DBG_CROSSFIRE)
+                  //  FBTrace.sysout("CROSSFIRE CommandAdaptor serialize => ", obj);
 
-                var type = typeof(thingy);
+                var type = typeof(obj);
 
                 var serialized = {
                         "type": type,
@@ -581,23 +600,26 @@ FBL.ns(function() { with(FBL) {
                 }
 
                 if (type == "object") {
-                    if (thingy == null) {
+                    if (obj == null) {
                          serialized["value"] = "null";
-                    } else if (thingy instanceof Array) {
+                    } else if (obj.type && obj.type == "ref" && obj.handle) {
+                        // already serialized
+                        serialized = obj;
+                    } else if (obj instanceof Array) {
                         var arr = "[";
-                        for (var i = 0; i < thingy.length; i++) {
-                            arr += this.serialize(thingy[i]);
-                            if (i < thingy.length-1) {
+                        for (var i = 0; i < obj.length; i++) {
+                            arr += this.serialize(obj[i]);
+                            if (i < obj.length-1) {
                                 arr += ',';
                             }
                         }
                         serialized["value"] = arr + "]";
                     } else {
-                        var ref = this.getRef(thingy);
+                        var ref = this.getRef(obj);
                         var o = {};
-                        for (var p in thingy) {
-                            if (thingy.hasOwnProperty(p) && !(p in ignoreVars)) {
-                                var prop = thingy[p];
+                        for (var p in obj) {
+                            if (obj.hasOwnProperty(p) && !(p in ignoreVars)) {
+                                var prop = obj[p];
                                 if (typeof(prop) == "object") {
                                     if (prop == null) {
                                         o[p] = "null";
@@ -606,7 +628,7 @@ FBL.ns(function() { with(FBL) {
                                     } else  {
                                         o[p] = this.getRef(prop);
                                     }
-                                } else if (p === thingy) {
+                                } else if (p === obj) {
                                     o[p] = ref;
                                 } else {
                                     o[p] = this.serialize(prop);
@@ -616,9 +638,9 @@ FBL.ns(function() { with(FBL) {
                         serialized["value"] = o;
                     }
                 } else if (type == "function") {
-                    serialized["value"] =  thingy.name ? thingy.name + "()" : "function()";
+                    serialized["value"] =  obj.name ? obj.name + "()" : "anonymous()";
                 } else {
-                    serialized["value"] = thingy;
+                    serialized["value"] = obj;
                 }
 
                 return serialized;
@@ -632,24 +654,24 @@ FBL.ns(function() { with(FBL) {
          * @ignore
          */
         getRef: function( obj, incContext) {
-            if (FBTrace.DBG_CROSSFIRE)
-                FBTrace.sysout("CROSSFIRE CommandAdaptor getRef", obj);
+            //if (FBTrace.DBG_CROSSFIRE)
+              //  FBTrace.sysout("CROSSFIRE CommandAdaptor getRef", obj);
             var ref = { "type":"ref", "handle": -1 };
             if (incContext) {
                 ref["context_id"] = this.contextId;
             }
             for (var i in this.refs) {
                 if (this.refs[i] === obj) {
-                    if (FBTrace.DBG_CROSSFIRE)
-                        FBTrace.sysout("CROSSFIRE CommandAdaptor getRef ref exists with handle: " + i, obj);
+                    //if (FBTrace.DBG_CROSSFIRE)
+                      //  FBTrace.sysout("CROSSFIRE CommandAdaptor getRef ref exists with handle: " + i, obj);
                     ref["handle"] = i;
                     return ref;
                 }
             }
             var handle = ++this.refCount;
             this.refs[handle] = obj;
-            if (FBTrace.DBG_CROSSFIRE)
-                FBTrace.sysout("CROSSFIRE CommandAdaptor getRef new ref created with handle: " + handle, obj);
+            //if (FBTrace.DBG_CROSSFIRE)
+                //FBTrace.sysout("CROSSFIRE CommandAdaptor getRef new ref created with handle: " + handle, obj);
             ref["handle"] = handle;
             return ref;
         },
