@@ -1,0 +1,478 @@
+<html><body>
+            <h2>Crossfire Protocol Reference</h2>
+            <h3>Handshake</h3>
+                <p>
+                    Once a connection has been established with a remote host,
+                    Crossfire will wait until it receives a UTF-8 string which
+                    matches <code>CrossfireHandshake\r\n</code>
+                </p>
+            <h3>Packet Format</h3>
+                <p>
+                    Crossfire packets contain a content-length header with key
+                    <code>Content-Length</code> followed by a colon (<code>:</code>),
+                    and the number of characters (in decimal) contained in the message body.
+                </p>
+                <p>
+                    The body of the packet is a UTF-8 string containing a JSON-formatted message.
+                </p>
+                <p>
+                    Packet headers and body are separated by a CRLF (<code>\r\n</code>).
+                    Packets are terminated by a CRLF (<code>\r\n</code>) after the body.
+                </p>
+
+                <i>Example:</i>
+                <pre>
+    CrossfireHandshake
+    \r\n
+    Content-Length:69
+    \r\n
+    {"context_id":null,"type":"request","seq":1,"command":"listcontexts"}
+    \r\n
+                </pre>
+            <h3>JSON Message Format</h3>
+                Message bodies are JSON-formatted strings which contain at a minimum,
+                the context ID, sequence number, and packet type.
+                <dl>
+                    <dt><code>"context_id"</code>
+                    <dd>
+                        String that identifies which JS context the packet applies to.
+                        For a Web page, this may be the URL of the page.
+
+                    <dt><code>"seq"</code>
+                    <dd>sequence number (integer)
+                    <dt><code>"type"</code>
+                    <dd>packet type; one of <code>"request"</code>,<code>"response"</code>, or <code>"event"</code>
+                </dl>
+<h4>Request Packets</h4>
+A request packet includes a command name and an arguments object containing any arguments
+specific to the command.
+<dl>
+<dt><code>"command"</code>
+<dd>command name of the request
+<dt><code>"arguments"</code>
+<dd>JSON object - named arguments map
+</dl>
+<i>Example</i>:
+<pre>
+ {
+   seq:21,
+   command:"setbreakpoint"
+   "arguments":
+    { position:"0",
+      enabled:"true",
+      target:"http:/localhost:8080/test/some_javascript.js",
+      line:"9",
+      ignoreCount:"0",
+      type:"line"},
+   "context_id":"http://localhost:8080/test.html"
+  }
+</pre>
+
+<h4>Response Packets</h4>
+A response packet will contain the sequence number of the original request and the name of the command,
+as well as the body of the response and booleans indicating the running status and whether the request was successful.
+<dl>
+<dt><code>"command"</code>
+<dd>command name of the request
+<dt><code>"request_seq"</code>
+<dd>request sequence number (integer)
+<dt><code>"running"</code>
+<dd>boolean
+<dt><code>"success"</code>
+<dd>boolean
+</dl>
+
+<i>Example:</i>
+<pre>
+  { "seq":2,
+    "type":"response",
+    "command":"listcontexts",
+    "request_seq":1,
+    "body":{
+        "contexts":["http://localhost:8080/test.html"]
+    },
+    "running":true,
+    "success":true
+  }
+</pre>
+<h4>Event Packets</h4>
+Event packets contain the name of the event and a 'data' object which may contain more information
+related to the event.
+<dl>
+<dt><code>"event"</code>
+<dd>name of the event
+<dt><code>"data"</code>
+<dd>JSON object containing additional data about the event
+</dl>
+<i>Example</i>
+<pre>
+  { "seq":6,
+    "type":"event",
+    "event":"onConsoleInfo",
+    "context_id":"http://localhost:8080/test.html",
+    "data": {"0":"The square root of 21 is 4.58257569495584"}
+  }
+</pre>
+            <h3>Commands</h3>
+                <ul>
+                    <li>
+<h4><code>version</code></h4>
+Returns the Crossfire protocol version. <i>( this command does not require a context_id field )</i>
+Example:
+<pre>
+{
+  "body": {
+    "version": "0.1a"
+  },
+  "command": "version",
+  "request_seq": 45,
+  "running": true,
+  "seq": 46,
+  "success": true,
+  "type": "response"
+}
+</pre>
+</li>
+<li>
+<h4><code>listcontexts</code></h4>
+Returns a list of context id's. <i>( this command does not require a context_id field )</i>
+Example:
+<pre>
+{
+  "body": {
+    "contexts": [
+      {
+        "crossfire_id": "xf0.1a::6621046",
+        "href": "file:///Web/testPage.html"
+      },
+      {
+        "crossfire_id": "xf0.1a::6621048",
+        "href": "file:///usr/share/ubuntu-artwork/home/index.html"
+      },
+      {
+        "crossfire_id": "xf0.1a::6621050",
+        "href": "http://getfirebug.com/"
+      }
+    ]
+  },
+  "command": "listcontexts",
+  "request_seq": 42,
+  "running": true,
+  "seq": 43,
+  "success": true,
+  "type": "response"
+}
+</pre>
+</li><li>
+<h4><code>lookup</code></h4>
+Looks up an object by its handle.
+</li><li>
+<h4><code>backtrace</code></h4>
+Returns a backtrace (stacktrace) of frames.
+</li><li>
+<h4><code>changebreakpoint</code></h4>
+Return the breakpoint object with the specified id.
+</li><li>
+<h4><code>clearbreakpoint</code></h4>
+Remove the breakpoint object with the specified id.
+</li><li>
+<h4><code>continue</code></h4>
+Continue execution of javascript if suspended, if no stepaction is passed, simply resumes execution.
+</li><li>
+<h4><code>evaluate</code></h4>
+Evaluates a javascript expression, either in the global scope, or optionally in a given frame if it exists.
+Example command:
+<pre>
+{
+  "context_id": "xf0.1a::6621048",
+  "type": "request",
+  "command": "evaluate",
+  "seq":30,
+  "arguments": {
+    "expression":"Math.PI*2"
+  }
+}
+</pre>
+And response:
+<pre>
+{
+  "body": {
+    "context_id": "xf0.1a::6621048",
+    "result": 6.2831853071795862
+  },
+  "command": "evaluate",
+  "context_id": "xf0.1a::6621048",
+  "request_seq": 30,
+  "running": true,
+  "seq": 31,
+  "success": true,
+  "type": "response"
+}
+</pre>
+</li>
+<li>
+<h4><code>frame</code></h4>
+Returns a frame.
+</li>
+<li>
+<h4><code>getbreakpoint</code></h4>
+Return the breakpoint object with the specified id.
+</li>
+<li>
+<h4><code>getbreakpoints</code></h4>
+Return all the breakpoints in this context.
+</li>
+<li>
+<h4><code>inspect</code></h4>
+Tells Firebug to enter 'inspect' mode.
+</li>
+<li>
+</h4><code>scope</code></h4>
+Returns a particular scope for the specified frame.
+</li>
+<li>
+<h4><code>scopes</code></h4>
+Returns all the scopes for a frame.
+</li>
+<li>
+<h4><code>scripts</code></h4>
+Retrieve all known scripts in a context.
+
+Example:
+<pre>
+{
+  "body": {
+    "context_id": "xf0.1a::6621050",
+    "scripts": [
+      {
+        "columnOffset": 0,
+        "compilationType": "top-level",
+        "id": "http://getfirebug.com/install.js",
+        "lineCount": 0,
+        "lineOffset": 0,
+        "sourceLength": 13
+      },
+      {
+        "columnOffset": 0,
+        "compilationType": "top-level",
+        "id": "http://getfirebug.com/",
+        "lineCount": 0,
+        "lineOffset": 0,
+        "sourceLength": 63
+      },
+      {
+        "columnOffset": 0,
+        "compilationType": "event",
+        "id": "http://getfirebug.com//event/seq/1",
+        "lineCount": 0,
+        "lineOffset": 0,
+        "sourceLength": 6
+      },
+      {
+        "columnOffset": 0,
+        "compilationType": "event",
+        "id": "http://getfirebug.com//event/seq/2",
+        "lineCount": 0,
+        "lineOffset": 0,
+        "sourceLength": 3
+      },
+      {
+        "columnOffset": 0,
+        "compilationType": "event",
+        "id": "http://getfirebug.com//event/seq/3",
+        "lineCount": 0,
+        "lineOffset": 0,
+        "sourceLength": 3
+      }
+    ]
+  },
+  "command": "scripts",
+  "context_id": "xf0.1a::6621050",
+  "request_seq": 48,
+  "running": true,
+  "seq": 49,
+  "success": true,
+  "type": "response"
+}
+</pre>
+</li>
+<li>
+<h4><code>setbreakpoint</code></h4>
+Set a breakpoint and return its id.
+</li>
+<li>
+<h4><code>source</code></h4>
+source command.
+</li>
+<li>
+<h4><code>suspend</code></h4>
+Try to suspend any currently running Javascript.
+</li>
+</ul>
+<h3>Events</h3>
+<ul>
+
+<li><code>onBreak</code> handles onBreak event.
+<pre>
+  { "seq":4,
+    "type":"event",
+    "event":"onBreak",
+    "data" : {
+       "url":"http://localhost:8080/test/some_javascript.js",
+       "line":7
+    },
+    "context_id":"http://localhost:8080/test.html"
+  }
+</pre>
+</li>
+<li><code>onConsoleDebug</code>
+<pre>
+  { "seq":34,
+    "type":"event",
+    "event":"onConsoleDebug",
+    "context_id":"http://localhost:8080/test.html",
+    "data": {
+      "0": {
+        "member": "aMember"
+      }
+    }
+  }
+</pre>
+</li>
+
+<li><code>onConsoleError</code></li>
+<pre>
+  { "seq":28,
+    "type":"event",
+    "event":"onConsoleError","context_id":"http://localhost:8080/test.html",
+    "data": {
+      "0": {
+        "source":"with(_FirebugCommandLine){syntax error\u000a};",
+        "message":"missing ; before statement",
+        "fileName":"http://localhost:8080/test.html",
+        "lineNumber":71,
+        "name":"SyntaxError",
+        "stack":"eval(\"with(_FirebugCommandLine){syntax error\\n};\")@:0\u000a(\"with(_FirebugCommandLine){syntax error\\n};\")@http://localhost:8080/test.html:71\u000a_firebugEvalEvent([object Event])@http://localhost:8080/test.html:60\u000a"
+      }
+    }
+  }
+</pre>
+<li><code>onConsoleInfo</code>
+<pre>
+  { "seq":6,
+    "type":"event",
+    "event":"onConsoleInfo",
+    "context_id":"http://localhost:8080/test.html",
+    "data": {"0":"The square root of 21 is 4.58257569495584"}
+  }
+</pre>
+</li>
+<li><code>onConsoleLog</code>
+<pre>
+  { "seq":27,
+    "type":"event",
+    "event":"onConsoleLog",
+    "context_id":"http://localhost:8080/test.html",
+    "data": { "0": "I did something!" }
+  }
+</pre>
+</li>
+
+<li><code>onConsoleWarn</code>
+<pre>
+  { "seq":23,
+    "type": "event",
+    "event":"onConsoleWarn",
+    "context_id":"http://localhost:8080/test.html",
+    "data":{"0":"bzzzt!"}
+  }
+</pre>
+</li>
+
+<li>
+<code>onInspectNode</code> handles onInspectNode event.
+<pre>
+  {  "seq":32,
+     "type":"event",
+     "event":"onInspectNode",
+     "context_id":"http://localhost:8080/test.html",
+     "data": { "node":"/html[1]/body[1]/p[4]/input[1]" }
+  }
+</pre>
+</li>
+<li>
+<code>onResume</code> handles onResume event.
+<pre>
+  { "seq":9,
+    "type":"event",
+    "event":"onResume",
+    "context_id":"http://localhost:8080/test.html"
+  }
+</pre>
+</li>
+<li>
+<code>onToggleBreakpoint</code>
+<pre>
+  { "seq":22,
+    "type":"event",
+    "event":"onToggleBreakpoint",
+    "context_id":"http://localhost:8080/test.html"
+  }
+</pre>
+</li>
+</ul>
+
+<h3>Object Types</h3>
+
+Commands like <code>frame</code>, <code>backtrace</code>, <code>scope</code>, <code>lookup</code> will contain serialized Javascript values and objects in the body of the response.  The JSON structure for these objects will always contain both a <code>context_id</code> and <code>type</code> field, and either a <code>value</code> field with a JSON value or, in the case of <code>ref</code> types, a <code>handle</code> field which can be used to obtain the actual value by using the <code>lookup</code> command.
+
+<h4>Types</h4>
+  object
+  function
+  boolean
+  number
+  string
+  undefined
+  ref
+
+<i>Example:
+Frame Request Body
+</i>
+<pre>
+{ "context_id": "http://locahost:8080/test/test.html",
+  "fromFrame": 0,
+  "toFrame": 0,
+  "totalFrames": 1,
+  "frames":[
+    {
+      "context_id: "http://locahost:8080/test/test.html",
+      "index": 0,
+      "func": "getRandom",
+      "line": 23,
+      "scopes": [
+        { "context_id": "http://locahost:8080/test/test.html",
+          "index": 0,
+          "frameIndex": 0,
+          "object": {
+            "context_id": "http://locahost:8080/test/test.html",
+            "type":"object",
+            "value":{
+              "random": {
+                "context_id": "http://locahost:8080/test/test.html",
+                "type": "number",
+                "value": 65
+              },
+              "parent": {
+                "context_id":"http://locahost:8080/test/test.html",
+                "type": "ref",
+                "handle": "1"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+</pre>
+</body></html>
