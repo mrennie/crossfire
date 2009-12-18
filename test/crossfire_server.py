@@ -193,6 +193,7 @@ Commands = [
     "frame",
     "scope",
     "scopes",
+    "script",
     "scripts",
     "source",
     "getbreakpoint",

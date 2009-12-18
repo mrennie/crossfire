@@ -353,9 +353,14 @@ FBL.ns(function() { with(FBL) {
                     toFrame = 1;
                 }
 
+                var frame;
                 var frames = [];
                 for (var i = fromFrame; i < toFrame; i++) {
-                    frames.push(this.frame({ "number": i, "includeScopes": includeScopes }));
+                    frame = this.frame({ "number": i, "includeScopes": includeScopes });
+                    if (frame) {
+                        delete frame.context_id;
+                        frames.push();
+                    }
                 }
 
                 return {
@@ -435,7 +440,10 @@ FBL.ns(function() { with(FBL) {
             var scope;
             do {
                 scope = this.scope({"number": scopes.length, "frameNumber":  args["frameNumber"]});
-                if (scope) scopes.push(scope);
+                if (scope) {
+                    delete scope.context_id;
+                    scopes.push(scope);
+                }
             } while(scope);
 
             if (scopes.length > 0) {
@@ -454,49 +462,73 @@ FBL.ns(function() { with(FBL) {
         /**
          * @name FirebugCommandAdaptor.scripts
          * @function
-         * @description Retrieve all known scripts.
+         * @description Retrieve a single script
          * @param {Object} args Arguments object.
-         * @param args.includeSource <code>includeSource</code>: boolean
+         * @param {Boolean} args.includeSource <code>includeSource</code>
+         * @param {String} args.url url of the script to return.
          */
-        "scripts": function( args) {
+        "script": function( args) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor scripts");
 
             var lines, sourceFile, script;
-            var scripts = [];
+            var incSrc = args["includeSource"];
+            var url = args["url"];
+
+            var srcMap = this.context.sourceFileMap;
+
+            sourceFile = srcMap[url];
+            try {
+                lines = sourceFile.loadScriptLines(this.context);
+            } catch (ex) {
+                lines = [];
+                if (FBTrace.DBG_CROSSFIRE)
+                    FBTrace.sysout("CROSSFIRE: failed to get source lines for script : " +ex);
+            }
+            var srcLen;
+            try {
+                srcLen = sourceFile.getSourceLength();
+            } catch(exc) {
+                if (FBTrace.DBG_CROSSFIRE)
+                    FBTrace.sysout("CROSSFIRE: failed to get source length for script : " +exc);
+                srcLen = 0;
+            }
+
+            script = {
+                "id": url,
+                "lineOffset": 0,
+                "columnOffset": 0,
+                "sourceStart": lines[0],
+                "sourceLength":srcLen,
+                "lineCount": lines.length,
+                "compilationType": sourceFile.compilation_unit_type,
+            };
+            if (incSrc) {
+                script["source"] = lines.join('\n');
+            }
+
+            return { "context_id": this.contextId, "script": script };
+
+        },
+
+        /**
+         * @name FirebugCommandAdaptor.scripts
+         * @function
+         * @description Retrieve all known scripts.
+         * @param {Object} args Arguments object.
+         * @param args.includeSource <code>includeSource</code>: boolean
+         */
+        "scripts": function ( args) {
             var incSrc = args["includeSource"];
             var srcMap = this.context.sourceFileMap;
+            var scripts = [];
+            var script;
             for (var url in srcMap) {
-                sourceFile = srcMap[url];
-                try {
-                    lines = sourceFile.loadScriptLines();
-                } catch (ex) {
-                    lines = [];
-                    if (FBTrace.DBG_CROSSFIRE)
-                        FBTrace.sysout("CROSSFIRE: failed to get source lines for script : " +ex);
+                script = this.script({ "url": url, "includeSource": incSrc });
+                if (script) {
+                    delete script.context_id;
+                    scripts.push( script );
                 }
-                var srcLen;
-                try {
-                    srcLen = sourceFile.getSourceLength();
-                } catch(exc) {
-                    if (FBTrace.DBG_CROSSFIRE)
-                        FBTrace.sysout("CROSSFIRE: failed to get source length for script : " +exc);
-                    srcLen = 0;
-                }
-
-                script = {
-                    "id": url,
-                    "lineOffset": 0,
-                    "columnOffset": 0,
-                    "sourceStart": lines[0],
-                    "sourceLength":srcLen,
-                    "lineCount": lines.length,
-                    "compilationType": sourceFile.compilation_unit_type,
-                };
-                if (incSrc) {
-                    script["source"] = lines.join('\n');
-                }
-                scripts.push( script );
             }
 
             return { "context_id": this.contextId, "scripts": scripts };
@@ -510,8 +542,9 @@ FBL.ns(function() { with(FBL) {
         "source": function ( args) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor source");
-
-            return this.scripts({"includeSource": true});
+            args = args || {};
+            args["includeSource"] = true;
+            return this.scripts(args);
         },
 
         /**
