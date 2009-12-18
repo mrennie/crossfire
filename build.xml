@@ -70,8 +70,7 @@
         <delete dir="${jsdoc.dir}"/>
         <mkdir dir="${jsdoc.dir}"/>
         <taskdef name="jsdoctoolkit" classname="uk.co.darrenhurley.ant.tasks.JsDocToolkit" classpathref="jsdoc.path"/>
-        <jsdoctoolkit jsdochome="${jsdoc.home}/jsdoc-toolkit-2.3.0/" template="crossfire" outputdir="${jsdoc.dir}">
-            <fileset dir="${build.dir}"  excludes="defaults/**/*" includes="**/*.js"/>
+        <jsdoctoolkit jsdochome="${jsdoc.home}/jsdoc-toolkit-2.3.0/" template="crossfire" inputdir="." outputdir="${jsdoc.dir}">
         </jsdoctoolkit>
     </target>
 
