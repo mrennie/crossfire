@@ -277,7 +277,7 @@ FBL.ns(function() { with(FBL) {
                 FBTrace.sysout("CROSSFIRE CommandAdaptor frame");
 
             var number = args["number"];
-            var includeScopes = args["includeScopes"] || true;
+            var includeScopes = (typeof args["includeScopes"] != "undefined")  ? args["includeScopes"] : true;
 
             var frame;
             if (this.context.Crossfire.currentFrame) {
