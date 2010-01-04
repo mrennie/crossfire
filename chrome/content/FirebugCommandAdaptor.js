@@ -1,6 +1,6 @@
 /* See license.txt for terms of usage */
 
-if (!Crossfire) var Crossfire = {};
+var Crossfire = Crossfire || {};
 
 
 // FirebugCommandAdaptor
@@ -273,11 +273,12 @@ FBL.ns(function() { with(FBL) {
          * @param {Boolean} args.includeScopes <code>includeScopes</code> defaults to true.
          */
         "frame": function( args) {
-            if (FBTrace.DBG_CROSSFIRE)
-                FBTrace.sysout("CROSSFIRE CommandAdaptor frame");
-
             var number = args["number"];
-            var includeScopes = (typeof args["includeScopes"] != "undefined")  ? args["includeScopes"] : true;
+
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CROSSFIRE CommandAdaptor frame: number => ", number);
+
+            var includeScopes = (typeof(args["includeScopes"]) != "undefined")  ? args["includeScopes"] : true;
 
             var frame;
             if (this.context.Crossfire.currentFrame) {
@@ -285,7 +286,7 @@ FBL.ns(function() { with(FBL) {
                     number = 0;
                     frame = this.context.Crossfire.currentFrame;
                 } else if (this.context.Crossfire.currentFrame.stack) {
-                    frame = this.context.Crossfire.currentFrame.stack[number];
+                    frame = this.context.Crossfire.currentFrame.stack[number-1];
                 }
 
                 try {
@@ -340,12 +341,12 @@ FBL.ns(function() { with(FBL) {
                 if (FBTrace.DBG_CROSSFIRE)
                     FBTrace.sysout("CROSSFIRE CommandAdaptor backtrace currentFrame.stack => " + stack);
 
-                var includeScopes = args["includeScopes"] || false;
+                var includeScopes = (typeof(args["includeScopes"]) != "undefined")  ? args["includeScopes"] : true;
 
                 if (stack) {
                     fromFrame = args["fromFrame"] || 0;
                     // toFrame set to stack.length if not set, or if set to a number higher than the stack sizes
-                    toFrame = (args["toFrame"] && args["toFrame"] < stack.length) ? args["toFrame"] : stack.length;
+                    toFrame = (args["toFrame"] && args["toFrame"] <= stack.length) ? args["toFrame"] : stack.length;
                 } else {
                     // issue 2559: if there is only one frame, stack is undefined,
                     // but we still want to return that frame.
@@ -355,11 +356,11 @@ FBL.ns(function() { with(FBL) {
 
                 var frame;
                 var frames = [];
-                for (var i = fromFrame; i < toFrame; i++) {
+                for (var i = fromFrame; i <= toFrame; i++) {
                     frame = this.frame({ "number": i, "includeScopes": includeScopes });
                     if (frame) {
                         delete frame.context_id;
-                        frames.push();
+                        frames.push(frame);
                     }
                 }
 
@@ -399,7 +400,7 @@ FBL.ns(function() { with(FBL) {
                         frameNo = 0;
                         frame = this.context.Crossfire.currentFrame;
                     } else {
-                        frame = this.context.Crossfire.currentFrame.stack[frameNo];
+                        frame = this.context.Crossfire.currentFrame.stack[frameNo-1];
                     }
                     scope = frame.scope;
                     for (var i = 0; i < scopeNo; i++) {
