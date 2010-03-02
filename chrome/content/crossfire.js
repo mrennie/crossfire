@@ -299,16 +299,17 @@ FBL.ns(function() { with(FBL) {
                     for (var i = 0; i < lengthValue.value; ++i) {
                         var prop = listValue.value[i];
                         var name = prop.name.getWrappedValue();
-                        copiedScope[name.toString()] = prop.value.getWrappedValue();
+                           copiedScope[name.toString()] = prop.value.getWrappedValue();
                     }
 
                     if (aScope.jsParent) {
-                        copiedScope.parent = copyScope(aScope.jsParent);
+                        //copiedScope.parent = copyScope(aScope.jsParent);
                     }
                 } catch (ex) {
                     if (FBTrace.DBG_CROSSFIRE) FBTrace.sysout("Exception copying scope => " + e);
                 }
                 return context.Crossfire.commandAdaptor.serialize(copiedScope);
+                //return copiedScope;
             }
 
             if (frame && frame.isValid) {

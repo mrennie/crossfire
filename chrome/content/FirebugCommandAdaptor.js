@@ -57,7 +57,7 @@ FBL.ns(function() { with(FBL) {
             } else {
                 Firebug.Debugger.resume(this.context);
             }
-            return true;
+            return {};
         },
 
         /**
@@ -69,7 +69,7 @@ FBL.ns(function() { with(FBL) {
              if (FBTrace.DBG_CROSSFIRE)
                  FBTrace.sysout("CROSSFIRE CommandAdaptor suspend");
             Firebug.Debugger.suspend(this.context);
-            return true;
+            return {};
         },
 
         /**
@@ -290,14 +290,16 @@ FBL.ns(function() { with(FBL) {
                 }
 
                 try {
+
                     var locals = {};
                     for (var l in frame.scope) {
                         if (l != "parent") { // ignore parent
-                            locals[l] = this.serialize(frame.scope[l]);
+                            locals[l] = frame.scope[l];
                         }
                     }
+
                     if (frame.thisValue) {
-                        locals["this"] = this.serialize(frame.thisValue);
+                        locals["this"] = frame.thisValue;
                     }
 
                     if (includeScopes) {
@@ -418,7 +420,7 @@ FBL.ns(function() { with(FBL) {
                     "context_id": this.contextId,
                     "index": scopeNo,
                     "frameIndex": frameNo,
-                    "object": this.serialize(scope)
+                    "object": scope
                 };
             }
 
@@ -642,7 +644,7 @@ FBL.ns(function() { with(FBL) {
                     } else if (obj instanceof Array) {
                         var arr = "[";
                         for (var i = 0; i < obj.length; i++) {
-                            arr += this.serialize(obj[i]);
+                            arr += JSON.stringify(this.serialize(obj[i]));
                             if (i < obj.length-1) {
                                 arr += ',';
                             }
@@ -652,27 +654,31 @@ FBL.ns(function() { with(FBL) {
                         var ref = this.getRef(obj);
                         var o = {};
                         for (var p in obj) {
-                            if (obj.hasOwnProperty(p) && !(p in ignoreVars)) {
-                                var prop = obj[p];
-                                if (typeof(prop) == "object") {
-                                    if (prop == null) {
-                                        o[p] = "null";
-                                    } else if (prop && prop.type && prop.type == "ref" && prop.handle) {
-                                        o[p] = prop;
-                                    } else  {
-                                        o[p] = this.getRef(prop);
+                            try {
+                                if (obj.hasOwnProperty(p) && !(p in ignoreVars)) {
+                                    var prop = obj[p];
+                                    if (typeof(prop) == "object") {
+                                        if (prop == null) {
+                                            o[p] = "null";
+                                        } else if (prop && prop.type && prop.type == "ref" && prop.handle) {
+                                            o[p] = prop;
+                                        } else  {
+                                            o[p] = this.getRef(prop);
+                                        }
+                                    } else if (p === obj) {
+                                        o[p] = ref;
+                                    } else {
+                                        o[p] = this.serialize(prop);
                                     }
-                                } else if (p === obj) {
-                                    o[p] = ref;
-                                } else {
-                                    o[p] = this.serialize(prop);
                                 }
+                            } catch (x) {
+                                o[p] =  { "type": "string", "value": "crossfire serialization exception: " + x };
                             }
                         }
                         serialized["value"] = o;
                     }
                 } else if (type == "function") {
-                    serialized["value"] =  obj.name ? obj.name + "()" : "anonymous()";
+                    serialized["value"] =  obj.name ? obj.name + "()" : "function()";
                 } else {
                     serialized["value"] = obj;
                 }
@@ -690,6 +696,11 @@ FBL.ns(function() { with(FBL) {
         getRef: function( obj, incContext) {
             //if (FBTrace.DBG_CROSSFIRE)
               //  FBTrace.sysout("CROSSFIRE CommandAdaptor getRef", obj);
+            if (obj && obj.type && obj.type == "ref" && obj.handle) {
+                FBTrace.sysout("CROSSFIRE CommandAdaptor getRef tried to get ref for serialized obj");
+                return;
+            }
+
             var ref = { "type":"ref", "handle": -1 };
             if (incContext) {
                 ref["context_id"] = this.contextId;
