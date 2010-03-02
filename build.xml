@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<project name="Crossfire" default="all" basedir=".">
+
+    <property name="dist.dir" value="dist/"/>
+    <property name="build.dir" value="build/"/>
+    <property file="version.properties"/>
+
+    <target name="all" depends="clean,prepare,xpi,doc"/>
+
+    <target name="xpi"
+        depends="prepare"
+        description="zip files into firefox XPI">
+        <mkdir dir="${dist.dir}"/>
+
+        <zip
+            destfile="${dist.dir}/${ant.project.name}-${VERSION}${RELEASE}.xpi"
+            basedir="${build.dir}" includes="**/*" />
+    </target>
+
+    <target name="prepare" depends="clean">
+        <mkdir dir="${build.dir}"/>
+        <copy file="install.rdf"
+                tofile="${build.dir}/install.rdf"
+                overwrite="true">
+                <filterchain>
+                        <replacetokens>
+                             <token key="VERSION" value="${VERSION}"/>
+                             <token key="RELEASE" value="${RELEASE}"/>
+                        </replacetokens>
+                </filterchain>
+        </copy>
+        <copy file="update.rdf"
+                tofile="${build.dir}/update.rdf"
+                overwrite="true">
+                <filterchain>
+                        <replacetokens>
+                             <token key="VERSION" value="${VERSION}"/>
+                             <token key="RELEASE" value="${RELEASE}"/>
+                        </replacetokens>
+                </filterchain>
+        </copy>
+        <copy todir="${build.dir}">
+            <fileset dir="${basedir}" includes="chrome.manifest,license.txt" />
+            <fileset dir="${basedir}" includes="chrome/**/*"/>
+            <fileset dir="${basedir}" includes="defaults/**/*"/>
+            <fileset dir="${basedir}" includes="components/**/*"/>
+            <fileset dir="${basedir}" includes="resources/**/*"/>
+        </copy>
+    </target>
+
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+        <delete dir="${dist.dir}"/>
+    </target>
+
+    <target name="detrace">
+        <echo>Nothing happened.</echo>
+    </target>
+
+    <!-- generate documentation -->
+    <property name="jsdoc.home" value="${basedir}/../jsdoc"/>
+    <property name="jsdoc.dir" value="doc/jsdocs"/>
+
+    <path id="jsdoc.path">
+        <pathelement path="${jsdoc.home}/jsdoctoolkit-ant-task-1.0.1.jar"/>
+        <pathelement path="${jsdoc.home}/js.jar"/>
+    </path>
+
+    <target name="doc">
+        <delete dir="${jsdoc.dir}"/>
+        <mkdir dir="${jsdoc.dir}"/>
+        <taskdef name="jsdoctoolkit" classname="uk.co.darrenhurley.ant.tasks.JsDocToolkit" classpathref="jsdoc.path"/>
+        <jsdoctoolkit jsdochome="${jsdoc.home}/jsdoc-toolkit-2.3.0/" template="crossfire" inputdir="." outputdir="${jsdoc.dir}">
+        </jsdoctoolkit>
+    </target>
+
+</project>

@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+
+    <Description about="urn:mozilla:install-manifest">
+        <em:id>crossfire@almaden.ibm.com</em:id>
+        <em:name>Crossfire</em:name>
+        <em:version>@VERSION@@RELEASE@</em:version>
+        <em:description>Remote debugging for Firebug.</em:description>
+        <em:iconURL>chrome://crossfire/skin/crossfire.png</em:iconURL>
+        <em:updateURL>http://getfirebug.com/releases/crossfire/@VERSION@/update.rdf</em:updateURL>
+        <em:updateKey>MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDPLn33L/P3axN/69LmQfY7j5cdEc+Xy6XsRIhDHrhhXUsh2CXseA+WauwfcoE92X5lBGDAHGZ7a+bgNZ+rF6Jl92i5juTEGTeONURtHP0ORr1H8f1P0nQclozvqrDuereXoiYezGEU7oDnw5DRWN/k7rwvIYG1gPOIdy5bE0esjQIDAQAB</em:updateKey>
+        <em:targetApplication>
+            <Description>
+                <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+                <em:minVersion>3.5</em:minVersion>
+                <em:maxVersion>3.6.*</em:maxVersion>
+            </Description>
+        </em:targetApplication>
+        <em:creator>Michael G. Collins (Firetoad)</em:creator>
+        <em:contributor>John J. Barton</em:contributor>
+    </Description>
+</RDF>
