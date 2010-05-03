@@ -190,34 +190,44 @@ FBL.ns(function() { with(FBL) {
         onSourceFileCreated: function( context, sourceFile) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  onSourceFileCreated");
-            this.handleEvent(context, "onScript", sourceFile.href);
+            var context_href;
+            try {
+                context_href = context.window.location.href;
+            } catch(e) {
+                context_href = "";
+            }
+            this.handleEvent(context, "onScript", { "href": sourceFile.href, "context_href": context_href });
         },
 
 
         // ----- context listeners -----
         /**
          * @description Add the new context to our list of contexts.
+         * @description Create a new command and event adaptor for the context when it is loaded.
          * @param context
          */
         initContext: function( context) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  initContext");
             context.Crossfire = { "crossfire_id" : generateId() };
-            this.contexts.push(context);
-        },
-
-        /**
-         * @description Create a new command adaptor for the context when it is loaded. Send "onContextCreated" event.
-         * @param context
-         */
-        loadedContext: function( context) {
-            if (FBTrace.DBG_CROSSFIRE)
-                FBTrace.sysout("CROSSFIRE:  loadedContext");
-            var contextId =  context.Crossfire.crossfire_id;
 
             context.Crossfire["commandAdaptor"] = new Crossfire.FirebugCommandAdaptor(context);
             context.Crossfire["eventAdaptor"] = new Crossfire.FirebugEventAdaptor(context);
+
+            this.contexts.push(context);
+
             this.handleEvent(context, "onContextCreated");
+
+        },
+
+        /**
+         * @description Send "onContextCreated" event.
+         * @param context
+         *
+        loadedContext: function( context) {
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CROSSFIRE:  loadedContext");
+
 
         },
 
@@ -237,6 +247,7 @@ FBL.ns(function() { with(FBL) {
             var contextId = context.Crossfire.crossfire_id;
             for (var i = 0; i < this.contexts.length; i++) {
                 if (this.contexts[i].Crossfire.crossfire_id == contextId) {
+                    delete this.contexts[i].Crossfire.currentFrame;
                     this.handleEvent(this.contexts[i], "onContextDestroyed");
                     this.contexts.splice(i, 1);
                     break;
