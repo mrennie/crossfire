@@ -9,7 +9,6 @@ const HANDSHAKE_RETRY = 1007;
 
 const Packets = {};
 
-
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 /**
@@ -24,12 +23,6 @@ function SocketTransport() {
     this.wrappedJSObject = this;
     this.listeners = [];
     this.connected = false;
-
-    //if (DEBUG) {
-        var appShellService = Cc["@mozilla.org/appshell/appShellService;1"].
-            getService(Ci.nsIAppShellService);
-        this.debug = function(str) { appShellService.hiddenDOMWindow.dump("Crossfire SocketTransport :: " + str + "\n"); };
-    //} */
 }
 
 SocketTransport.prototype =
@@ -108,9 +101,6 @@ SocketTransport.prototype =
         this._destroyTransport();
         this.listening = true;
         this._createTransport(host, port);
-
-        if (this.debug)
-            this.debug("listening...");
     },
 
     /**
@@ -145,70 +135,20 @@ SocketTransport.prototype =
     /** @ignore */
     _createTransport: function (host, port) {
 
-        if (this.debug)
-            this.debug("_createTransport");
+        var transportService = Cc["@mozilla.org/network/socket-transport-service;1"]
+                                  .getService(Ci.nsISocketTransportService);
 
-        if (this.listening) {
+        this._transport = transportService.createTransport(null,0, host, port, null);
 
-            var serverSocket = Cc["@mozilla.org/network/server-socket;1"]
-                                  .createInstance(Ci.nsIServerSocket);
+        this._outputStream = this._transport.openOutputStream(0, 0, 0);
 
-            serverSocket.init(port, true, -1);
 
-            var self = this;
-
-            serverSocket.asyncListen({
-                QueryInterface: function(iid) {
-                    if(!iid.equals(Ci.nsISupports) && !iid.equals(Ci.nsIServerSocketListener))
-                        throw NS_ERROR_NO_INTERFACE;
-                    return this;
-                },
-
-                onSocketAccepted: function( socket, transport) {
-                    if (self.debug)
-                        self.debug(" socket accepted. transport is => " + transport);
-
-                    self._transport = transport;
-
-                    self._createInputStream();
-
-                    self._createOutputStream();
-
-                    self._notifyConnection("waitOnHandshake");
-                    self._waitHandshake();
-                }
-            });
-        } else {
-            var transportService = Cc["@mozilla.org/network/socket-transport-service;1"]
-                                      .getService(Ci.nsISocketTransportService);
-
-            this._transport = transportService.createTransport(null,0, host, port, null);
-
-            this._createInputStream();
-
-            this._createOutputStream();
-
-            this._sendHandshake();
-        }
-    },
-
-    _createInputStream: function() {
-        if (this.debug)
-            this.debug("_createInputSteram");
-
-        this._inputStream = this._transport.openInputStream(Ci.nsITransport.OPEN_BLOCKING & Ci.nsITransport.OPEN_UNBUFFERED, 0, 0);
+        this._inputStream = this._transport.openInputStream(Ci.nsITransport.OPEN_BLOCKING, 0, 0);
 
         this._scriptableInputStream = Cc["@mozilla.org/scriptableinputstream;1"]
                             .createInstance(Ci.nsIScriptableInputStream);
 
         this._scriptableInputStream.init(this._inputStream);
-    },
-
-    _createOutputStream: function() {
-        if (this.debug)
-            this.debug("_createOutputStream");
-
-        this._outputStream = this._transport.openOutputStream(Ci.nsITransport.OPEN_BLOCKING & Ci.nsITransport.OPEN_UNBUFFERED, 0, 0);
 
         this._outputStreamCallback = {
                 _packets: [],
@@ -231,17 +171,19 @@ SocketTransport.prototype =
                             outputStream.flush();
                         }
                     } catch( ex) {
-                        if (this.debug) this.debug(ex);
+                        //TODO: log exception
                     }
                 }
             };
 
+        if (this.listening) {
+            this._waitHandshake();
+        } else {
+            this._sendHandshake();
+        }
     },
 
     _destroyTransport: function() {
-        if (this.debug)
-            this.debug("_destroyTransport");
-
         delete this._outputStreamCallback;
         delete this._outputStream;
 
@@ -270,9 +212,6 @@ SocketTransport.prototype =
 
     /** @ignore */
     _sendHandshake: function() {
-        if (this.debug)
-            this.debug("_sendHandshake");
-
         this._outputStream.asyncWait( {
             QueryInterface: function( iid) {
                 if(!iid.equals(Ci.nsISupports) && !iid.equals(Ci.nsIOutputStreamCallback))
@@ -296,9 +235,6 @@ SocketTransport.prototype =
 
     /** @ignore */
     _waitHandshake: function( timeout) {
-        if (this.debug)
-            this.debug("_waitHandshake");
-
         this._defer(function() {
             try {
                 if (this._inputStream.available() == CROSSFIRE_HANDSHAKE.length) {
@@ -317,12 +253,6 @@ SocketTransport.prototype =
                 this._waitHandshake(HANDSHAKE_RETRY);
             } catch (e) {
                 //this.close();
-                if (this.debug)
-                    this.debug("_waitHandshake: " + e);
-
-                if (this.listening) {
-                    this._waitHandshake(HANDSHAKE_RETRY);
-                }
             }
         }, timeout);
     },
@@ -337,25 +267,16 @@ SocketTransport.prototype =
 
     /** @ignore */
     _waitOnPacket: function() {
-        var avail, response, packet;
+        var avail;
         try {
             avail = this._inputStream.available();
         } catch (e) {
-            if (this.debug) this.debug(e);
+
         }
         if (avail) {
-            response = this._scriptableInputStream.read(avail);
-
-            if (this.debug)
-                this.debug("_waitOnPacket got response => " + response);
-
+            var response = this._scriptableInputStream.read(avail);
             if (response) {
-                if (this.listening) {
-                    packet = new Packets.EventPacket(response);
-                } else {
-                    packet = new Packets.RequestPacket(response);
-                }
-                this._notifyListeners(packet);
+                this._notifyListeners(new Packets.RequestPacket(response));
             }
         }
         if (this.connected) {
@@ -372,30 +293,22 @@ SocketTransport.prototype =
                  if (handler)
                      handler.apply(listener, [status]);
             } catch (e) {
-                if (this.debug) this.debug(e);
+                //TODO: log exception
             }
         }
     },
 
 
     /** @ignore */
-    _notifyListeners: function( packet) {
-        var listener, handler;
+    _notifyListeners: function( requestPacket) {
         for (var i = 0; i < this.listeners.length; ++i) {
-            listener = this.listeners[i];
+            var listener = this.listeners[i];
             try {
-
-                if (this.listening) {
-                    handler = listener["fireEvent"];
-                } else {
-                    handler = listener["handleRequest"];
-                }
-
+                var handler = listener["handleRequest"];
                 if (handler)
-                    handler.apply(listener, [packet]);
-
+                    handler.apply(listener, [requestPacket]);
             } catch (e) {
-                if (this.debug) this.debug(e);
+                //TODO: log exception
             }
         }
     }

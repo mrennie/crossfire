@@ -140,16 +140,6 @@ FBL.ns(function() { with(FBL) {
                             break;
                         }
                     }
-
-                    FBTrace.sysout("CROSSFIRE enumerating a breakpoint");
-                    FBTrace.sysout("bp props");
-                    FBTrace.sysout("type => ", props.type);
-                    FBTrace.sysout("condition => ", props.condition);
-
-                    for (var mad in props) {
-                        FBTrace.sysout(mad, mad[props]);
-                    }
-
                     if (!found) {
                         var bp = {
                                 "handle": self.breakpointIds++,
