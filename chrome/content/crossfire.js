@@ -5,7 +5,7 @@
  *
  */
 
-const CROSSFIRE_VERSION = "0.1a";
+const CROSSFIRE_VERSION = "0.2";
 var CONTEXT_ID_SEED = Math.round(Math.random() * 10000000);
 
 var Crossfire = Crossfire || {};
