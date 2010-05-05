@@ -123,15 +123,17 @@ FBL.ns(function() { with(FBL) {
          * @description Return all the breakpoints in this context.
          */
         "getbreakpoints": function() {
+            var found, newBp;
             var bps = [];
             var self = this;
 
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor getbreakpoints");
 
+            // js breakpoints
             for (var url in this.context.sourceFileMap) {
                 fbs.enumerateBreakpoints(url, { "call": function(url, line, props, script) {
-                    var found = false;
+                    found = false;
                     for (var bp in self.breakpoints) {
                         if ( (bp.url == url)
                                 && (bp.line == line)) {
@@ -202,22 +204,23 @@ FBL.ns(function() { with(FBL) {
                 }
             }
             if (!breakpoint) {
+                var breakpoint = {
+                        "handle": this.breakpointIds++,
+                        "type": "line",
+                        "line": line,
+                        "target": url
+                    };
+
+                breakpoints.push(breakpoint);
+
                 var sourceFile = this.context.sourceFileMap[url];
                 if (sourceFile) {
                     Firebug.Debugger.setBreakpoint(sourceFile, line);
-
-                    if (FBTrace.DBG_CROSSFIRE)
-                        FBTrace.sysout("CROSSFIRE CommandAdaptor breakpoint set.");
-
-                    var breakpoint = {
-                            "handle": this.breakpointIds++,
-                            "type": "line",
-                            "line": line,
-                            "target": url
-                        };
-                    breakpoints.push(breakpoint);
-
                 }
+
+                if (FBTrace.DBG_CROSSFIRE)
+                    FBTrace.sysout("CROSSFIRE CommandAdaptor breakpoint set.");
+
             }
             return {"context_id": this.contextId, "breakpoint": breakpoint  };
 
@@ -727,6 +730,19 @@ FBL.ns(function() { with(FBL) {
         clearRefs: function() {
             this.refCount = 0;
             this.refs = [];
+        },
+
+        /*
+         * @ignore
+         * add breakpoints that were set before the sourceFile was loaded.
+         */
+        sourceFileLoaded: function( sourceFile) {
+            for (var bp in this.breakpoints) {
+                if (bp.target == sourceFile.href) {
+                    line = bp.line;
+                    Firebug.Debugger.setBreakpoint(sourceFile, line);
+                }
+            }
         }
     };
 

@@ -33,6 +33,7 @@ FBL.ns(function() { with(FBL) {
             Firebug.Debugger.addListener(this);
             Firebug.Console.addListener(this);
             Firebug.Inspector.addListener(this);
+            Firebug.HTMLModule.addListener(this);
 
             var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
             var host = commandLine.getHost();
@@ -180,6 +181,8 @@ FBL.ns(function() { with(FBL) {
             if (this.transport && this.status == "connected") {
                 var eventAdaptor = context.Crossfire.eventAdaptor;
                 var eventData = eventAdaptor[eventName].apply(eventAdaptor, args);
+                if (FBTrace.DBG_CROSSFIRE)
+                    FBTrace.sysout("CROSSFIRE handleEvent sending to transport: " + eventData);
                 this.transport.sendEvent(eventName, eventData);
             }
         },
@@ -189,13 +192,17 @@ FBL.ns(function() { with(FBL) {
 
         onSourceFileCreated: function( context, sourceFile) {
             if (FBTrace.DBG_CROSSFIRE)
-                FBTrace.sysout("CROSSFIRE:  onSourceFileCreated");
+                FBTrace.sysout("CROSSFIRE:  onSourceFileCreated => " + sourceFile.href);
+
             var context_href;
             try {
                 context_href = context.window.location.href;
             } catch(e) {
                 context_href = "";
             }
+
+            context.Crossfire.commandAdaptor.sourceFileLoaded(sourceFile);
+
             this.handleEvent(context, "onScript", { "href": sourceFile.href, "context_href": context_href });
         },
 
@@ -223,11 +230,12 @@ FBL.ns(function() { with(FBL) {
         /**
          * @description Send "onContextCreated" event.
          * @param context
-         *
+         */
         loadedContext: function( context) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  loadedContext");
 
+            //context.Crossfire.commandAdaptor.setContextLoaded();
 
         },
 
@@ -455,6 +463,7 @@ FBL.ns(function() { with(FBL) {
 
         },
 
+        /* we aren't actually using these events for anything right now...
         onJSDActivtate: function() {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  onJSDActivtate");
@@ -465,6 +474,20 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE: onJSDDeactivate");
         },
+        */
+
+
+        // ----- Firebug HTMLModule listener -----
+
+        /**
+         * Send <code>onToggleBreakpoint</code> event for HTML breakpoints.
+         */
+        onModifyBreakpoint: function(context, xpath, type) {
+             if (FBTrace.DBG_CROSSFIRE)
+                 FBTrace.sysout("CROSSFIRE: onModifyBreakpoint");
+             this.handleEvent(context, "onToggleBreakpoint");
+        },
+
 
         // ----- Firebug Console listener -----
 
