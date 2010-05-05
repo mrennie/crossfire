@@ -31,7 +31,19 @@ CommandLineHandler.prototype =
             this.host = cmdLine.handleFlagWithParam("crossfire-host", false);
             this.port = cmdLine.handleFlagWithParam("crossfire-port", false);
         } catch (e) {
-            Cu.reportError("Command Line Handler failed: "+e);
+            Cu.reportError("Command Line Handler failed: " + e);
+        }
+
+        try {
+            this.loadFBModules = cmdLine.handleFlag("-load-fb-modules", false);
+            this.noFBModules = cmdLine.handleFlag("-no-fb-modules", false);
+
+            if (this.loadFBModules) {
+                this._watchAndInitializeFirebug();
+            }
+
+        } catch (e2) {
+            Cu.reportError("Command Line Handler failed: " + e2);
         }
     },
 
@@ -53,7 +65,43 @@ CommandLineHandler.prototype =
      */
     getHost: function() {
         return this.host;
+    },
+
+    /**
+     * @name CommandLineHandler.loadFBModules
+     * @function
+     * @description loadFBModules
+     * @return boolean indicating whether -load-fb-modules flag was specified on the command-line.
+     */
+    shouldLoadFBModules: function() {
+        return (this.loadFBModules && !this.noFBModules);
+    },
+
+    /** @ignore */
+    _watchAndInitializeFirebug: function() {
+        // initialize Firebug Modules before panels are loaded...
+        var windowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].getService(Ci.nsIWindowWatcher);
+
+        var windowObserver = {
+            QueryInterface: function(iid) {
+                    if(!iid.equals(Ci.nsISupports) && !iid.equals(Ci.nsIObserver))
+                        throw NS_ERROR_NO_INTERFACE;
+                    return this;
+            },
+
+            observe: function( subject, topic, data) {
+                if (topic == "domwindowopened") {
+                    if (/* nsIDOMWindow */ subject.Firebug) {
+                        subject.Firebug.initialize();
+                        windowWatcher.unregisterNotification(windowObserver);
+                    }
+                }
+            }
+        };
+
+        windowWatcher.registerNotification(windowObserver);
     }
+
 };
 
 /** @ignore */
