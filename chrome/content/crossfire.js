@@ -30,11 +30,6 @@ FBL.ns(function() { with(FBL) {
 
         /** extends Firebug.Module */
         initialize: function() {
-            Firebug.Debugger.addListener(this);
-            Firebug.Console.addListener(this);
-            Firebug.Inspector.addListener(this);
-            Firebug.HTMLModule.addListener(this);
-
             var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
             var host = commandLine.getHost();
             var port = commandLine.getPort();
@@ -56,6 +51,12 @@ FBL.ns(function() { with(FBL) {
                 FBTrace.sysout("CROSSFIRE connect: host => " + host + " port => " + port);
             this.host = host;
             this.port = port;
+
+            Firebug.Debugger.addListener(this);
+            Firebug.Console.addListener(this);
+            Firebug.Inspector.addListener(this);
+            Firebug.HTMLModule.addListener(this);
+
             this.getTransport().open(host, port);
         },
 
@@ -194,16 +195,18 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  onSourceFileCreated => " + sourceFile.href);
 
-            var context_href;
-            try {
-                context_href = context.window.location.href;
-            } catch(e) {
-                context_href = "";
+            if (this.status == "connected") {
+                var context_href;
+                try {
+                    context_href = context.window.location.href;
+                } catch(e) {
+                    context_href = "";
+                }
+
+                context.Crossfire.commandAdaptor.sourceFileLoaded(sourceFile);
+
+                this.handleEvent(context, "onScript", { "href": sourceFile.href, "context_href": context_href });
             }
-
-            context.Crossfire.commandAdaptor.sourceFileLoaded(sourceFile);
-
-            this.handleEvent(context, "onScript", { "href": sourceFile.href, "context_href": context_href });
         },
 
 
@@ -216,14 +219,17 @@ FBL.ns(function() { with(FBL) {
         initContext: function( context) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  initContext");
-            context.Crossfire = { "crossfire_id" : generateId() };
 
-            context.Crossfire["commandAdaptor"] = new Crossfire.FirebugCommandAdaptor(context);
-            context.Crossfire["eventAdaptor"] = new Crossfire.FirebugEventAdaptor(context);
+            if (this.status == "connected") {
+                context.Crossfire = { "crossfire_id" : generateId() };
 
-            this.contexts.push(context);
+                context.Crossfire["commandAdaptor"] = new Crossfire.FirebugCommandAdaptor(context);
+                context.Crossfire["eventAdaptor"] = new Crossfire.FirebugEventAdaptor(context);
 
-            this.handleEvent(context, "onContextCreated");
+                this.contexts.push(context);
+
+                this.handleEvent(context, "onContextCreated");
+            }
 
         },
 
@@ -235,7 +241,9 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  loadedContext");
 
+            //if (this.status == "connected") {
             //context.Crossfire.commandAdaptor.setContextLoaded();
+            //}
 
         },
 
@@ -256,7 +264,11 @@ FBL.ns(function() { with(FBL) {
             for (var i = 0; i < this.contexts.length; i++) {
                 if (this.contexts[i].Crossfire.crossfire_id == contextId) {
                     delete this.contexts[i].Crossfire.currentFrame;
-                    this.handleEvent(this.contexts[i], "onContextDestroyed");
+
+                    if (this.status == "connected") {
+                        this.handleEvent(this.contexts[i], "onContextDestroyed");
+                    }
+
                     this.contexts.splice(i, 1);
                     break;
                 }
