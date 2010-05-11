@@ -251,17 +251,28 @@ FBL.ns(function() { with(FBL) {
          */
         "clearbreakpoint": function( args) {
             var breakpoint;
-            var bpId = args["breakpoint"];
+            var bpId = args["handle"];
+            var target = args["target"];
+            var line = args["line"];
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor clearbreakpoint id: " + bpId);
-            if (bpId) {
+            if (bpId || (target && line)) {
                 for (var i = 0; i < this.breakpoints.length; i++) {
-                    if (this.breakpoints[i].handle == bpId) {
+                    if ( (bpId && this.breakpoints[i].handle == bpId)
+                        || (target && line && this.breakpoints[i].target == target && this.breakpoints[i].line == line) )
+                    {
                         breakpoint = this.breakpoints[i];
                         Firebug.Debugger.clearBreakpoint({ "href": breakpoint.target }, breakpoint.line);
                         this.breakpoints.splice(i, 1);
                         return { "context_id": this.contextId, "breakpoint": breakpoint.handle };
                     }
+                }
+
+                // if we get here crossfire didn't know about the breakpoint,
+                // but if we have target and line arguments, try to clear it anyway.
+                if (target && line) {
+                    Firebug.Debugger.clearBreakpoint({ "href": target }, line);
+                    return { "context_id": this.contextId };
                 }
             }
             return false;
