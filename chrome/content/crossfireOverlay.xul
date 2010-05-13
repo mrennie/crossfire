@@ -13,7 +13,7 @@
         </statusbarpanel>
         <menupopup id="crossfireStatusMenu" onpopupshowing="Crossfire.onStatusMenuShowing(this)">
             <menuitem id="menu_connectCrossfire" label="Connect..." onclick="Crossfire.connect()"/>
-            <menuitem id="menu_listenCrossfire" label="Listen..." onclick="Crossfire.listen()" disabled="true"/>
+            <menuitem id="menu_listenCrossfire" label="Listen..." onclick="Crossfire.listen()"/>
             <menuitem id="menu_disconnectCrossfire" class="hidden" label="Disconnect..." onclick="Crossfire.disconnect()"/>
         </menupopup>
     </statusbar>

@@ -61,18 +61,29 @@ var EXPORTED_SYMBOLS = ["EventPacket", "RequestPacket", "ResponsePacket"];
      * @param data JSON object containing additional arguments for the event.
      */
     function EventPacket( event, data) {
-        var sequence = Packet.seq++;
-        var packet = {
-                "seq": sequence,
-                "type":	"event",
-                "event": event,
-        };
-        for (var prop in data) {
-            packet[prop] = data[prop];
+        if (data) {
+            var sequence = Packet.seq++;
+            var packet = {
+                    "seq": sequence,
+                    "type":	"event",
+                    "event": event,
+            };
+            for (var prop in data) {
+                packet[prop] = data[prop];
+            }
+            var json = this.toJSON(packet);
+            this.data = this.toPacketString(json);
+            this.length = this.data.length;
+        } else {
+            //FIXME: incoming event hack
+            var unchunked = this.parsePacketString(event);
+            var json = this.parseJSON(unchunked);
+            for (var prop in json) {
+                this[prop] = json[prop];
+            }
+            if (json && json.seq)
+                Packet.seq = json.seq+1;
         }
-        var json = this.toJSON(packet);
-        this.data = this.toPacketString(json);
-        this.length = this.data.length;
     };
 
     EventPacket.prototype = Packet;
@@ -88,7 +99,7 @@ var EXPORTED_SYMBOLS = ["EventPacket", "RequestPacket", "ResponsePacket"];
         for (var prop in json) {
             this[prop] = json[prop];
         }
-        if (json.seq)
+        if (json && json.seq)
             Packet.seq = json.seq+1;
     };
 
