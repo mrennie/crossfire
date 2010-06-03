@@ -9,7 +9,6 @@ const HANDSHAKE_RETRY = 1007;
 
 const Packets = {};
 
-
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 /**
@@ -21,15 +20,26 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
  */
 function SocketTransport() {
     Cu.import("resource://crossfire/Packet.js", Packets);
+    
     this.wrappedJSObject = this;
     this.listeners = [];
     this.connected = false;
-
+    
     //if (DEBUG) {
-        var appShellService = Cc["@mozilla.org/appshell/appShellService;1"].
-            getService(Ci.nsIAppShellService);
-        this.debug = function(str) { appShellService.hiddenDOMWindow.dump("Crossfire SocketTransport :: " + str + "\n"); };
-    //} */
+    var appShellService = Cc["@mozilla.org/appshell/appShellService;1"].
+        getService(Ci.nsIAppShellService);
+    this.debug = function(str) { appShellService.hiddenDOMWindow.dump("Crossfire SocketTransport :: " + str + "\n"); };
+    //  } */
+        
+    // quit-application observer
+    var transport = this;
+    Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService).addObserver({
+        observe: function(subject, topic, data)
+        {
+    		if (transport.debug) transport.debug("quit application observed");
+    		transport.close();
+        }
+    }, "quit-application", false);
 }
 
 SocketTransport.prototype =
@@ -125,12 +135,12 @@ SocketTransport.prototype =
             this._notifyConnection("closed");
             this.connected = false;
 
-            if (this._outputStream) {
-                this._outputStream.close();
-            }
-
             if (this._inputStream) {
                 this._inputStream.close(null);
+            }
+            
+            if (this._outputStream) {
+                this._outputStream.close();
             }
 
             if (this._transport) {
@@ -210,6 +220,7 @@ SocketTransport.prototype =
 
         this._outputStream = this._transport.openOutputStream(Ci.nsITransport.OPEN_BLOCKING & Ci.nsITransport.OPEN_UNBUFFERED, 0, 0);
 
+        var debug = this.debug;
         this._outputStreamCallback = {
                 _packets: [],
 
@@ -231,7 +242,7 @@ SocketTransport.prototype =
                             outputStream.flush();
                         }
                     } catch( ex) {
-                        if (this.debug) this.debug(ex);
+                        if (debug) debug("onOutputStreamReady" + ex);
                     }
                 }
             };
@@ -341,7 +352,7 @@ SocketTransport.prototype =
         try {
             avail = this._inputStream.available();
         } catch (e) {
-            if (this.debug) this.debug(e);
+            if (this.debug) this.debug("_waitOnPacket " + e);
         }
         if (avail) {
             response = this._scriptableInputStream.read(avail);
@@ -372,7 +383,7 @@ SocketTransport.prototype =
                  if (handler)
                      handler.apply(listener, [status]);
             } catch (e) {
-                if (this.debug) this.debug(e);
+                if (this.debug) this.debug("_notifyConnection " + e);
             }
         }
     },
@@ -395,7 +406,7 @@ SocketTransport.prototype =
                     handler.apply(listener, [packet]);
 
             } catch (e) {
-                if (this.debug) this.debug(e);
+                if (this.debug) this.debug("_notifyListeners " + e);
             }
         }
     }
