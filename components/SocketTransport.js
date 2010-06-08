@@ -20,17 +20,17 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
  */
 function SocketTransport() {
     Cu.import("resource://crossfire/Packet.js", Packets);
-    
+
     this.wrappedJSObject = this;
     this.listeners = [];
     this.connected = false;
-    
+
     //if (DEBUG) {
     var appShellService = Cc["@mozilla.org/appshell/appShellService;1"].
         getService(Ci.nsIAppShellService);
     this.debug = function(str) { appShellService.hiddenDOMWindow.dump("Crossfire SocketTransport :: " + str + "\n"); };
     //  } */
-        
+
     // quit-application observer
     var transport = this;
     Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService).addObserver({
@@ -138,7 +138,7 @@ SocketTransport.prototype =
             if (this._inputStream) {
                 this._inputStream.close(null);
             }
-            
+
             if (this._outputStream) {
                 this._outputStream.close();
             }
@@ -206,7 +206,7 @@ SocketTransport.prototype =
         if (this.debug)
             this.debug("_createInputStream");
 
-        this._inputStream = this._transport.openInputStream(Ci.nsITransport.OPEN_BLOCKING & Ci.nsITransport.OPEN_UNBUFFERED, 0, 0);
+        this._inputStream = this._transport.openInputStream(Ci.nsITransport.OPEN_BLOCKING | Ci.nsITransport.OPEN_UNBUFFERED, 0, 0);
 
         this._scriptableInputStream = Cc["@mozilla.org/scriptableinputstream;1"]
                             .createInstance(Ci.nsIScriptableInputStream);
@@ -218,7 +218,7 @@ SocketTransport.prototype =
         if (this.debug)
             this.debug("_createOutputStream");
 
-        this._outputStream = this._transport.openOutputStream(Ci.nsITransport.OPEN_BLOCKING & Ci.nsITransport.OPEN_UNBUFFERED, 0, 0);
+        this._outputStream = this._transport.openOutputStream(Ci.nsITransport.OPEN_BLOCKING | Ci.nsITransport.OPEN_UNBUFFERED, 0, 0);
 
         var debug = this.debug;
         this._outputStreamCallback = {
