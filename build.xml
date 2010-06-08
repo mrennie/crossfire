@@ -15,12 +15,9 @@
         <zip
             destfile="${dist.dir}/${ant.project.name}-${VERSION}${RELEASE}.xpi"
             basedir="${build.dir}" includes="**/*" />
-    </target>
 
-    <target name="prepare" depends="clean">
-        <mkdir dir="${build.dir}"/>
-        <copy file="install.rdf"
-                tofile="${build.dir}/install.rdf"
+        <copy file="update.rdf"
+                tofile="${dist.dir}/update.rdf"
                 overwrite="true">
                 <filterchain>
                         <replacetokens>
@@ -29,8 +26,12 @@
                         </replacetokens>
                 </filterchain>
         </copy>
-        <copy file="update.rdf"
-                tofile="${build.dir}/update.rdf"
+    </target>
+
+    <target name="prepare" depends="clean">
+        <mkdir dir="${build.dir}"/>
+        <copy file="install.rdf"
+                tofile="${build.dir}/install.rdf"
                 overwrite="true">
                 <filterchain>
                         <replacetokens>
