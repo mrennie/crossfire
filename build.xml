@@ -58,7 +58,7 @@
     </target>
 
     <!-- generate documentation -->
-    <property name="jsdoc.home" value="${basedir}/../jsdoc"/>
+    <property name="jsdoc.home" value="${basedir}/../../../../jsdoc/"/>
     <property name="jsdoc.dir" value="doc/jsdocs"/>
 
     <path id="jsdoc.path">
@@ -70,7 +70,7 @@
         <delete dir="${jsdoc.dir}"/>
         <mkdir dir="${jsdoc.dir}"/>
         <taskdef name="jsdoctoolkit" classname="uk.co.darrenhurley.ant.tasks.JsDocToolkit" classpathref="jsdoc.path"/>
-        <jsdoctoolkit jsdochome="${jsdoc.home}/jsdoc-toolkit-2.3.0/" template="crossfire" inputdir="." outputdir="${jsdoc.dir}">
+        <jsdoctoolkit jsdochome="${jsdoc.home}/jsdoc-toolkit-2.3.0/" template="firebug" inputdir="." outputdir="${jsdoc.dir}">
         </jsdoctoolkit>
     </target>
 

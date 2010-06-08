@@ -477,7 +477,7 @@ FBL.ns(function() { with(FBL) {
         },
 
         /**
-         * @name FirebugCommandAdaptor.scripts
+         * @name FirebugCommandAdaptor.script
          * @function
          * @description Retrieve a single script
          * @param {Object} args Arguments object.
