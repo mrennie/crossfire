@@ -419,7 +419,7 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  onStartDebugging");
 
-            var frame = context.currentFrame;
+            var frame = context.stoppedFrame;
             var lineno = 1;
             var sourceFile = Firebug.SourceFile.getSourceFileByScript(context, frame.script)
             if (sourceFile) {
