@@ -11,7 +11,7 @@ var CONTEXT_ID_SEED = Math.round(Math.random() * 10000000);
 var Crossfire = Crossfire || {};
 
 FBL.ns(function() { with(FBL) {
-    const SocketTransport = Components.classes["@almaden.ibm.com/crossfire/socket-transport;1"];
+	Cu.import("resource://crossfire/SocketTransport.js", Crossfire);
 
     /**
      * @name CrossfireModule
@@ -87,8 +87,10 @@ FBL.ns(function() { with(FBL) {
         },
 
         getTransport: function() {
+        	if (FBTrace.DBG_CROSSFIRE)
+        		FBTrace.sysout("getTransport");
             if (!this.transport) {
-                this.transport = SocketTransport.createInstance().wrappedJSObject;
+            	this.transport = new Crossfire.SocketTransport();
                 this.transport.addListener(this);
             }
             return this.transport;

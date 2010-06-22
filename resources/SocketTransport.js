@@ -8,8 +8,23 @@ const CROSSFIRE_HANDSHAKE        = "CrossfireHandshake\r\n";
 const HANDSHAKE_RETRY = 1007;
 
 const Packets = {};
+Cu.import("resource://crossfire/Packet.js", Packets);
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+var EXPORTED_SYMBOLS = ["SocketTransport", "getTransport"];
+
+var _instance;
+
+/**
+ * @name getTransport
+ * @function
+ * @description returns the Singleton instance of Crossfire's SocketTransport object
+ */
+function getTransport() {
+	if (!_instance) {
+		_instance = new SocketTransport();
+	}
+	return _instance;
+}
 
 /**
  * @name SocketTransport
@@ -19,9 +34,9 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
  * sending/receiving packets.
  */
 function SocketTransport() {
-    Cu.import("resource://crossfire/Packet.js", Packets);
 
-    this.wrappedJSObject = this;
+
+    //this.wrappedJSObject = this;
     this.listeners = [];
     this.connected = false;
 
@@ -30,6 +45,8 @@ function SocketTransport() {
         getService(Ci.nsIAppShellService);
     this.debug = function(str) { appShellService.hiddenDOMWindow.dump("Crossfire SocketTransport :: " + str + "\n"); };
     //  } */
+
+    this.debug("SocketTransport constructor created debug function");
 
     // quit-application observer
     var transport = this;
@@ -40,18 +57,15 @@ function SocketTransport() {
     		transport.close();
         }
     }, "quit-application", false);
+
+    this.debug("SocketTransport constructor returning this => " + this);
+    return this;
+
 }
 
 SocketTransport.prototype =
 /** @lends SocketTransport */
 {
-    // ----- XPCOM -----
-
-    classDescription: "Firefox Socket Transport for remote debugging.",
-    contractID: "@almaden.ibm.com/crossfire/socket-transport;1",
-    classID: Components.ID("{7bfa8f17-156a-43c2-80d6-07877ef71769}"),
-    QueryInterface: XPCOMUtils.generateQI(),
-
 
     // ----- external API ----
 
@@ -411,9 +425,3 @@ SocketTransport.prototype =
         }
     }
 };
-
-/** @ignore */
-function NSGetModule(compMgr, fileSpec)
-{
-  return XPCOMUtils.generateModule([SocketTransport]);
-}
