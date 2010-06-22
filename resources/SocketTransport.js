@@ -7,10 +7,9 @@ const Cu = Components.utils;
 const CROSSFIRE_HANDSHAKE        = "CrossfireHandshake\r\n";
 const HANDSHAKE_RETRY = 1007;
 
-const Packets = {};
-Cu.import("resource://crossfire/Packet.js", Packets);
+Cu.import("resource://crossfire/Packet.js");
 
-var EXPORTED_SYMBOLS = ["SocketTransport", "getTransport"];
+var EXPORTED_SYMBOLS = ["CrossfireSocketTransport", "getCrossfireSocketTransport"];
 
 var _instance;
 
@@ -19,58 +18,50 @@ var _instance;
  * @function
  * @description returns the Singleton instance of Crossfire's SocketTransport object
  */
-function getTransport() {
+function getCrossfireSocketTransport() {
 	if (!_instance) {
-		_instance = new SocketTransport();
+		_instance = new CrossfireSocketTransport();
 	}
 	return _instance;
 }
 
 /**
- * @name SocketTransport
- * @constructor SocketTransport
+ * @name CrossfireSocketTransport
+ * @constructor CrossfireSocketTransport
  * @description Firefox Socket Transport for remote debug protocol.
  * Opens a socket connection to a remote host and handles handshaking and
  * sending/receiving packets.
  */
-function SocketTransport() {
+function CrossfireSocketTransport() {
 
-
-    //this.wrappedJSObject = this;
     this.listeners = [];
     this.connected = false;
 
-    //if (DEBUG) {
-    var appShellService = Cc["@mozilla.org/appshell/appShellService;1"].
-        getService(Ci.nsIAppShellService);
-    this.debug = function(str) { appShellService.hiddenDOMWindow.dump("Crossfire SocketTransport :: " + str + "\n"); };
-    //  } */
-
-    this.debug("SocketTransport constructor created debug function");
+    Cu.import("resource://firebug/firebug-trace-service.js");
+    FBTrace = traceConsoleService.getTracer("extensions.firebug");
 
     // quit-application observer
     var transport = this;
     Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService).addObserver({
         observe: function(subject, topic, data)
         {
-    		if (transport.debug) transport.debug("quit application observed");
+    		if (FBTrace.DBG_CROSSFIRE_TRANSPORT) FBTrace.sysout("quit application observed");
     		transport.close();
         }
     }, "quit-application", false);
 
-    this.debug("SocketTransport constructor returning this => " + this);
     return this;
 
 }
 
-SocketTransport.prototype =
-/** @lends SocketTransport */
+CrossfireSocketTransport.prototype =
+/** @lends CrossfireSocketTransport */
 {
 
     // ----- external API ----
 
     /**
-     * @name SocketTransport.addListener
+     * @name CrossfireSocketTransport.addListener
      * @function
      * @description Adds listener to be called when the transport receives requests.
      * The transport will pass a RequestPacket @see Packet.js
@@ -83,7 +74,7 @@ SocketTransport.prototype =
     },
 
     /**
-     * @name SocketTransport.sendResponse
+     * @name CrossfireSocketTransport.sendResponse
      * @function
      * @description Builds and sends a response packet. @see also Packet.js
      * @param command The name of the command for the response.
@@ -95,22 +86,22 @@ SocketTransport.prototype =
     sendResponse: function(command, requestSeq, body, running, success) {
         if (running == null || running == undefined) running = true; // assume we are running unless explicitly told otherwise
         success = !!(success); // convert to boolean
-        this._defer(function() { this._sendPacket(new Packets.ResponsePacket(command, requestSeq, body, running, success)); });
+        this._defer(function() { this._sendPacket(new ResponsePacket(command, requestSeq, body, running, success)); });
     },
 
     /**
-     * @name SocketTransport.sendEvent
+     * @name CrossfireSocketTransport.sendEvent
      * @function
      * @description Send an event packet. @see also Packet.js
      * @param event Event name
      * @param data optional JSON object containing additional data about the event.
      */
     sendEvent: function( event, data) {
-        this._defer(function() { this._sendPacket(new Packets.EventPacket(event, data)); });
+        this._defer(function() { this._sendPacket(new EventPacket(event, data)); });
     },
 
     /**
-     * @name SocketTransport.open
+     * @name CrossfireSocketTransport.open
      * @function
      * @param {String} host the hostname.
      * @param {Number} port the port.
@@ -122,7 +113,7 @@ SocketTransport.prototype =
     },
 
     /**
-     * @name SocketTransport.listen
+     * @name CrossfireSocketTransport.listen
      * @function
      * @param {String} host the hostname.
      * @param {Number} port the port.
@@ -133,12 +124,12 @@ SocketTransport.prototype =
         this.listening = true;
         this._createTransport(host, port);
 
-        if (this.debug)
-            this.debug("listening...");
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            FBTrace.sysout("listening...");
     },
 
     /**
-     * @name SocketTransport.close
+     * @name CrossfireSocketTransport.close
      * @function
      * @description close a previously opened connection.
      */
@@ -169,8 +160,8 @@ SocketTransport.prototype =
     /** @ignore */
     _createTransport: function (host, port) {
 
-        if (this.debug)
-            this.debug("_createTransport");
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            FBTrace.sysout("_createTransport");
 
         if (this.listening) {
 
@@ -217,8 +208,8 @@ SocketTransport.prototype =
     },
 
     _createInputStream: function() {
-        if (this.debug)
-            this.debug("_createInputStream");
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            FBTrace.sysout("_createInputStream");
 
         this._inputStream = this._transport.openInputStream(Ci.nsITransport.OPEN_BLOCKING | Ci.nsITransport.OPEN_UNBUFFERED, 0, 0);
 
@@ -229,12 +220,11 @@ SocketTransport.prototype =
     },
 
     _createOutputStream: function() {
-        if (this.debug)
-            this.debug("_createOutputStream");
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            FBTrace.sysout("_createOutputStream");
 
         this._outputStream = this._transport.openOutputStream(Ci.nsITransport.OPEN_BLOCKING | Ci.nsITransport.OPEN_UNBUFFERED, 0, 0);
 
-        var debug = this.debug;
         this._outputStreamCallback = {
                 _packets: [],
 
@@ -256,7 +246,7 @@ SocketTransport.prototype =
                             outputStream.flush();
                         }
                     } catch( ex) {
-                        if (debug) debug("onOutputStreamReady" + ex);
+                        if (FBTrace.DBG_CROSSFIRE_TRANSPORT) FBTrace.sysout("onOutputStreamReady" + ex);
                     }
                 }
             };
@@ -264,8 +254,8 @@ SocketTransport.prototype =
     },
 
     _destroyTransport: function() {
-        if (this.debug)
-            this.debug("_destroyTransport");
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            FBTrace.sysout("_destroyTransport");
 
         delete this._outputStreamCallback;
         delete this._outputStream;
@@ -295,8 +285,8 @@ SocketTransport.prototype =
 
     /** @ignore */
     _sendHandshake: function() {
-        if (this.debug)
-            this.debug("_sendHandshake");
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            FBTrace.sysout("_sendHandshake");
 
         this._outputStream.asyncWait( {
             QueryInterface: function( iid) {
@@ -321,8 +311,8 @@ SocketTransport.prototype =
 
     /** @ignore */
     _waitHandshake: function( timeout) {
-        if (this.debug)
-            this.debug("_waitHandshake");
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            FBTrace.sysout("_waitHandshake");
 
         this._defer(function() {
             try {
@@ -342,8 +332,8 @@ SocketTransport.prototype =
                 this._waitHandshake(HANDSHAKE_RETRY);
             } catch (e) {
                 //this.close();
-                if (this.debug)
-                    this.debug("_waitHandshake: " + e);
+                if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                    FBTrace.sysout("_waitHandshake: " + e);
 
                 if (this.listening) {
                     this._waitHandshake(HANDSHAKE_RETRY);
@@ -366,19 +356,19 @@ SocketTransport.prototype =
         try {
             avail = this._inputStream.available();
         } catch (e) {
-            if (this.debug) this.debug("_waitOnPacket " + e);
+            if (FBTrace.DBG_CROSSFIRE_TRANSPORT) FBTrace.sysout("_waitOnPacket " + e);
         }
         if (avail) {
             response = this._scriptableInputStream.read(avail);
 
-            if (this.debug)
-                this.debug("_waitOnPacket got response => " + response);
+            if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                FBTrace.sysout("_waitOnPacket got response => " + response);
 
             if (response) {
                 if (this.listening) {
-                    packet = new Packets.EventPacket(response);
+                    packet = new EventPacket(response);
                 } else {
-                    packet = new Packets.RequestPacket(response);
+                    packet = new RequestPacket(response);
                 }
                 this._notifyListeners(packet);
             }
@@ -397,7 +387,7 @@ SocketTransport.prototype =
                  if (handler)
                      handler.apply(listener, [status]);
             } catch (e) {
-                if (this.debug) this.debug("_notifyConnection " + e);
+                if (FBTrace.DBG_CROSSFIRE_TRANSPORT) FBTrace.sysout("_notifyConnection " + e);
             }
         }
     },
@@ -420,7 +410,7 @@ SocketTransport.prototype =
                     handler.apply(listener, [packet]);
 
             } catch (e) {
-                if (this.debug) this.debug("_notifyListeners " + e);
+                if (FBTrace.DBG_CROSSFIRE_TRANSPORT) FBTrace.sysout("_notifyListeners " + e);
             }
         }
     }
