@@ -41,6 +41,24 @@ FBL.ns(function() { with(FBL) {
               },
 
               /**
+                * @name FirebugEventAdaptor.onContextLoaded
+                * @function
+                * @return <code>context_id</code> of the loaded context.
+                */
+              "onContextLoaded": function() {
+            	  if (FBTrace.DBG_CROSSFIRE)
+                      FBTrace.sysout("CROSSFIRE EventAdaptor onContextLoaded");
+
+                  var href;
+                  try {
+                      href = this.context.window.location.href;
+                  } catch(e) {
+                      href = "";
+                  }
+                  return { "context_id": this.contextId, "data": { "href": href } };
+              },
+
+              /**
                * @name FirebugEventAdaptor.onContextDestroyed
                * @function
                * @return <code>context_id</code> of the destroyed context.

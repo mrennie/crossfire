@@ -12,8 +12,9 @@
             <image id="crossfireIcon" class="disconnected" tooltiptext="Crossfire: disconnected"/>
         </statusbarpanel>
         <menupopup id="crossfireStatusMenu" onpopupshowing="Crossfire.onStatusMenuShowing(this)">
-            <menuitem id="menu_connectCrossfire" label="Connect..." onclick="Crossfire.connect()"/>
-            <menuitem id="menu_listenCrossfire" label="Listen..." onclick="Crossfire.listen()"/>
+            <menuitem id="menu_startCrossfireServer" label="Start Server" onclick="Crossfire.startServer()"/>
+
+            <menuitem id="menu_connectCrossfireClient" label="Connect as client" onclick="Crossfire.connect()"/>
             <menuitem id="menu_disconnectCrossfire" class="hidden" label="Disconnect..." onclick="Crossfire.disconnect()"/>
         </menupopup>
     </statusbar>

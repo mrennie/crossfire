@@ -7,9 +7,27 @@ const Cu = Components.utils;
 const CROSSFIRE_HANDSHAKE        = "CrossfireHandshake\r\n";
 const HANDSHAKE_RETRY = 1007;
 
+var EXPORTED_SYMBOLS = [ "CrossfireSocketTransport", "getCrossfireServer", "CROSSFIRE_STATUS" ];
+
 Cu.import("resource://crossfire/Packet.js");
 
-var EXPORTED_SYMBOLS = ["CrossfireSocketTransport", "getCrossfireSocketTransport"];
+try {
+	Cu.import("resource://firebug/firebug-trace-service.js");
+	FBTrace = traceConsoleService.getTracer("extensions.firebug");
+} catch(ex) {
+	FBTrace = {};
+}
+
+var CROSSFIRE_STATUS = {
+
+		STATUS_DISCONNECTED: "disconnected",
+		STATUS_WAIT_SERVER: "wait_server",
+		STATUS_CONNECTING: "connecting",
+		STATUS_CONNECTED_SERVER: "connected_server",
+		STATUS_CONNECTED_CLIENT: "connected_client"
+
+};
+
 
 var _instance;
 
@@ -18,9 +36,12 @@ var _instance;
  * @function
  * @description returns the Singleton instance of Crossfire's SocketTransport object
  */
-function getCrossfireSocketTransport() {
+function getCrossfireServer() {
+	if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+		FBTrace.sysout("getCrossfireServer");
+
 	if (!_instance) {
-		_instance = new CrossfireSocketTransport();
+		_instance = new CrossfireSocketTransport(true);
 	}
 	return _instance;
 }
@@ -28,17 +49,20 @@ function getCrossfireSocketTransport() {
 /**
  * @name CrossfireSocketTransport
  * @constructor CrossfireSocketTransport
+ * @param isServer boolean specifying whether to start the transport as client or server
  * @description Firefox Socket Transport for remote debug protocol.
  * Opens a socket connection to a remote host and handles handshaking and
  * sending/receiving packets.
  */
-function CrossfireSocketTransport() {
+function CrossfireSocketTransport( isServer) {
 
     this.listeners = [];
     this.connected = false;
 
-    Cu.import("resource://firebug/firebug-trace-service.js");
-    FBTrace = traceConsoleService.getTracer("extensions.firebug");
+    this.isServer = isServer;
+
+    if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+    	FBTrace.sysout("Creating new CrossfireSocketTransport");
 
     // quit-application observer
     var transport = this;
@@ -109,23 +133,9 @@ CrossfireSocketTransport.prototype =
      */
     open: function( host, port) {
         this._destroyTransport();
-        this._createTransport(host, port, false);
-    },
-
-    /**
-     * @name CrossfireSocketTransport.listen
-     * @function
-     * @param {String} host the hostname.
-     * @param {Number} port the port.
-     * @description Listen for connections on localhost to the specified port.
-     */
-    listen: function( host, port) {
-        this._destroyTransport();
-        this.listening = true;
-        this._createTransport(host, port);
-
-        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
-            FBTrace.sysout("listening...");
+        this.host = host;
+        this.port = port;
+        this._createTransport(host, port, this.isServer);
     },
 
     /**
@@ -137,7 +147,7 @@ CrossfireSocketTransport.prototype =
         this.sendEvent("closed");
 
         this._defer(function() {
-            this._notifyConnection("closed");
+            this._notifyConnection(CROSSFIRE_STATUS.STATUS_DISCONNECTED);
             this.connected = false;
 
             if (this._inputStream) {
@@ -163,7 +173,7 @@ CrossfireSocketTransport.prototype =
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
             FBTrace.sysout("_createTransport");
 
-        if (this.listening) {
+        if (this.isServer) {
 
             var serverSocket = Cc["@mozilla.org/network/server-socket;1"]
                                   .createInstance(Ci.nsIServerSocket);
@@ -180,19 +190,18 @@ CrossfireSocketTransport.prototype =
                 },
 
                 onSocketAccepted: function( socket, transport) {
-                    if (self.debug)
-                        self.debug(" socket accepted. transport is => " + transport);
-
                     self._transport = transport;
 
                     self._createInputStream();
 
                     self._createOutputStream();
 
-                    self._notifyConnection("waitOnHandshake");
+                    self._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTING);
                     self._waitHandshake();
                 }
             });
+
+            this._notifyConnection(CROSSFIRE_STATUS.STATUS_WAIT_SERVER);
         } else {
             var transportService = Cc["@mozilla.org/network/socket-transport-service;1"]
                                       .getService(Ci.nsISocketTransportService);
@@ -250,7 +259,6 @@ CrossfireSocketTransport.prototype =
                     }
                 }
             };
-
     },
 
     _destroyTransport: function() {
@@ -300,11 +308,11 @@ CrossfireSocketTransport.prototype =
             }
         }, 0, 0, null);
 
-        if (this.listening) {
+        if (this.isServer) {
             this._waitOnPacket();
-            this._notifyConnection("handshakeComplete");
+            this._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER);
         } else {
-            this._notifyConnection("waitOnHandshake");
+            this._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTING);
             this._waitHandshake();
         }
     },
@@ -320,11 +328,11 @@ CrossfireSocketTransport.prototype =
                     if (this._scriptableInputStream.read(CROSSFIRE_HANDSHAKE.length) == CROSSFIRE_HANDSHAKE) {
                         this.connected = true;
                         this._outputStream.asyncWait(this._outputStreamCallback,0,0,null);
-                        if (this.listening) {
+                        if (this.isServer) {
                             this._sendHandshake();
                         } else {
                             this._waitOnPacket();
-                            this._notifyConnection("handshakeComplete");
+                            this._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT);
                         }
                         return;
                     }
@@ -335,7 +343,7 @@ CrossfireSocketTransport.prototype =
                 if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
                     FBTrace.sysout("_waitHandshake: " + e);
 
-                if (this.listening) {
+                if (this.isServer) {
                     this._waitHandshake(HANDSHAKE_RETRY);
                 }
             }
@@ -357,6 +365,10 @@ CrossfireSocketTransport.prototype =
             avail = this._inputStream.available();
         } catch (e) {
             if (FBTrace.DBG_CROSSFIRE_TRANSPORT) FBTrace.sysout("_waitOnPacket " + e);
+            this.close();
+            if (this.isServer) {
+            	this.open(this.host, this.port);
+            }
         }
         if (avail) {
             response = this._scriptableInputStream.read(avail);
@@ -365,7 +377,8 @@ CrossfireSocketTransport.prototype =
                 FBTrace.sysout("_waitOnPacket got response => " + response);
 
             if (response) {
-                if (this.listening) {
+                if (!this.isServer) {
+                	//FIXME: mcollins handle events/requests based on packet type, not server/client mode
                     packet = new EventPacket(response);
                 } else {
                     packet = new RequestPacket(response);
@@ -400,7 +413,8 @@ CrossfireSocketTransport.prototype =
             listener = this.listeners[i];
             try {
 
-                if (this.listening) {
+                if (!this.isServer) {
+                	//FIXME: mcollins handle events/requests based on packet type, not server/client mode
                     handler = listener["fireEvent"];
                 } else {
                     handler = listener["handleRequest"];

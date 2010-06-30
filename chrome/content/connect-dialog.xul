@@ -13,7 +13,17 @@
 
     <script type="application/javascript"><![CDATA[
         function onLoad( dialog) {
+        	var params = dialog.arguments[0];
+        	if (params.title)
+				document.title = params.title;
 
+			if (params.cli_host) {
+				document.getElementById("crossfire_host").value = params.cli_host;
+			}
+
+            if (params.cli_port) {
+            	params.port = document.getElementById("crossfire_port").value = params.cli_port;
+            }
         }
 
         function onAccept( dialog) {

@@ -28,8 +28,11 @@ CommandLineHandler.prototype =
 
     handle: function(cmdLine) {
         try {
-            this.host = cmdLine.handleFlagWithParam("crossfire-host", false);
-            this.port = cmdLine.handleFlagWithParam("crossfire-port", false);
+        	this.serverPort = cmdLine.handleFlagWithParam("crossfire-server-port", false);
+        	if (!this.serverPort) {
+        		this.host = cmdLine.handleFlagWithParam("crossfire-host", false);
+        		this.port = cmdLine.handleFlagWithParam("crossfire-port", false);
+        	}
         } catch (e) {
             Cu.reportError("Command Line Handler failed: " + e);
         }
@@ -45,6 +48,16 @@ CommandLineHandler.prototype =
         } catch (e2) {
             Cu.reportError("Command Line Handler failed: " + e2);
         }
+    },
+
+    /**
+     * @name CommandLineHandler.getServerPort
+     * @function
+     * @description  getServerPort
+     * @return the server port that was specified on the command-line.
+     */
+    getServerPort: function() {
+        return this.serverPort;
     },
 
     /**

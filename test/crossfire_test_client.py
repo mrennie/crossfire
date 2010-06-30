@@ -10,7 +10,7 @@
 # See license.txt for terms of usage.
 #
 # Usage:
-# $> python crossfire_server.py [<host>] <port>
+# $> python crossfire_test_client.py [<host>] <port>
 #
 
 import json, readline, socket, sys, threading, time
@@ -19,32 +19,39 @@ current_seq = 0
 
 HANDSHAKE_STRING = "CrossfireHandshake\r\n"
 
-class CrossfireServer:
+class CrossfireClient:
 
   def __init__(self, host, port):
     self.host = host
     self.port = port
 
   def start(self):
-    self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-      self.socket.bind((self.host, self.port))
-    except socket.error:
-      print socket.error
-      quit()
+    #self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #try:
+    #  self.socket.bind((self.host, self.port))
+    #except socket.error:
+    #  print socket.error
+    #  quit()
 
-    self.socket.listen(1)
-    self.conn, addr = self.socket.accept()
+    #self.socket.listen(1)
+    #self.conn, addr = self.socket.accept()
+    
+    #self.conn = self.socket.connect((self.host, self.port))
+
+    self.socket = socket.create_connection((self.host, self.port))
 
     self.socketCondition = threading.Condition()
-    self.reader = PacketReader(self.conn, self.socketCondition)
-    self.writer = PacketWriter(self.conn, self.socketCondition)
+    self.reader = PacketReader(self.socket, self.socketCondition)
+    self.writer = PacketWriter(self.socket, self.socketCondition)
+
+    self.socket.settimeout(10)
+    self.socket.send(HANDSHAKE_STRING)
 
     self.waitHandshake()
 
   def stop(self):
     try:
-      self.conn.close()
+      #self.conn.close()
       self.socket.close()
       self.socketCondition.acquire()
       self.reader.join(10)
@@ -57,15 +64,15 @@ class CrossfireServer:
     self.start()
 
   def waitHandshake(self):
+    shake = ''
     print 'Waiting for Crossfire handshake...'
     try:
-      shake = self.conn.recv(len(HANDSHAKE_STRING))
-    except socket.error:
-      print socket.error
+      shake = self.socket.recv(len(HANDSHAKE_STRING))
+      print shake
+    except socket.error, msg:
+      print msg	
     if shake == HANDSHAKE_STRING:
       print 'Received Crossfire handshake.'
-      self.conn.settimeout(3)
-      self.conn.send(HANDSHAKE_STRING)
 
       self.socketCondition.acquire()
       self.writer.start()
@@ -252,7 +259,7 @@ class CommandLine(threading.Thread):
 
 
 if __name__ == "__main__":
-  server = None
+  client = None
   commandLine = None
 
   def main():
@@ -270,24 +277,24 @@ if __name__ == "__main__":
       port = sys.argv[2]
 
     if host and port:
-      print 'Starting Crossfire server on ' + host + ':' + port
-      server = CrossfireServer(host, int(port))
+      print 'Starting Crossfire client on ' + host + ':' + port
+      client = CrossfireClient(host, int(port))
       commandLine = CommandLine()
 
       try:
-        server.start()
+        client.start()
         commandLine.start()
 
         print "Sending version command...\n"
         command = Command("", "version")
-        server.sendPacket(command)
+        client.sendPacket(command)
 
         print "Listing contexts...\n"
         command = Command("", "listcontexts")
-        server.sendPacket(command)
+        client.sendPacket(command)
 
         while True:
-            packet = server.getPacket()
+            packet = client.getPacket()
             if packet:
               print
               json.dump(packet, sys.stdout, sort_keys=True, indent=2)
@@ -296,18 +303,18 @@ if __name__ == "__main__":
               readline.redisplay()
 
               if 'event' in packet and packet['event'] == "closed":
-                  server.restart()
+                  client.restart()
 
             command = commandLine.getCommand()
             if command:
                 print "\nSending command => " + command.command
-                server.sendPacket(command)
+                client.sendPacket(command)
 
       except (KeyboardInterrupt):
         pass
     else:
       print 'No host and/or port specified.'
-      print 'Usage: $> python crossfire_server.py [<host>] <port>'
+      print 'Usage: $> python crossfire_test_client.py [<host>] <port>'
 
     quit()
 
@@ -315,7 +322,7 @@ if __name__ == "__main__":
     global server
     global commandLine
 
-    print "\nStopping Server..."
+    print "\nShutting down..."
 
     try:
       server.stop()

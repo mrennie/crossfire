@@ -17,8 +17,8 @@
     list-style-image: url(chrome://crossfire/skin/crossfire-disconnected.gif);
 }
 
-#crossfireIcon.listening {
-    list-style-image: url(chrome://crossfire/skin/crossfire-listening.gif);
+#crossfireIcon.waiting {
+    list-style-image: url(chrome://crossfire/skin/crossfire-waiting.gif);
 }
 
 menuitem.hidden {
