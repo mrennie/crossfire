@@ -121,6 +121,8 @@ CrossfireSocketTransport.prototype =
      * @param data optional JSON object containing additional data about the event.
      */
     sendEvent: function( event, data) {
+    	if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+    		FBTrace.sysout("sendEvent " + event + " :: " + data);
         this._defer(function() { this._sendPacket(new EventPacket(event, data)); });
     },
 
@@ -249,8 +251,12 @@ CrossfireSocketTransport.prototype =
 
                 onOutputStreamReady: function( outputStream) {
                     try {
-                        var packet;
-                        while ((packet = this._packets.pop())) {
+                        var packet = this._packets.pop();
+                        if (packet) {
+                            //while ((packet = this._packets.pop())) {
+
+                        	if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                        		FBTrace.sysout("onOutputStreamReady sending packet: " + packet);
                             outputStream.write(packet.data, packet.length);
                             outputStream.flush();
                         }
@@ -296,6 +302,7 @@ CrossfireSocketTransport.prototype =
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
             FBTrace.sysout("_sendHandshake");
 
+        var self = this;
         this._outputStream.asyncWait( {
             QueryInterface: function( iid) {
                 if(!iid.equals(Ci.nsISupports) && !iid.equals(Ci.nsIOutputStreamCallback))
@@ -303,18 +310,21 @@ CrossfireSocketTransport.prototype =
                 return this;
             },
             onOutputStreamReady: function( outputStream) {
+            	outputStream.flush();
                 outputStream.write(CROSSFIRE_HANDSHAKE, CROSSFIRE_HANDSHAKE.length);
                 outputStream.flush();
+
+                if (self.isServer) {
+                    self.connected = true;
+                    self._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER);
+                    self._waitOnPacket();
+                } else {
+                    self._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTING);
+                    self._waitHandshake();
+                }
+
             }
         }, 0, 0, null);
-
-        if (this.isServer) {
-            this._waitOnPacket();
-            this._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER);
-        } else {
-            this._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTING);
-            this._waitHandshake();
-        }
     },
 
     /** @ignore */
@@ -326,13 +336,13 @@ CrossfireSocketTransport.prototype =
             try {
                 if (this._inputStream.available() == CROSSFIRE_HANDSHAKE.length) {
                     if (this._scriptableInputStream.read(CROSSFIRE_HANDSHAKE.length) == CROSSFIRE_HANDSHAKE) {
-                        this.connected = true;
                         this._outputStream.asyncWait(this._outputStreamCallback,0,0,null);
                         if (this.isServer) {
                             this._sendHandshake();
                         } else {
                             this._waitOnPacket();
                             this._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT);
+                            this.connected = true;
                         }
                         return;
                     }
@@ -352,6 +362,8 @@ CrossfireSocketTransport.prototype =
 
     /** @ignore */
     _sendPacket: function( packet) {
+    	if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+    		FBTrace.sysout("_sendPacket " + packet);
         this._outputStreamCallback.addPacket(packet);
         if (this.connected) {
             this._outputStream.asyncWait(this._outputStreamCallback,0,0,null);

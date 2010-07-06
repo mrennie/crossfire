@@ -174,7 +174,7 @@ FBL.ns(function() { with(FBL) {
         onConnectionStatusChanged: function( status) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE onConnectionStatusChanged: " + status);
-
+            this.status = status;
             this.updateStatusText(status);
             this.updateStatusIcon(status);
         },
@@ -195,7 +195,7 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE handleEvent arguments: " + args);
 
-            if (this.transport && this.status == "connected") {
+            if (this.transport && this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
                 var eventAdaptor = context.Crossfire.eventAdaptor;
                 var eventData = eventAdaptor[eventName].apply(eventAdaptor, args);
                 if (FBTrace.DBG_CROSSFIRE)
@@ -211,18 +211,18 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  onSourceFileCreated => " + sourceFile.href);
 
-            if (this.status == "connected") {
-                var context_href;
-                try {
-                    context_href = context.window.location.href;
-                } catch(e) {
-                    context_href = "";
-                }
 
-                context.Crossfire.commandAdaptor.sourceFileLoaded(sourceFile);
-
-                this.handleEvent(context, "onScript", { "href": sourceFile.href, "context_href": context_href });
+            var context_href;
+            try {
+                context_href = context.window.location.href;
+            } catch(e) {
+                context_href = "";
             }
+
+            context.Crossfire.commandAdaptor.sourceFileLoaded(sourceFile);
+
+            this.handleEvent(context, "onScript", { "href": sourceFile.href, "context_href": context_href });
+
         },
 
 
@@ -236,16 +236,14 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  initContext");
 
-            if (this.status == "connected") {
-                context.Crossfire = { "crossfire_id" : generateId() };
+            context.Crossfire = { "crossfire_id" : generateId() };
 
-                context.Crossfire["commandAdaptor"] = new Crossfire.FirebugCommandAdaptor(context);
-                context.Crossfire["eventAdaptor"] = new Crossfire.FirebugEventAdaptor(context);
+            context.Crossfire["commandAdaptor"] = new Crossfire.FirebugCommandAdaptor(context);
+            context.Crossfire["eventAdaptor"] = new Crossfire.FirebugEventAdaptor(context);
 
-                this.contexts.push(context);
+            this.contexts.push(context);
 
-                this.handleEvent(context, "onContextCreated");
-            }
+            this.handleEvent(context, "onContextCreated");
 
         },
 
@@ -257,17 +255,18 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  loadedContext");
 
-            //if (this.status == "connected") {
             //context.Crossfire.commandAdaptor.setContextLoaded();
-            //}
 
             this.handleEvent(context, "onContextLoaded");
 
         },
 
-        /* @ignore
+        /**
+         *
+         * @description send context changed event
+         *
         showContext: function() {
-          //TODO: ?? this.handleEvent("navigated");
+        	this.handleEvent(oldContext, "onContextSwitched", newContext);
         },
         */
 
@@ -283,9 +282,7 @@ FBL.ns(function() { with(FBL) {
                 if (this.contexts[i].Crossfire.crossfire_id == contextId) {
                     delete this.contexts[i].Crossfire.currentFrame;
 
-                    if (this.status == "connected") {
-                        this.handleEvent(this.contexts[i], "onContextDestroyed");
-                    }
+                    this.handleEvent(this.contexts[i], "onContextDestroyed");
 
                     this.contexts.splice(i, 1);
                     break;
