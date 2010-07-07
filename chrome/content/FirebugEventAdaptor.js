@@ -59,6 +59,38 @@ FBL.ns(function() { with(FBL) {
               },
 
               /**
+               * @name FirebugEventAdaptor.onContextChanged
+               * @function
+               * @return <code>old_context_id</code> and <code>new_context_id</code>
+               */
+              "onContextChanged": function( newContext) {
+            	  if (FBTrace.DBG_CROSSFIRE)
+                      FBTrace.sysout("CROSSFIRE EventAdaptor onContextChanged");
+
+
+                  var newContextId, newHref, href;
+
+                  newContextId = newContext.Crossfire.crossfire_id;
+
+
+                  try {
+                      href = this.context.window.location.href;
+                  } catch(e) {
+                      href = "";
+                  }
+
+                  try {
+                      newHref = newContext.window.location.href;
+                  } catch(e) {
+                      newHref = "";
+                  }
+
+
+                  return { "context_id": this.contextId, "new_context_id": newContextId, "data": { "href": href, "new_href": newHref } };
+
+              },
+
+              /**
                * @name FirebugEventAdaptor.onContextDestroyed
                * @function
                * @return <code>context_id</code> of the destroyed context.

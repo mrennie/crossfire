@@ -263,12 +263,13 @@ FBL.ns(function() { with(FBL) {
 
         /**
          *
-         * @description send context changed event
-         *
-        showContext: function() {
-        	this.handleEvent(oldContext, "onContextSwitched", newContext);
+         * @description send context change event
+         */
+        showContext: function(browser, context) {
+        	this.handleEvent(this.currentContext, "onContextChanged", context);
+        	this.currentContext = context;
         },
-        */
+
 
         /**
          *  @description Remove the context from our list of contexts.
