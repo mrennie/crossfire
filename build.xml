@@ -8,7 +8,6 @@
     <target name="all" depends="clean,prepare,xpi,doc"/>
 
     <target name="xpi"
-        depends="prepare"
         description="zip files into firefox XPI">
         <mkdir dir="${dist.dir}"/>
 
