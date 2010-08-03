@@ -5,7 +5,7 @@
  *
  */
 
-const CROSSFIRE_VERSION = "0.2";
+const CROSSFIRE_VERSION = "0.3";
 var CONTEXT_ID_SEED = Math.round(Math.random() * 10000000);
 
 var Crossfire = Crossfire || {};
@@ -29,9 +29,9 @@ FBL.ns(function() { with(FBL) {
 
         /** extends Firebug.Module */
         initialize: function() {
-    		var host, port, serverPort;
+            var host, port, serverPort;
 
-    		Components.utils.import("resource://crossfire/SocketTransport.js");
+            Components.utils.import("resource://crossfire/SocketTransport.js");
 
             var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
 
@@ -42,7 +42,7 @@ FBL.ns(function() { with(FBL) {
 
                 this.startServer("localhost", serverPort);
 
-    		} else if (host && port) {
+            } else if (host && port) {
                 host = commandLine.getHost();
                 port = commandLine.getPort();
 
@@ -70,7 +70,7 @@ FBL.ns(function() { with(FBL) {
             Firebug.HTMLModule.addListener(this);
 
             if (!this.transport)
-            	this.transport = new CrossfireSocketTransport();
+                this.transport = new CrossfireSocketTransport();
 
             this.transport.addListener(this);
             this.transport.open(host, port);
@@ -87,19 +87,19 @@ FBL.ns(function() { with(FBL) {
 
             this.serverPort = port;
 
-        	try {
-        		this.transport = getCrossfireServer();
-        		this.connect(host, port);
-        	} catch(e) {
-        		FBTrace.sysout(e);
-        	}
+            try {
+                this.transport = getCrossfireServer();
+                this.connect(host, port);
+            } catch(e) {
+                FBTrace.sysout(e);
+            }
         },
 
         /**
          *
          */
         stopServer: function() {
-        	this.transport.close();
+            this.transport.close();
         },
 
         /**
@@ -266,8 +266,8 @@ FBL.ns(function() { with(FBL) {
          * @description send context change event
          */
         showContext: function(browser, context) {
-        	this.handleEvent(this.currentContext, "onContextChanged", context);
-        	this.currentContext = context;
+            this.handleEvent(this.currentContext, "onContextChanged", context);
+            this.currentContext = context;
         },
 
 
@@ -564,8 +564,8 @@ FBL.ns(function() { with(FBL) {
                 FBTrace.sysout("CROSSFIRE updateStatusIcon");
             var icon = $("crossfireIcon");
             if (icon) {
-            	if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER
-            			|| status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
+                if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER
+                        || status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
                     setClass($("menu_connectCrossfireClient"), "hidden");
                     setClass($("menu_startCrossfireServer"), "hidden");
 
@@ -576,8 +576,8 @@ FBL.ns(function() { with(FBL) {
                     setClass(icon, "connected");
 
                 } else if (status == CROSSFIRE_STATUS.STATUS_WAIT_SERVER
-                		/* TODO: create a separate icon state for 'connecting' */
-                		|| status == CROSSFIRE_STATUS.STATUS_CONNECTING) {
+                        /* TODO: create a separate icon state for 'connecting' */
+                        || status == CROSSFIRE_STATUS.STATUS_CONNECTING) {
                     setClass($("menu_connectCrossfireClient"), "hidden");
                     setClass($("menu_startCrossfireServer"), "hidden");
 
@@ -600,22 +600,22 @@ FBL.ns(function() { with(FBL) {
         },
 
         updateStatusText: function( status) {
-        	if (FBTrace.DBG_CROSSFIRE)
-        	    FBTrace.sysout("CROSSFIRE updateStatusText: " + status);
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CROSSFIRE updateStatusText: " + status);
 
             var icon = $("crossfireIcon");
 
-        	if (status == CROSSFIRE_STATUS.STATUS_DISCONNECTED) {
-        		$("crossfireIcon").setAttribute("tooltiptext", "Crossfire: disconnected.");
-        	} else if (status == CROSSFIRE_STATUS.STATUS_WAIT_SERVER) {
-        		$("crossfireIcon").setAttribute("tooltiptext", "Crossfire: accepting connections on port " + this.serverPort);
-        	} else if (status == CROSSFIRE_STATUS.STATUS_CONNECTING) {
-        		$("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connecting...");
-        	} else if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
-        		$("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connected to client on port " + this.serverPort);
-        	} else if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
-        		$("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connected to " + this.host + ":" + this.port);
-        	}
+            if (status == CROSSFIRE_STATUS.STATUS_DISCONNECTED) {
+                $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: disconnected.");
+            } else if (status == CROSSFIRE_STATUS.STATUS_WAIT_SERVER) {
+                $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: accepting connections on port " + this.serverPort);
+            } else if (status == CROSSFIRE_STATUS.STATUS_CONNECTING) {
+                $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connecting...");
+            } else if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
+                $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connected to client on port " + this.serverPort);
+            } else if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
+                $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connected to " + this.host + ":" + this.port);
+            }
 
         },
 
@@ -676,7 +676,7 @@ FBL.ns(function() { with(FBL) {
     };
 
     Crossfire.stopServer = function() {
-    	 if (FBTrace.DBG_CROSSFIRE)
+         if (FBTrace.DBG_CROSSFIRE)
              FBTrace.sysout("Crossfire.stopServer");
 
     };
@@ -707,9 +707,9 @@ FBL.ns(function() { with(FBL) {
 
         var title;
         if (isServer) {
-        	title = "Crossfire - Start Server";
+            title = "Crossfire - Start Server";
         } else {
-        	title = "Crossfire - Connect to Server";
+            title = "Crossfire - Connect to Server";
         }
 
         return { "host": null, "port": null, "title": title, "cli_host": host, "cli_port": port };
