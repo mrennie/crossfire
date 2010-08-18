@@ -12,19 +12,19 @@ var EXPORTED_SYMBOLS = [ "CrossfireSocketTransport", "getCrossfireServer", "CROS
 Cu.import("resource://crossfire/Packet.js");
 
 try {
-	Cu.import("resource://firebug/firebug-trace-service.js");
-	FBTrace = traceConsoleService.getTracer("extensions.firebug");
+    Cu.import("resource://firebug/firebug-trace-service.js");
+    FBTrace = traceConsoleService.getTracer("extensions.firebug");
 } catch(ex) {
-	FBTrace = {};
+    FBTrace = {};
 }
 
 var CROSSFIRE_STATUS = {
 
-		STATUS_DISCONNECTED: "disconnected",
-		STATUS_WAIT_SERVER: "wait_server",
-		STATUS_CONNECTING: "connecting",
-		STATUS_CONNECTED_SERVER: "connected_server",
-		STATUS_CONNECTED_CLIENT: "connected_client"
+        STATUS_DISCONNECTED: "disconnected",
+        STATUS_WAIT_SERVER: "wait_server",
+        STATUS_CONNECTING: "connecting",
+        STATUS_CONNECTED_SERVER: "connected_server",
+        STATUS_CONNECTED_CLIENT: "connected_client"
 
 };
 
@@ -37,13 +37,13 @@ var _instance;
  * @description returns the Singleton instance of Crossfire's SocketTransport object
  */
 function getCrossfireServer() {
-	if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
-		FBTrace.sysout("getCrossfireServer");
+    if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+        FBTrace.sysout("getCrossfireServer");
 
-	if (!_instance) {
-		_instance = new CrossfireSocketTransport(true);
-	}
-	return _instance;
+    if (!_instance) {
+        _instance = new CrossfireSocketTransport(true);
+    }
+    return _instance;
 }
 
 /**
@@ -62,15 +62,15 @@ function CrossfireSocketTransport( isServer) {
     this.isServer = isServer;
 
     if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
-    	FBTrace.sysout("Creating new CrossfireSocketTransport");
+        FBTrace.sysout("Creating new CrossfireSocketTransport");
 
     // quit-application observer
     var transport = this;
     Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService).addObserver({
         observe: function(subject, topic, data)
         {
-    		if (FBTrace.DBG_CROSSFIRE_TRANSPORT) FBTrace.sysout("quit application observed");
-    		transport.close();
+            if (FBTrace.DBG_CROSSFIRE_TRANSPORT) FBTrace.sysout("quit application observed");
+            transport.close();
         }
     }, "quit-application", false);
 
@@ -121,8 +121,8 @@ CrossfireSocketTransport.prototype =
      * @param data optional JSON object containing additional data about the event.
      */
     sendEvent: function( event, data) {
-    	if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
-    		FBTrace.sysout("sendEvent " + event + " :: " + data);
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            FBTrace.sysout("sendEvent " + event + " :: " + data);
         this._defer(function() { this._sendPacket(new EventPacket(event, data)); });
     },
 
@@ -165,6 +165,7 @@ CrossfireSocketTransport.prototype =
             }
 
             this._destroyTransport();
+            this._buffer='';
         });
     },
 
@@ -255,8 +256,8 @@ CrossfireSocketTransport.prototype =
                         if (packet) {
                             //while ((packet = this._packets.pop())) {
 
-                        	if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
-                        		FBTrace.sysout("onOutputStreamReady sending packet: " + packet);
+                            if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                                FBTrace.sysout("onOutputStreamReady sending packet: " + packet);
                             outputStream.write(packet.data, packet.length);
                             outputStream.flush();
                         }
@@ -310,7 +311,7 @@ CrossfireSocketTransport.prototype =
                 return this;
             },
             onOutputStreamReady: function( outputStream) {
-            	outputStream.flush();
+                outputStream.flush();
                 outputStream.write(CROSSFIRE_HANDSHAKE, CROSSFIRE_HANDSHAKE.length);
                 outputStream.flush();
 
@@ -362,24 +363,31 @@ CrossfireSocketTransport.prototype =
 
     /** @ignore */
     _sendPacket: function( packet) {
-    	if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
-    		FBTrace.sysout("_sendPacket " + packet);
-        this._outputStreamCallback.addPacket(packet);
-        if (this.connected) {
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            FBTrace.sysout("_sendPacket " + packet);
+        if (this._outputStreamCallback) {
+			this._outputStreamCallback.addPacket(packet);
+		}
+        if (this.connected && this._outputStream) {
             this._outputStream.asyncWait(this._outputStreamCallback,0,0,null);
         }
     },
 
     /** @ignore */
+    _buffer: '',
+
+    /** @ignore */
     _waitOnPacket: function() {
-        var avail, response, packet;
+        var avail, response;
+		if (!this.connected || !this._inputStream)
+			return;
         try {
             avail = this._inputStream.available();
         } catch (e) {
             if (FBTrace.DBG_CROSSFIRE_TRANSPORT) FBTrace.sysout("_waitOnPacket " + e);
             this.close();
             if (this.isServer) {
-            	this.open(this.host, this.port);
+                this.open(this.host, this.port);
             }
         }
         if (avail) {
@@ -389,18 +397,44 @@ CrossfireSocketTransport.prototype =
                 FBTrace.sysout("_waitOnPacket got response => " + response);
 
             if (response) {
-                if (!this.isServer) {
-                	//FIXME: mcollins handle events/requests based on packet type, not server/client mode
-                    packet = new EventPacket(response);
-                } else {
-                    packet = new RequestPacket(response);
-                }
-                this._notifyListeners(packet);
+                this._buffer += response;
+                
+                while(this._parseBuffer()){
+                    // until nothing more is recognized
+                };
             }
         }
         if (this.connected) {
             this._defer(function() { this._waitOnPacket();});
         }
+    },
+
+    /** @ignore */
+     _parseBuffer: function(){
+        /*
+         * Buffer always starts with:
+         *   "Content-Length:" + str.length + "\r\n"
+         */
+        var block, packet,
+            lengthIndexBegin = this._buffer.indexOf("Content-Length:"),
+            lengthIndexEnd   = this._buffer.indexOf("\r\n"),
+            length = Number(this._buffer.substring(lengthIndexBegin + "Content-Length:".length, lengthIndexEnd));
+        if (lengthIndexBegin===0 && FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            FBTrace.sysout("_parseBuffer had extra stuff in the buffer, being ignored: " + this._buffer.substring(0,lengthIndexBegin)); // have yet to see this happen
+            
+        if (lengthIndexBegin != -1 && lengthIndexEnd != -1 && this._buffer.length >= lengthIndexEnd + 2 + length) {
+            block = this._buffer.substr(lengthIndexEnd+2, length);
+            this._buffer = this._buffer.slice(lengthIndexEnd + 2 + length);
+            if (!this.isServer) {
+                //FIXME: mcollins handle events/requests based on packet type, not server/client mode
+                packet = new EventPacket(block);
+            } else {
+                packet = new RequestPacket(block);
+            }
+            this._notifyListeners(packet);
+            return true;
+        }
+        return false;
     },
 
     /** @ignore */
@@ -426,7 +460,7 @@ CrossfireSocketTransport.prototype =
             try {
 
                 if (!this.isServer) {
-                	//FIXME: mcollins handle events/requests based on packet type, not server/client mode
+                    //FIXME: mcollins handle events/requests based on packet type, not server/client mode
                     handler = listener["fireEvent"];
                 } else {
                     handler = listener["handleRequest"];

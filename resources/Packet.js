@@ -31,26 +31,6 @@ var EXPORTED_SYMBOLS = ["EventPacket", "RequestPacket", "ResponsePacket"];
         toPacketString: function( str) {
             return "Content-Length:" + str.length + "\r\n" + str; // HTTP-ish style
             //return (str.length.toString(16)) + "\r\n" + str + "\r\n0\r\n"; // chunked-encoding style
-        },
-
-        parsePacketString: function( blob) {
-            var chunks, length, message = "";
-            chunks = blob.split("\r\n");
-            for (var i = 0; i < chunks.length; i+=2) {
-                    //length = parseInt(chunks[i], 16); // chunked-style
-                    length = 0;
-                    var headers = chunks[i].split(':');
-                    for (var j = 0; j < headers.length; j+=2) {
-                        if (headers[j].indexOf("Content-Length") != -1) {
-                            length = parseInt(headers[j+1]);
-                            break;
-                        }
-                    }
-
-                    if (length > 0 && chunks[i+1].length == length)
-                        message += chunks[i+1];
-            }
-            return message;
         }
     };
 
@@ -66,7 +46,7 @@ var EXPORTED_SYMBOLS = ["EventPacket", "RequestPacket", "ResponsePacket"];
             var packet = {
                     "seq": sequence,
                     "type":	"event",
-                    "event": event,
+                    "event": event
             };
             for (var prop in data) {
                 packet[prop] = data[prop];
@@ -76,8 +56,7 @@ var EXPORTED_SYMBOLS = ["EventPacket", "RequestPacket", "ResponsePacket"];
             this.length = this.data.length;
         } else {
             //FIXME: incoming event hack
-            var unchunked = this.parsePacketString(event);
-            var json = this.parseJSON(unchunked);
+            var json = this.parseJSON(event);
             for (var prop in json) {
                 this[prop] = json[prop];
             }
@@ -94,8 +73,7 @@ var EXPORTED_SYMBOLS = ["EventPacket", "RequestPacket", "ResponsePacket"];
      * @param packetString The unprocessed UTF-8 packet string.
      */
     function RequestPacket( packetString) {
-        var unchunked = this.parsePacketString(packetString);
-        var json = this.parseJSON(unchunked);
+        var json = this.parseJSON(packetString);
         for (var prop in json) {
             this[prop] = json[prop];
         }
