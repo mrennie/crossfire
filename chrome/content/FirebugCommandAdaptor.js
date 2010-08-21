@@ -111,7 +111,15 @@ FBL.ns(function() { with(FBL) {
             } else {
                 if (FBTrace.DBG_CROSSFIRE)
                     FBTrace.sysout("CROSSFIRE CommandAdaptor evaluating '" + expression + "' in sandbox.");
-               result = Firebug.CommandLine.evaluateInSandbox(expression, this.context);
+                Firebug.CommandLine.evaluate(expression, this.context,null,null,function(r){
+                    result = r;
+                    if (FBTrace.DBG_CROSSFIRE)
+                        FBTrace.sysout("CROSSFIRE evaluating success",[expression,result]);
+                },function(){
+                    if (FBTrace.DBG_CROSSFIRE)
+                        FBTrace.sysout("CROSSFIRE evaluating failure",expression,arguments);
+                    throw new Error("Failure to evaluate expression: " + expression);
+                });
             }
 
             return { "context_id": this.contextId, "result": result };
