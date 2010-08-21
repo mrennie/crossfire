@@ -146,7 +146,7 @@ CrossfireSocketTransport.prototype =
      * @description close a previously opened connection.
      */
     close: function() {
-        this.sendEvent("closed");
+        this.sendEvent("closed",{});
 
         this._defer(function() {
             this._notifyConnection(CROSSFIRE_STATUS.STATUS_DISCONNECTED);
