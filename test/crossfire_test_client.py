@@ -168,7 +168,7 @@ class PacketWriter(threading.Thread):
         if len(self.packetQueue) > 0:
           packet = self.packetQueue.pop()
           json_str = json.dumps(packet.packet)
-          packet_string = "Content-Length:" + str(len(json_str)) + "\r\n" + json_str
+          packet_string = "Content-Length:" + str(len(json_str)) + "\r\n\r\n" + json_str
           self.conn.send(packet_string)
 
         self.cv.notifyAll()
