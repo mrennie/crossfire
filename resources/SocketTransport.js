@@ -366,8 +366,8 @@ CrossfireSocketTransport.prototype =
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
             FBTrace.sysout("_sendPacket " + packet);
         if (this._outputStreamCallback) {
-			this._outputStreamCallback.addPacket(packet);
-		}
+            this._outputStreamCallback.addPacket(packet);
+        }
         if (this.connected && this._outputStream) {
             this._outputStream.asyncWait(this._outputStreamCallback,0,0,null);
         }
@@ -379,8 +379,8 @@ CrossfireSocketTransport.prototype =
     /** @ignore */
     _waitOnPacket: function() {
         var avail, response;
-		if (!this.connected || !this._inputStream)
-			return;
+        if (!this.connected || !this._inputStream)
+            return;
         try {
             avail = this._inputStream.available();
         } catch (e) {
@@ -405,26 +405,34 @@ CrossfireSocketTransport.prototype =
             }
         }
         if (this.connected) {
-            this._defer(function() { this._waitOnPacket();});
+            this._defer(function() { this._waitOnPacket();},50);
         }
     },
 
     /** @ignore */
      _parseBuffer: function(){
         /*
-         * Buffer always starts with:
+         * Buffer always has length header:
          *   "Content-Length:" + str.length + "\r\n"
          */
-        var block, packet,
-            lengthIndexBegin = this._buffer.indexOf("Content-Length:"),
-            lengthIndexEnd   = this._buffer.indexOf("\r\n"),
-            length = Number(this._buffer.substring(lengthIndexBegin + "Content-Length:".length, lengthIndexEnd));
-        if (lengthIndexBegin===0 && FBTrace.DBG_CROSSFIRE_TRANSPORT)
-            FBTrace.sysout("_parseBuffer had extra stuff in the buffer, being ignored: " + this._buffer.substring(0,lengthIndexBegin)); // have yet to see this happen
+        var block, packet, length, i, headers = {}, header,
+            headersEnd       = this._buffer.indexOf("\r\n\r\n"),
+            contentBegin     = headersEnd + 4,
+            headersRaw       = this._buffer.substring(0,headersEnd);
+			
+        headersRaw = headersRaw.split("\r\n");
+        for (i=0; i < headersRaw.length; i++)
+        {
+            header = /([\w-]+)\s*:\s*(\S+)/.exec(headersRaw[i]);
+            if (header)
+                headers[header[1].toLowerCase()] = header[2];
+        }
+        
+        length = parseInt(headers['content-length'],10);
             
-        if (lengthIndexBegin != -1 && lengthIndexEnd != -1 && this._buffer.length >= lengthIndexEnd + 2 + length) {
-            block = this._buffer.substr(lengthIndexEnd+2, length);
-            this._buffer = this._buffer.slice(lengthIndexEnd + 2 + length);
+        if (this._buffer.length >= contentBegin + length) {
+            block = this._buffer.substr(contentBegin, length);
+            this._buffer = this._buffer.slice(contentBegin + length);
             if (!this.isServer) {
                 //FIXME: mcollins handle events/requests based on packet type, not server/client mode
                 packet = new EventPacket(block);

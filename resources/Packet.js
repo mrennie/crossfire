@@ -29,7 +29,7 @@ var EXPORTED_SYMBOLS = ["EventPacket", "RequestPacket", "ResponsePacket"];
         },
 
         toPacketString: function( str) {
-            return "Content-Length:" + str.length + "\r\n" + str; // HTTP-ish style
+            return "Content-Length:" + str.length + "\r\n\r\n" + str; // HTTP-ish style
             //return (str.length.toString(16)) + "\r\n" + str + "\r\n0\r\n"; // chunked-encoding style
         }
     };
