@@ -312,7 +312,7 @@ FBL.ns(function() { with(FBL) {
                 if (context.window && !context.window.closed) {
                     href = context.window.location.href;
                 }
-                contexts.push( { "crossfire_id" : context.Crossfire.crossfire_id,
+                contexts.push( { "context_id" : context.Crossfire.crossfire_id,
                                  "href"         : href ,
                                  "current"      : this.currentContext == context });
             }
