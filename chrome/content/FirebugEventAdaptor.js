@@ -231,7 +231,7 @@ FBL.ns(function() { with(FBL) {
                 if (FBTrace.DBG_CROSSFIRE)
                      FBTrace.sysout("CROSSFIRE EventAdaptor onInspectNode: ", node);
 
-                if (FireDiff) { //FIXME: remove dependency on FireDiff
+                if (typeof FireDiff != 'undefined') { //FIXME: remove dependency on FireDiff
                     var nodePath = FireDiff.Path.getElementPath(node, true);
                 }
 
