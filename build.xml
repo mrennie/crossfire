@@ -3,49 +3,11 @@
 
     <property name="dist.dir" value="dist/"/>
     <property name="build.dir" value="build/"/>
-    <property file="version.properties"/>
 
-    <target name="all" depends="clean,prepare,xpi,doc"/>
+    <target name="all" depends="firefox,clean,doc"/>
 
-    <target name="xpi"
-        description="zip files into firefox XPI">
-        <mkdir dir="${dist.dir}"/>
-
-        <zip
-            destfile="${dist.dir}/${ant.project.name}-${VERSION}${RELEASE}.xpi"
-            basedir="${build.dir}" includes="**/*" />
-
-        <copy file="update.rdf"
-                tofile="${dist.dir}/update.rdf"
-                overwrite="true">
-                <filterchain>
-                        <replacetokens>
-                             <token key="VERSION" value="${VERSION}"/>
-                             <token key="RELEASE" value="${RELEASE}"/>
-                        </replacetokens>
-                </filterchain>
-        </copy>
-    </target>
-
-    <target name="prepare" depends="clean">
-        <mkdir dir="${build.dir}"/>
-        <copy file="install.rdf"
-                tofile="${build.dir}/install.rdf"
-                overwrite="true">
-                <filterchain>
-                        <replacetokens>
-                             <token key="VERSION" value="${VERSION}"/>
-                             <token key="RELEASE" value="${RELEASE}"/>
-                        </replacetokens>
-                </filterchain>
-        </copy>
-        <copy todir="${build.dir}">
-            <fileset dir="${basedir}" includes="chrome.manifest,license.txt" />
-            <fileset dir="${basedir}" includes="chrome/**/*"/>
-            <fileset dir="${basedir}" includes="defaults/**/*"/>
-            <fileset dir="${basedir}" includes="components/**/*"/>
-            <fileset dir="${basedir}" includes="resources/**/*"/>
-        </copy>
+    <target name="firefox">
+         <ant dir="${basedir}/firefox"/>
     </target>
 
     <target name="clean">

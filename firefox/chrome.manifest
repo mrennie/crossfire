@@ -1,4 +1,4 @@
 content     crossfire   chrome/content/
 skin        crossfire modern/1.0   chrome/content/skin/
 overlay     chrome://firebug/content/firebugOverlay.xul     chrome://crossfire/content/crossfireOverlay.xul
-resource    crossfire   resources/
+resource    crossfire   ../resources/
