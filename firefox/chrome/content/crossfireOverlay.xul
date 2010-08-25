@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet href="chrome://crossfire/skin/crossfire.css" ?>
+
+<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" >
+    <script type="application/javascript" src="chrome://crossfire/content/FirebugEventAdaptor.js"/>
+    <script type="application/javascript" src="chrome://crossfire/content/FirebugCommandAdaptor.js"/>
+    <script type="application/javascript" src="chrome://crossfire/content/crossfire.js"/>
+
+    <statusbar id="status-bar">
+        <statusbarpanel id="crossfireStatusBar" context="crossfireContextMenu" onmousedown="Crossfire.onStatusClick(this)">
+            <image id="crossfireIcon" class="disconnected" tooltiptext="Crossfire: disconnected"/>
+        </statusbarpanel>
+        <menupopup id="crossfireStatusMenu" onpopupshowing="Crossfire.onStatusMenuShowing(this)">
+            <menuitem id="menu_startCrossfireServer" label="Start Server" onclick="Crossfire.startServer()"/>
+
+            <menuitem id="menu_connectCrossfireClient" label="Connect as client" onclick="Crossfire.connect()"/>
+            <menuitem id="menu_disconnectCrossfire" class="hidden" label="Disconnect..." onclick="Crossfire.disconnect()"/>
+        </menupopup>
+    </statusbar>
+</overlay>
