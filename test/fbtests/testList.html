@@ -1,0 +1,26 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <title>Crossfire 0.2 Test List</title>
+
+    <script type="text/javascript" src="http://getfirebug.com/tests/content/testlists/testListUtils.js"></script>
+
+    <link rel="stylesheet" href="http://getfirebug.com/tests/content/testlists/styles/testConsole.css" type="text/css"/>
+    <link rel="stylesheet" href="http://getfirebug.com/tests/content/testlists/styles/testList.css" type="text/css"/>
+    <link rel="stylesheet" href="http://getfirebug.com/tests/content/testlists/styles/testResult.css" type="text/css"/>
+    <link rel="stylesheet" href="http://getfirebug.com/tests/content/testlists/styles/tabView.css" type="text/css"/>
+
+    <script type="text/javascript">
+      var driverBaseURI = getDriverBaseURI();
+      var serverURI = driverBaseURI;
+
+      var testList = [
+         { group: "crossfire", uri: "fbtests/crossfire/helloCrossfireTest.js", desc: "First test: just see if Crossfire is there." },
+         { group: "crossfire", uri: "fbtests/crossfire/startServerTest.js", desc: "Test if the crossfire server can start." },
+         { group: "crossfire", uri: "fbtests/crossfire/clientTest.js", desc: "Test crossfire client." },
+      ];
+    </script>
+  </head>
+
+  </html>
