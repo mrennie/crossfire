@@ -23,7 +23,7 @@ FBL.ns(function() { with(FBL) {
      * This module also adds context and debugger listeners and sends the
      * appropriate events to the remote host.
      */
-    var CrossfireModule = extend(Firebug.Module, /**@lends CrossfireModule */ {
+    top.CrossfireModule = extend(Firebug.Module, /**@lends CrossfireModule */ {
         contexts: [],
         dispatchName: "Crossfire",
 
@@ -49,7 +49,7 @@ FBL.ns(function() { with(FBL) {
                 if (FBTrace.DBG_CROSSFIRE)
                     FBTrace.sysout("CROSSFIRE Got command-line args: host => " + host + " port => " + port);
 
-                this.connect(host, port);
+                this.connectClient(host, port);
             }
         },
 
@@ -58,22 +58,19 @@ FBL.ns(function() { with(FBL) {
          * @param {String} host the remote host name.
          * @param {Number} port the remote port number.
          */
-        connect: function(host, port) {
+        connectClient: function(host, port) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE connect: host => " + host + " port => " + port);
             this.host = host;
             this.port = port;
 
-            Firebug.Debugger.addListener(this);
-            Firebug.Console.addListener(this);
-            Firebug.Inspector.addListener(this);
-            Firebug.HTMLModule.addListener(this);
+            this._addListeners();
 
-            if (!this.transport)
-                this.transport = new CrossfireSocketTransport();
+            if (!this.clientTransport)
+                this.clientTransport = new CrossfireSocketTransport();
 
-            this.transport.addListener(this);
-            this.transport.open(host, port);
+            this.clientTransport.addListener(this);
+            this.clientTransport.open(host, port);
         },
 
         /**
@@ -89,10 +86,22 @@ FBL.ns(function() { with(FBL) {
 
             try {
                 this.transport = getCrossfireServer();
-                this.connect(host, port);
+
+                this._addListeners();
+
+                this.transport.addListener(this);
+
+                this.transport.open(host, port);
             } catch(e) {
                 FBTrace.sysout(e);
             }
+        },
+
+        _addListeners: function() {
+            Firebug.Debugger.addListener(this);
+            Firebug.Console.addListener(this);
+            Firebug.Inspector.addListener(this);
+            Firebug.HTMLModule.addListener(this);
         },
 
         /**
@@ -690,7 +699,7 @@ FBL.ns(function() { with(FBL) {
         window.openDialog("chrome://crossfire/content/connect-dialog.xul", "crossfire-connect","chrome,modal,dialog", params);
 
         if (params.host && params.port) {
-            CrossfireModule.connect(params.host, parseInt(params.port));
+            CrossfireModule.connectClient(params.host, parseInt(params.port));
         }
     };
 
