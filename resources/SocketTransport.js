@@ -94,7 +94,11 @@ CrossfireSocketTransport.prototype =
      * @param listener An object which contains a method named "handleRequest".
      */
     addListener: function( listener) {
-        this.listeners.push(listener);
+    	// don't push the listener again if it is already there
+    	// http://code.google.com/p/fbug/issues/detail?id=3452
+    	if(this.listeners.indexOf(listener) < 0) {
+    		this.listeners.push(listener);
+    	}
     },
 
     /**
@@ -166,6 +170,9 @@ CrossfireSocketTransport.prototype =
 
             this._destroyTransport();
             this._buffer='';
+            // clean up the listeners
+            // http://code.google.com/p/fbug/issues/detail?id=3452
+            this.listeners = [];
         });
     },
 
