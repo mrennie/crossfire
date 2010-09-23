@@ -94,11 +94,11 @@ CrossfireSocketTransport.prototype =
      * @param listener An object which contains a method named "handleRequest".
      */
     addListener: function( listener) {
-    	// don't push the listener again if it is already there
-    	// http://code.google.com/p/fbug/issues/detail?id=3452
-    	if(this.listeners.indexOf(listener) < 0) {
-    		this.listeners.push(listener);
-    	}
+        // don't push the listener again if it is already there
+        // http://code.google.com/p/fbug/issues/detail?id=3452
+        if(this.listeners.indexOf(listener) < 0) {
+            this.listeners.push(listener);
+        }
     },
 
     /**
@@ -405,7 +405,7 @@ CrossfireSocketTransport.prototype =
 
             if (response) {
                 this._buffer += response;
-                
+
                 while(this._parseBuffer()){
                     // until nothing more is recognized
                 };
@@ -426,7 +426,7 @@ CrossfireSocketTransport.prototype =
             headersEnd       = this._buffer.indexOf("\r\n\r\n"),
             contentBegin     = headersEnd + 4,
             headersRaw       = this._buffer.substring(0,headersEnd);
-			
+
         headersRaw = headersRaw.split("\r\n");
         for (i=0; i < headersRaw.length; i++)
         {
@@ -434,9 +434,9 @@ CrossfireSocketTransport.prototype =
             if (header)
                 headers[header[1].toLowerCase()] = header[2];
         }
-        
+
         length = parseInt(headers['content-length'],10);
-            
+
         if (this._buffer.length >= contentBegin + length) {
             block = this._buffer.substr(contentBegin, length);
             this._buffer = this._buffer.slice(contentBegin + length);
