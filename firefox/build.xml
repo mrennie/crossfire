@@ -14,6 +14,13 @@
             destfile="${dist.dir}/${ant.project.name}-${VERSION}${RELEASE}.xpi"
             basedir="${build.dir}" includes="**/*" />
 
+        <checksum
+            file="${dist.dir}/${ant.project.name}-${VERSION}${RELEASE}.xpi"
+            property="updateHash"
+            algorithm="SHA-1"/>
+
+        <echo>Update hash is ${updateHash}</echo>
+
         <copy file="update.rdf"
                 tofile="${dist.dir}/update.rdf"
                 overwrite="true">
@@ -21,6 +28,7 @@
                         <replacetokens>
                              <token key="VERSION" value="${VERSION}"/>
                              <token key="RELEASE" value="${RELEASE}"/>
+                             <token key="UPDATEHASH" value="${updateHash}"/>
                         </replacetokens>
                 </filterchain>
         </copy>
