@@ -104,10 +104,18 @@ FBL.ns(function() { with(FBL) {
             Firebug.HTMLModule.addListener(this);
         },
 
+        _removeListeners: function() {
+        	Firebug.Debugger.removeListener(this);
+            Firebug.Console.removeListener(this);
+            Firebug.Inspector.removeListener(this);
+            Firebug.HTMLModule.removeListener(this);
+        },
+        
         /**
          *
          */
         stopServer: function() {
+        	this._removeListeners();
             this.transport.close();
         },
 
@@ -118,6 +126,7 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE disconnect");
             if (this.status != CROSSFIRE_STATUS.STATUS_DISCONNECTED && this.transport) {
+            	this._removeListeners();
                 this.transport.close();
                 this.transport = null;
             }
