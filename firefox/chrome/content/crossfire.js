@@ -492,6 +492,7 @@ FBL.ns(function() { with(FBL) {
 
         /**
          * Send <code>onResume</code> event and set status 'running' to true.
+         * @param context the current Crossfire context
          */
         onResume: function( context) {
             if (FBTrace.DBG_CROSSFIRE)
@@ -505,34 +506,59 @@ FBL.ns(function() { with(FBL) {
         },
 
         /**
-         * Send <code>onToggleBreakpoint</code> event.
+         * @name onToggleBreakpoint
+         * @function
+         * @description Send <code>onToggleBreakpoint</code> event.
+         * @param context the current Crossfire context
+         * @param url the URL that the breakpoint was toggled within
+         * @param lineNo the number of the line the breakpoint was toggled on
+         * @param isSet the toggled state of the breakpoint. 
+         * <code>true</code> if the breakpoint was toggled on (created), <code>false</code> otherwise
+         * @param props a collection of additional properties from Firebug
+         * @see FirebugEventAdapter.onToggleBreakpoint
          */
         onToggleBreakpoint: function(context, url, lineNo, isSet, props) {
-            if (FBTrace.DBG_CROSSFIRE)
+            if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE: onToggleBreakpoint");
-            this.handleEvent(context, "onToggleBreakpoint");
+            }
+            this.handleEvent(context, "onToggleBreakpoint", {"url":url,"line":lineNo,"set":isSet,"props":props});
         },
 
         /**
-         * Send <code>onToggleBreakpoint</code> event.
+         * @name onToggleErrorBreakpoint
+         * @function
+         * @description Send <code>onToggleBreakpoint</code> event.
+         * @param context the current Crossfire context
+         * @param url the URL that the breakpoint was toggled within
+         * @param lineNo the number of the line the breakpoint was toggled on
+         * @param isSet the toggled state of the breakpoint. 
+         * <code>true</code> if the breakpoint was toggled on (created), <code>false</code> otherwise
+         * @param props a collection of additional properties from Firebug
+         * @see FirebugEventAdapter.onToggleBreakpoint
          */
         onToggleErrorBreakpoint: function(context, url, lineNo, isSet, props) {
-            if (FBTrace.DBG_CROSSFIRE)
+            if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE: onToggleErrorBreakpoint");
-            this.handleEvent(context, "onToggleBreakpoint");
-
+            }
+            this.onToggleBreakpoint(context, url, lineNo, isSet, props);
         },
 
 
         // ----- Firebug HTMLModule listener -----
 
         /**
-         * Send <code>onToggleBreakpoint</code> event for HTML breakpoints.
+         * @name onModifyBreakpoint
+         * @function
+         * @description Send <code>onToggleBreakpoint</code> event for HTML breakpoints.
+         * @param context the current Crossfire context
+         * @param xpath the xpath the breakpoint was modified for
+         * @param type the type of the breakpoint
          */
         onModifyBreakpoint: function(context, xpath, type) {
-             if (FBTrace.DBG_CROSSFIRE)
+             if (FBTrace.DBG_CROSSFIRE) {
                  FBTrace.sysout("CROSSFIRE: onModifyBreakpoint");
-             this.handleEvent(context, "onToggleBreakpoint");
+             }
+             this.handleEvent(context, "onToggleBreakpoint", {"xpath":xpath,"type":type});
         },
 
 

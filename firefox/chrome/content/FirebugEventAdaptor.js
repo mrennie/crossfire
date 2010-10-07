@@ -212,11 +212,12 @@ FBL.ns(function() { with(FBL) {
              * @function
              * @description handles <code>onToggleBreakpoint</code> event.
              * @returns <code>context_id</code>
+             * @param data the information about the breakpoint that toggled
              */
-            "onToggleBreakpoint": function() {
+            "onToggleBreakpoint": function(data) {
                 if (FBTrace.DBG_CROSSFIRE)
                      FBTrace.sysout("CROSSFIRE EventAdaptor onToggleBreakpoint");
-                return { "context_id": this.contextId };
+                return { "context_id": this.contextId, "data": data};
             },
 
             /**
