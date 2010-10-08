@@ -1,28 +1,43 @@
 /* See license.txt for terms of usage */
-/**
- * Crossfire
- * Firebug extension to add support for remote debug protocol.
- *
- */
 
+/**
+ * @name CROSSFIRE_VERSION
+ * @description The current version of Crossfire
+ * @constant
+ * @public
+ * @memberOf Crossfire
+ * @type String
+ */
 const CROSSFIRE_VERSION = "0.3";
+/**
+ * @name CONTEXT_ID_SEED
+ * @description The seed to use when creating new context ids for Crossfire
+ * @public
+ * @memberOf Crossfire
+ * @type Integer
+ */
 var CONTEXT_ID_SEED = Math.round(Math.random() * 10000000);
+/**
+ * @name Crossfire
+ * @description Firebug extension to add support for remote debug protocol.
+ * @public
+ */
 var Crossfire = Crossfire || {};
 
 FBL.ns(function() { with(FBL) {
 
     /**
      * @name CrossfireModule
-     * @namespace CrossfireModule
      * @module Firebug Module for Crossfire. This module acts as a controller
      * between Firebug and the remote debug connection.  It is responsible for
      * opening a connection to the remote debug host and dispatching any
-     * command requests to the FirebugCommandAdaptor (@see FirebugCommandAdaptor.js).
-     *
+     * command requests to the FirebugCommandAdaptor.
+     * <br><br>
      * This module also adds context and debugger listeners and sends the
      * appropriate events to the remote host.
+     * @see FirebugCommandAdaptor.js
      */
-    top.CrossfireModule = extend(Firebug.Module, /**@lends CrossfireModule */ {
+    top.CrossfireModule = extend(Firebug.Module,  {
         contexts: [],
         dispatchName: "Crossfire",
 
@@ -31,6 +46,7 @@ FBL.ns(function() { with(FBL) {
          * @description Initializes Crossfire
          * @function
          * @private
+         * @memberOf CrossfireModule
          * @extends Firebug.Module 
          */
         initialize: function() {
@@ -59,6 +75,7 @@ FBL.ns(function() { with(FBL) {
          * @description Attempts to connect to remote host/port
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param {String} host the remote host name.
          * @param {Number} port the remote port number.
          */
@@ -87,6 +104,7 @@ FBL.ns(function() { with(FBL) {
          * @description Listen for incoming connections on a port.
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param {String} host the host name.
          * @param {Number} port the port number to listen on.
          */
@@ -111,6 +129,7 @@ FBL.ns(function() { with(FBL) {
          * @description Adds Crossfire as a listener to the core modules
          * @function
          * @private
+         * @memberOf CrossfireModule
          */
         _addListeners: function() {
             Firebug.Debugger.addListener(this);
@@ -124,6 +143,7 @@ FBL.ns(function() { with(FBL) {
          * @description Removes Crossfire as a listener from the core modules
          * @function
          * @private
+         * @memberOf CrossfireModule
          */
         _removeListeners: function() {
         	Firebug.Debugger.removeListener(this);
@@ -137,6 +157,7 @@ FBL.ns(function() { with(FBL) {
          * @description Stops the server and closes the socket
          * @function
          * @public
+         * @memberOf CrossfireModule
          */
         stopServer: function() {
         	this._removeListeners();
@@ -149,6 +170,7 @@ FBL.ns(function() { with(FBL) {
          * @description Disconnects the current connection and closes the socket.
          * @function
          * @public
+         * @memberOf CrossfireModule
          */
         disconnect: function() {
             if (FBTrace.DBG_CROSSFIRE)
@@ -168,6 +190,7 @@ FBL.ns(function() { with(FBL) {
          * property and calls the requested command on that context's command adaptor.
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param request the original request from {@link SocketTransport}
          */
         handleRequest: function( request) {
@@ -216,6 +239,7 @@ FBL.ns(function() { with(FBL) {
          * @description Called when the status of the transport's connection changes.
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param {String} status the status to report
          */
         onConnectionStatusChanged: function( status) {
@@ -232,6 +256,7 @@ FBL.ns(function() { with(FBL) {
          * <br><br>
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param <code>context</context> context of this event.
          * @param {String} <code>eventName<code> name of the event
          * @param {Object} arguments any arguments after the first two will be passed to the event handler.
@@ -262,6 +287,7 @@ FBL.ns(function() { with(FBL) {
          * Fires an <code>onScript</code> event.
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param context the context of this event
          * @param sourceFile the source file object
          */
@@ -289,6 +315,7 @@ FBL.ns(function() { with(FBL) {
          * Fires an <code>onContextCreated</code> event.
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param context the new context
          */
         initContext: function( context) {
@@ -309,6 +336,7 @@ FBL.ns(function() { with(FBL) {
          * Fires an <code>onContextCreated</code> event.
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param context the context that completed loading
          */
         loadedContext: function( context) {
@@ -327,6 +355,7 @@ FBL.ns(function() { with(FBL) {
          * Fires an <code>onContextChanged</code> event
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param browser the browser the context was changed to in
          * @param context the context that was switched from
          */
@@ -342,6 +371,7 @@ FBL.ns(function() { with(FBL) {
          * Fires an <code>onContextDestroyed</code> event.
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param context the context that has been destroyed
          */
         destroyContext: function(context) {
@@ -372,6 +402,7 @@ FBL.ns(function() { with(FBL) {
          * not specific to one context.
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @type Array
          * @returns an Array of the known list of contexts
          */
@@ -400,6 +431,7 @@ FBL.ns(function() { with(FBL) {
          * be gone by the time the remote host requests it.
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param frame the stackframe to copy
          * @param ctx the current Crossfire context
          * @param shouldCopyStack is the stack of the frame should also be copied
@@ -498,6 +530,7 @@ FBL.ns(function() { with(FBL) {
                  * @description recursively copies all of the stack elements from the given frame
                  * @function
                  * @private
+                 * @memberOf CrossfireModule
                  * @param the current frame
                  * @type Array
                  * @returns the Array for the copied stack
@@ -537,6 +570,7 @@ FBL.ns(function() { with(FBL) {
          * Fires an <code>onBreak</code> event.
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param context the current Crossfire context
          */
         onStartDebugging: function( context) {
@@ -572,6 +606,7 @@ FBL.ns(function() { with(FBL) {
          * Fires an <code>onStop</code> event.
          * @function
          * @public 
+         * @memberOf CrossfireModule
          * @param context the current Crossfire context
          * @param frame the current stackframe
          * @param type
@@ -589,6 +624,7 @@ FBL.ns(function() { with(FBL) {
          * Fires an <code>onResume</code> event.
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param context the current Crossfire context
          */
         onResume: function( context) {
@@ -604,9 +640,10 @@ FBL.ns(function() { with(FBL) {
 
         /**
          * @name onToggleBreakpoint
+         * @description Send <code>onToggleBreakpoint</code> event.
          * @function
          * @public
-         * @description Send <code>onToggleBreakpoint</code> event.
+         * @memberOf CrossfireModule
          * @param context the current Crossfire context
          * @param url the URL that the breakpoint was toggled within
          * @param lineNo the number of the line the breakpoint was toggled on
@@ -624,9 +661,10 @@ FBL.ns(function() { with(FBL) {
 
         /**
          * @name onToggleErrorBreakpoint
+         * @description Send <code>onToggleBreakpoint</code> event.
          * @function
          * @public
-         * @description Send <code>onToggleBreakpoint</code> event.
+         * @memberOf CrossfireModule
          * @param context the current Crossfire context
          * @param url the URL that the breakpoint was toggled within
          * @param lineNo the number of the line the breakpoint was toggled on
@@ -647,9 +685,10 @@ FBL.ns(function() { with(FBL) {
 
         /**
          * @name onModifyBreakpoint
+         * @description Send <code>onToggleBreakpoint</code> event for HTML breakpoints.
          * @function
          * @public
-         * @description Send <code>onToggleBreakpoint</code> event for HTML breakpoints.
+         * @memberOf CrossfireModule
          * @param context the current Crossfire context
          * @param xpath the xpath the breakpoint was modified for
          * @param type the type of the breakpoint
@@ -679,6 +718,7 @@ FBL.ns(function() { with(FBL) {
          * </ul>
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param context the current Crossfire context
          * @param objects
          * @param className the name of the kind of console event.
@@ -719,6 +759,7 @@ FBL.ns(function() { with(FBL) {
          * Fires an <code>onInspectNode</code> event.
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param context the current Crossfire context
          * @param node the node being inspected
          */
@@ -734,6 +775,7 @@ FBL.ns(function() { with(FBL) {
          * @description Update the Crossfire connection status icon.
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param status the status to update the icon to
          */
         updateStatusIcon: function( status) {
@@ -781,6 +823,7 @@ FBL.ns(function() { with(FBL) {
          * @description Updates the Crossfire status text
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param status the status to update the text to
          */
         updateStatusText: function( status) {
@@ -808,6 +851,7 @@ FBL.ns(function() { with(FBL) {
          * @description Update the Crossfire running status.
          * @function
          * @public
+         * @memberOf CrossfireModule
          * @param isRunning the desired running state for Crossfire
          */
         setRunning: function( isRunning) {
@@ -829,6 +873,8 @@ FBL.ns(function() { with(FBL) {
          * @description Call-back when the menu is showing
          * @function
          * @public
+         * @memberOf CrossfireModule
+         * @param menu the menu showing
          */
         onStatusMenuShowing: function( menu) {
             if (FBTrace.DBG_CROSSFIRE)
@@ -848,6 +894,7 @@ FBL.ns(function() { with(FBL) {
      * @description Call-back for menu pop-up
      * @function
      * @public
+     * @memberOf Crossfire
      * @param el 
      */
     Crossfire.onStatusClick = function( el) {
@@ -859,6 +906,7 @@ FBL.ns(function() { with(FBL) {
      * @description Call-back for the menu showing 
      * @function
      * @public
+     * @memberOf Crossfire
      * @param menu the menu showing
      */
     Crossfire.onStatusMenuShowing = function( menu) {
@@ -870,6 +918,7 @@ FBL.ns(function() { with(FBL) {
      * @description Delegate to {@link CrossfireModule#startServer(host, port)}
      * @function
      * @public
+     * @memberOf Crossfire
      */
     Crossfire.startServer = function() {
         if (FBTrace.DBG_CROSSFIRE)
@@ -887,6 +936,7 @@ FBL.ns(function() { with(FBL) {
      * @description Traces the function call
      * @function
      * @public
+     * @memberOf Crossfire
      */
     Crossfire.stopServer = function() {
          if (FBTrace.DBG_CROSSFIRE)
@@ -898,6 +948,7 @@ FBL.ns(function() { with(FBL) {
      * @description Delegate to {@link CrossfireModule#connectClient(host, port)}
      * @function
      * @public
+     * @memberOf Crossfire
      */
     Crossfire.connect = function() {
         if (FBTrace.DBG_CROSSFIRE)
@@ -916,6 +967,7 @@ FBL.ns(function() { with(FBL) {
      * @description delegate to {@link CrossfireModule#disconnect()}
      * @function
      * @public
+     * @memberOf Crossfire
      */
     Crossfire.disconnect = function() {
         if (FBTrace.DBG_CROSSFIRE)
@@ -929,6 +981,7 @@ FBL.ns(function() { with(FBL) {
      * @description Fetches the entered parameters from the server-start dialog
      * @function
      * @private
+     * @memberOf Crossfire
      * @param isServer if the dialog should ask for server start-up parameters or client connect parameters
      * @type Array
      * @returns an Array of dialog parameters
@@ -953,6 +1006,7 @@ FBL.ns(function() { with(FBL) {
      * @description generate a unique id for newly created contexts.
      * @function
      * @public
+     * @memberOf Crossfire
      * @type String
      * @returns a unique id for newly created contexts
      */
