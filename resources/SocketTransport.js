@@ -23,15 +23,7 @@ const CROSSFIRE_HANDSHAKE = "CrossfireHandshake\r\n";
 const HANDSHAKE_RETRY = 1007;
 
 /**
- * @name EXPORTED_SYMBOLS
- * @description The symbols being exported:
- * <ul>
- * <li><code>CrossfireSocketTransport</code></li>
- * <li><code>getCrossfireServer</code></li>
- * <li><code>CROSSFIRE_STATUS</code></li>
- * </ul>
- * @public
- * @memberOf CrossfireSocketTransport
+ * @ignore
  */
 var EXPORTED_SYMBOLS = [ "CrossfireSocketTransport", "getCrossfireServer", "CROSSFIRE_STATUS" ];
 
