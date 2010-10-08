@@ -9,7 +9,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 /**
  * @name CommandLineHandler
- * @constructor CommandLineHandler
+ * @constructor
  * @description Processes command-line arguments to connect to a remote debug host and port.
  * <br><br>
  * List of accepted command line arguments includes:
@@ -25,12 +25,13 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
  * @property port the port of the computer to connect to
  * @property loadFBModules if the Firebug modules should be loaded at startup
  * @property noFBModules if no Firebug modules should be loaded at startup
+ * @type CommandLineHandler
+ * @returns a new {@link CommandLineHandler}
  */
 function CommandLineHandler() {
     this.wrappedJSObject = this;
 }
 CommandLineHandler.prototype =
-/** @lends CommandLineHandler */
 {
 
       classDescription: "command line handler",
@@ -40,9 +41,11 @@ CommandLineHandler.prototype =
       _xpcom_categories: [{ category: "command-line-handler", entry: "m-crossfire-clh" }],
 
     /**
-     * @name CommandLineHandler.handle
+     * @name handle
+     * @description default call-back to look for the crossfire command line arguments.
      * @function
-     * @description default call-back to look for the crossfire command line arguments. 
+     * @public
+     * @memberOf CommandLineHandler
      * @param cmdLine an {@link nsICommandLine} object
      * @see https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsICommandLine
      */
@@ -71,11 +74,14 @@ CommandLineHandler.prototype =
     },
 
     /**
-     * @name CommandLineHandler.getServerPort
-     * @function
+     * @name getServerPort
      * @description  returns the port that the server was started on.
      * <br><br>
      * This value is specified using the <code>crossfire-server-port</code> argument.
+     * @function
+     * @public
+     * @memberOf CommandLineHandler
+     * @type Integer
      * @return the server port that was specified on the command-line.
      */
     getServerPort: function() {
@@ -83,11 +89,14 @@ CommandLineHandler.prototype =
     },
 
     /**
-     * @name CommandLineHandler.getPort
-     * @function
+     * @name getPort
      * @description  returns the port that Crossfire should try and connect to. 
      * <br><br>
      * This value is specified using the <code>crossfire-port</code> argument.
+     * @function
+     * @public
+     * @memberOf CommandLineHandler
+     * @type Integer
      * @return the port that was specified on the command-line.
      */
     getPort: function() {
@@ -95,12 +104,15 @@ CommandLineHandler.prototype =
     },
 
     /**
-     * @name CommandLineHandler.getHost
-     * @function
+     * @name getHost
      * @description returns the host computer name that Crossfire should try and connect to. This value can be a computer name or IP address -
      * for example <code>localhost</code> or <code>127.0.0.1</code>.
      * <br><br>
      * This value is specified using the <code>crossfire-host</code> argument.
+     * @function
+     * @public
+     * @memberOf CommandLineHandler
+     * @type String
      * @return the host that was specified on the command-line.
      */
     getHost: function() {
@@ -108,14 +120,17 @@ CommandLineHandler.prototype =
     },
 
     /**
-     * @name CommandLineHandler.shouldLoadFBModules
-     * @function
+     * @name shouldLoadFBModules
      * @description if the Firebug modules should be loaded when Firefox starts.
      * <br><br>
      * This value is specified using the <code>-load-fb-modules</code> or <code>-no-fb-modules</code> flag.
      * <br><br>
      * If both <code>-no-fb-modules</code> and <code>-load-fb-modules</code> are specified <code>-no-fb-modules</code> will be 
      * considered to 'win' and no Firebug modules will be loaded.
+     * @function
+     * @public
+     * @memberOf CommandLineHandler
+     * @type Boolean
      * @return boolean indicating whether <code>-no-fb-modules</code> or <code>-load-fb-modules</code> was specified on the command-line.
      */
     shouldLoadFBModules: function() {
@@ -123,9 +138,11 @@ CommandLineHandler.prototype =
     },
 
     /** 
-     * @ignore 
+     * @name _watchAndInitializeFirebug
+     * @description registers an observer to an {@link nsIWindowWatcher} 
      * @function
-     * @description registers an observer to an {@link nsIWindowWatcher}
+     * @private
+     * @memberOf CommandLineHandler
      * @see https://developer.mozilla.org/en/nsIWindowWatcher
      */
     _watchAndInitializeFirebug: function() {
