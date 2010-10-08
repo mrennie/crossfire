@@ -7,7 +7,6 @@
 
 const CROSSFIRE_VERSION = "0.3";
 var CONTEXT_ID_SEED = Math.round(Math.random() * 10000000);
-
 var Crossfire = Crossfire || {};
 
 FBL.ns(function() { with(FBL) {
@@ -27,21 +26,23 @@ FBL.ns(function() { with(FBL) {
         contexts: [],
         dispatchName: "Crossfire",
 
-        /** extends Firebug.Module */
+        /** 
+         * @name initialize
+         * @description Initializes Crossfire
+         * @function
+         * @private
+         * @extends Firebug.Module 
+         */
         initialize: function() {
             var host, port, serverPort;
-
             Components.utils.import("resource://crossfire/SocketTransport.js");
-
             var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
-
             serverPort = commandLine.getServerPort();
             if (serverPort) {
                 if (FBTrace.DBG_CROSSFIRE)
                     FBTrace.sysout("CROSSFIRE Got command-line args: server-port => " + serverPort);
 
                 this.startServer("localhost", serverPort);
-
             } else if (host && port) {
                 host = commandLine.getHost();
                 port = commandLine.getPort();
@@ -54,7 +55,10 @@ FBL.ns(function() { with(FBL) {
         },
 
         /**
-         * @description attempt to connect to remote host/port
+         * @name connectClient
+         * @description Attempts to connect to remote host/port
+         * @function
+         * @public
          * @param {String} host the remote host name.
          * @param {Number} port the remote port number.
          */
@@ -63,18 +67,26 @@ FBL.ns(function() { with(FBL) {
                 FBTrace.sysout("CROSSFIRE connect: host => " + host + " port => " + port);
             this.host = host;
             this.port = port;
+            try {
+	            this._addListeners();
 
-            this._addListeners();
+	            if (!this.clientTransport)
+	                this.clientTransport = new CrossfireSocketTransport();
 
-            if (!this.clientTransport)
-                this.clientTransport = new CrossfireSocketTransport();
-
-            this.clientTransport.addListener(this);
-            this.clientTransport.open(host, port);
+	            this.clientTransport.addListener(this);
+	            this.clientTransport.open(host, port);
+	        }
+	        catch(e) {
+	        	this._removeListeners();
+	        	FBTrace.sysout(e);
+	        }
         },
 
         /**
-         * @description listen for incoming connections on a port.
+         * @name startServer
+         * @description Listen for incoming connections on a port.
+         * @function
+         * @public
          * @param {String} host the host name.
          * @param {Number} port the port number to listen on.
          */
@@ -83,27 +95,36 @@ FBL.ns(function() { with(FBL) {
                 FBTrace.sysout("CROSSFIRE startServer: host => " + host + " port => " + port);
 
             this.serverPort = port;
-
             try {
                 this.transport = getCrossfireServer();
-
                 this._addListeners();
-
                 this.transport.addListener(this);
-
                 this.transport.open(host, port);
             } catch(e) {
+            	this._removeListeners();
                 FBTrace.sysout(e);
             }
         },
-
+        
+        /**
+         * @name _addListeners
+         * @description Adds Crossfire as a listener to the core modules
+         * @function
+         * @private
+         */
         _addListeners: function() {
             Firebug.Debugger.addListener(this);
             Firebug.Console.addListener(this);
             Firebug.Inspector.addListener(this);
             Firebug.HTMLModule.addListener(this);
         },
-
+        
+        /**
+         * @name _removeListeners
+         * @description Removes Crossfire as a listener from the core modules
+         * @function
+         * @private
+         */
         _removeListeners: function() {
         	Firebug.Debugger.removeListener(this);
             Firebug.Console.removeListener(this);
@@ -112,15 +133,22 @@ FBL.ns(function() { with(FBL) {
         },
         
         /**
-         *
+         * @name stopServer
+         * @description Stops the server and closes the socket
+         * @function
+         * @public
          */
         stopServer: function() {
         	this._removeListeners();
             this.transport.close();
+            this.transport = null;
         },
 
         /**
-         * @description disconnect the current connection.
+         * @name disconnect
+         * @description Disconnects the current connection and closes the socket.
+         * @function
+         * @public
          */
         disconnect: function() {
             if (FBTrace.DBG_CROSSFIRE)
@@ -135,14 +163,12 @@ FBL.ns(function() { with(FBL) {
         // ----- Crossfire transport listener -----
 
         /**
-         * @description
-         * Listener function called by the transport when a request is
-         * received.
-         *
-         * @description
-         * Looks up the context by the request object's <code>context_id</code>
-         * property and calls the requested command on that context's
-         * command adaptor.
+         * @name handleRequest
+         * @description Looks up the context by the request object's <code>context_id</code>
+         * property and calls the requested command on that context's command adaptor.
+         * @function
+         * @public
+         * @param request the original request from {@link SocketTransport}
          */
         handleRequest: function( request) {
             if (FBTrace.DBG_CROSSFIRE)
@@ -186,8 +212,11 @@ FBL.ns(function() { with(FBL) {
         },
 
         /**
-         * @description called when the status of the transport's connection changes.
-         * @param {String} status
+         * @name onConnectionStatusChanged
+         * @description Called when the status of the transport's connection changes.
+         * @function
+         * @public
+         * @param {String} status the status to report
          */
         onConnectionStatusChanged: function( status) {
             if (FBTrace.DBG_CROSSFIRE)
@@ -198,8 +227,11 @@ FBL.ns(function() { with(FBL) {
         },
 
         /**
-         *
-         * @description send events generated by Firebug to the remote host.
+         * @name handleEvent
+         * @description Send events generated by Firebug to the remote host.
+         * <br><br>
+         * @function
+         * @public
          * @param <code>context</context> context of this event.
          * @param {String} <code>eventName<code> name of the event
          * @param {Object} arguments any arguments after the first two will be passed to the event handler.
@@ -223,11 +255,19 @@ FBL.ns(function() { with(FBL) {
         },
 
         // ----- firebug listeners -----
-
+        /**
+         * @name onSourceFileCreated
+         * @description Handles a script being loaded - i.e. a script has been compiled in the current context.
+         * <br><br>
+         * Fires an <code>onScript</code> event.
+         * @function
+         * @public
+         * @param context the context of this event
+         * @param sourceFile the source file object
+         */
         onSourceFileCreated: function( context, sourceFile) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  onSourceFileCreated => " + sourceFile.href);
-
 
             var context_href;
             try {
@@ -239,33 +279,37 @@ FBL.ns(function() { with(FBL) {
             context.Crossfire.commandAdaptor.sourceFileLoaded(sourceFile);
 
             this.handleEvent(context, "onScript", { "href": sourceFile.href, "context_href": context_href });
-
         },
 
         // ----- context listeners -----
         /**
-         * @description Add the new context to our list of contexts.
-         * @description Create a new command and event adaptor for the context when it is loaded.
-         * @param context
+         * @name initContext
+         * @description Handles a context being created - i.e. a new tab has been opened.
+         * <br><br>
+         * Fires an <code>onContextCreated</code> event.
+         * @function
+         * @public
+         * @param context the new context
          */
         initContext: function( context) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  initContext");
 
             context.Crossfire = { "crossfire_id" : generateId() };
-
             context.Crossfire["commandAdaptor"] = new Crossfire.FirebugCommandAdaptor(context);
             context.Crossfire["eventAdaptor"] = new Crossfire.FirebugEventAdaptor(context);
-
             this.contexts.push(context);
-
             this.handleEvent(context, "onContextCreated");
-
         },
 
         /**
-         * @description Send "onContextCreated" event.
-         * @param context
+         * @name loadedContext
+         * @description Handles a context being loaded - i.e. the scripts in a given context have completed being compiled.
+         * <br><br>
+         * Fires an <code>onContextCreated</code> event.
+         * @function
+         * @public
+         * @param context the context that completed loading
          */
         loadedContext: function( context) {
             if (FBTrace.DBG_CROSSFIRE)
@@ -274,12 +318,17 @@ FBL.ns(function() { with(FBL) {
             //context.Crossfire.commandAdaptor.setContextLoaded();
 
             this.handleEvent(context, "onContextLoaded");
-
         },
 
         /**
-         *
-         * @description send context change event
+         * @name showContext
+         * @description Handles a context being shown - i.e. a tab has been switched to. 
+         * <br><br>
+         * Fires an <code>onContextChanged</code> event
+         * @function
+         * @public
+         * @param browser the browser the context was changed to in
+         * @param context the context that was switched from
          */
         showContext: function(browser, context) {
             this.handleEvent(this.currentContext, "onContextChanged", context);
@@ -287,8 +336,13 @@ FBL.ns(function() { with(FBL) {
         },
 
         /**
-         *  @description Remove the context from our list of contexts.
-         *  @param context
+         * @name destroyContext
+         * @description Handles a context being destroyed - i.e. a tab has been closed in the browser. 
+         * <br><br>
+         * Fires an <code>onContextDestroyed</code> event.
+         * @function
+         * @public
+         * @param context the context that has been destroyed
          */
         destroyContext: function(context) {
             if (FBTrace.DBG_CROSSFIRE)
@@ -309,12 +363,17 @@ FBL.ns(function() { with(FBL) {
         // ----- utils -----
 
         /**
-         * listContexts method is called in response to a <code>listcontexts</code> command.
+         * @name listContexts
+         * @description Called in response to a <code>listcontexts</code> command.
          * This method returns all the context id's that we know about.
          *
          * This is the only method that returns a protocol command response
          * that is not implemented in FirebugCommandAdaptor, because it is
          * not specific to one context.
+         * @function
+         * @public
+         * @type Array
+         * @returns an Array of the known list of contexts
          */
         listContexts: function() {
             if (FBTrace.DBG_CROSSFIRE)
@@ -335,9 +394,17 @@ FBL.ns(function() { with(FBL) {
         },
 
         /**
-         * Make a copy of a frame since the jsdIStackFrame's are ephemeral,
+         * @name copyFrame
+         * @description Make a copy of a frame since the jsdIStackFrame's are ephemeral,
          * but our protocol is asynchronous so the original frame object may
          * be gone by the time the remote host requests it.
+         * @function
+         * @public
+         * @param frame the stackframe to copy
+         * @param ctx the current Crossfire context
+         * @param shouldCopyStack is the stack of the frame should also be copied
+         * @type Array
+         * @returns a copy of the given stackframe
          */
         copyFrame: function copyFrame( frame, ctx, shouldCopyStack) {
             if (FBTrace.DBG_CROSSFIRE)
@@ -426,7 +493,15 @@ FBL.ns(function() { with(FBL) {
                 // copy eval so we can call it from 'evaluate' command
                 frameCopy["eval"] = function() { return frame.eval.apply(frame, arguments); };
 
-                // recursively copy all the frames in the stack
+                /**
+                 * @name copyStack
+                 * @description recursively copies all of the stack elements from the given frame
+                 * @function
+                 * @private
+                 * @param the current frame
+                 * @type Array
+                 * @returns the Array for the copied stack
+                 */
                 function copyStack( aFrame) {
                     if (FBTrace.DBG_CROSSFIRE_FRAMES)
                         FBTrace.sysout("CROSSFIRE copyStack: calling frame is => ", aFrame.callingFrame);
@@ -456,8 +531,13 @@ FBL.ns(function() { with(FBL) {
         // ----- Firebug Debugger listener -----
 
         /**
-         * Copy the current frame (in case remote host requests it)
-         * and send <code>onBreak</code> event.
+         * @name onStartDebugging
+         * @description Handles Firebug suspending.
+         * <br><br>
+         * Fires an <code>onBreak</code> event.
+         * @function
+         * @public
+         * @param context the current Crossfire context
          */
         onStartDebugging: function( context) {
             if (FBTrace.DBG_CROSSFIRE)
@@ -485,13 +565,30 @@ FBL.ns(function() { with(FBL) {
             this.setRunning(false);
         },
 
+        /**
+         * @name onStop
+         * @description Handles Firebug stopping
+         * <br><br>
+         * Fires an <code>onStop</code> event.
+         * @function
+         * @public 
+         * @param context the current Crossfire context
+         * @param frame the current stackframe
+         * @param type
+         * @param rv
+         */
         onStop: function(context, frame, type, rv) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE:  onStop");
         },
 
         /**
-         * Send <code>onResume</code> event and set status 'running' to true.
+         * @name onResume
+         * @description Handles Firebug resuming and sets the running state to <code>true</code>.
+         * <br><br>
+         * Fires an <code>onResume</code> event.
+         * @function
+         * @public
          * @param context the current Crossfire context
          */
         onResume: function( context) {
@@ -508,6 +605,7 @@ FBL.ns(function() { with(FBL) {
         /**
          * @name onToggleBreakpoint
          * @function
+         * @public
          * @description Send <code>onToggleBreakpoint</code> event.
          * @param context the current Crossfire context
          * @param url the URL that the breakpoint was toggled within
@@ -527,6 +625,7 @@ FBL.ns(function() { with(FBL) {
         /**
          * @name onToggleErrorBreakpoint
          * @function
+         * @public
          * @description Send <code>onToggleBreakpoint</code> event.
          * @param context the current Crossfire context
          * @param url the URL that the breakpoint was toggled within
@@ -549,6 +648,7 @@ FBL.ns(function() { with(FBL) {
         /**
          * @name onModifyBreakpoint
          * @function
+         * @public
          * @description Send <code>onToggleBreakpoint</code> event for HTML breakpoints.
          * @param context the current Crossfire context
          * @param xpath the xpath the breakpoint was modified for
@@ -565,15 +665,33 @@ FBL.ns(function() { with(FBL) {
         // ----- Firebug Console listener -----
 
         /**
-         * logFormatted listener.
-         * @description Generates event packets based on the className (log,debug,info,warn,error).
-         * @description The object or message logged is contained in the packet's <code>data</code> property.
-         * The generated event names are:
-         * 		<code>onConsoleLog</code>,
-         * 		<code>onConsoleDebug</code>,
-         * 		<code>onConsoleInfo</code>,
-         * 		<code>onConsoleWarn</code>,
-         * 		<code>onConsoleError</code>
+         * @name logFormatted
+         * @description Generates event packets based on the className (log,debug,info,warn,error). 
+         * The object or message logged is contained in the packet's <code>data</code> property.
+         * <br><br>
+         * Fires one of the following events:
+         * <ul>
+         * <li><code>onConsoleLog</code></li>
+         * <li><code>onConsoleDebug</code></li>
+         * <li><code>onConsoleInfo</code></li>
+         * <li><code>onConsoleWarn</code></li>
+         * <li><code>onConsoleError</code></li>
+         * </ul>
+         * @function
+         * @public
+         * @param context the current Crossfire context
+         * @param objects
+         * @param className the name of the kind of console event.
+         * <br>
+         * One of:
+         * <ul>
+         * <li>log</li>
+         * <li>debug</li>
+         * <li>info</li>
+         * <li>warn</li>
+         * <li>error</li>
+         * </ul>
+         * @param sourceLink
          */
         logFormatted: function(context, objects, className, sourceLink) {
             if (FBTrace.DBG_CROSSFIRE)
@@ -595,7 +713,14 @@ FBL.ns(function() { with(FBL) {
         // ----- Firebug.Inspector Listener -----
 
         /**
-         * @description Send <code>onInspectNode</code> event.
+         * @name onInspectNode
+         * @description Handles a node being inspected in Firebug.
+         * <br><br>
+         * Fires an <code>onInspectNode</code> event.
+         * @function
+         * @public
+         * @param context the current Crossfire context
+         * @param node the node being inspected
          */
         onInspectNode: function(context, node) {
             node = node.wrappedJSObject;
@@ -604,18 +729,12 @@ FBL.ns(function() { with(FBL) {
             this.handleEvent(context, "onInspectNode", node);
         },
 
-        /* @ignore
-        onStopInspecting: function(context, node) {
-            if (FBTrace.DBG_CROSSFIRE)
-                FBTrace.sysout("CROSSFIRE onStopInspecting");
-
-            var contextId = context.Crossfire.crossfire_id;
-            this.transport.sendEvent("onStopInspecting", { "context_id": contextId });
-        }
-        */
-
         /**
-         * Update Crossfire connection status icon.
+         * @name updateStatusIcon
+         * @description Update the Crossfire connection status icon.
+         * @function
+         * @public
+         * @param status the status to update the icon to
          */
         updateStatusIcon: function( status) {
             if (FBTrace.DBG_CROSSFIRE)
@@ -657,6 +776,13 @@ FBL.ns(function() { with(FBL) {
             }
         },
 
+        /**
+         * @name updateStatusText
+         * @description Updates the Crossfire status text
+         * @function
+         * @public
+         * @param status the status to update the text to
+         */
         updateStatusText: function( status) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE updateStatusText: " + status);
@@ -678,7 +804,11 @@ FBL.ns(function() { with(FBL) {
         },
 
         /**
-         * Update Crossfire running status.
+         * @name setRunning
+         * @description Update the Crossfire running status.
+         * @function
+         * @public
+         * @param isRunning the desired running state for Crossfire
          */
         setRunning: function( isRunning) {
             if (FBTrace.DBG_CROSSFIRE)
@@ -694,15 +824,15 @@ FBL.ns(function() { with(FBL) {
             this.running = isRunning;
         },
 
-        // Crossfire status menu
+        /**
+         * @name onStatusMenuShowing
+         * @description Call-back when the menu is showing
+         * @function
+         * @public
+         */
         onStatusMenuShowing: function( menu) {
             if (FBTrace.DBG_CROSSFIRE)
                  FBTrace.sysout("CROSSFIRE onStatusMenuShowing");
-            if (this.running) {
-
-            } else {
-
-            }
         }
 
     });
@@ -713,14 +843,34 @@ FBL.ns(function() { with(FBL) {
 
     // ----- Crossfire XUL Event Listeners -----
 
+    /**
+     * @name Crossfire.onStatusClick
+     * @description Call-back for menu pop-up
+     * @function
+     * @public
+     * @param el 
+     */
     Crossfire.onStatusClick = function( el) {
         $("crossfireStatusMenu").openPopup(el, "before_end", 0,0,false,false);
     };
 
+    /**
+     * @name Crossfire.onStatusMenuShowing
+     * @description Call-back for the menu showing 
+     * @function
+     * @public
+     * @param menu the menu showing
+     */
     Crossfire.onStatusMenuShowing = function( menu) {
         //CrossfireModule.onStatusMenuShowing(menu);
     };
 
+    /**
+     * @name Crossfire.startServer
+     * @description Delegate to {@link CrossfireModule#startServer(host, port)}
+     * @function
+     * @public
+     */
     Crossfire.startServer = function() {
         if (FBTrace.DBG_CROSSFIRE)
             FBTrace.sysout("Crossfire.startServer");
@@ -730,15 +880,25 @@ FBL.ns(function() { with(FBL) {
         if (params.host && params.port) {
             CrossfireModule.startServer(params.host, parseInt(params.port));
         }
-
     };
 
+    /**
+     * @name Crossfire.stopServer
+     * @description Traces the function call
+     * @function
+     * @public
+     */
     Crossfire.stopServer = function() {
          if (FBTrace.DBG_CROSSFIRE)
              FBTrace.sysout("Crossfire.stopServer");
-
     };
 
+    /**
+     * @name Crossfire.connect
+     * @description Delegate to {@link CrossfireModule#connectClient(host, port)}
+     * @function
+     * @public
+     */
     Crossfire.connect = function() {
         if (FBTrace.DBG_CROSSFIRE)
             FBTrace.sysout("Crossfire.connect");
@@ -751,6 +911,12 @@ FBL.ns(function() { with(FBL) {
         }
     };
 
+    /**
+     * @name Crossfire.disconnect
+     * @description delegate to {@link CrossfireModule#disconnect()}
+     * @function
+     * @public
+     */
     Crossfire.disconnect = function() {
         if (FBTrace.DBG_CROSSFIRE)
             FBTrace.sysout("Crossfire.disconnect");
@@ -758,6 +924,15 @@ FBL.ns(function() { with(FBL) {
         CrossfireModule.disconnect();
     };
 
+    /**
+     * @name _getDialogParams
+     * @description Fetches the entered parameters from the server-start dialog
+     * @function
+     * @private
+     * @param isServer if the dialog should ask for server start-up parameters or client connect parameters
+     * @type Array
+     * @returns an Array of dialog parameters
+     */
     function _getDialogParams( isServer) {
         var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
         var host = commandLine.getHost();
@@ -771,12 +946,19 @@ FBL.ns(function() { with(FBL) {
         }
 
         return { "host": null, "port": null, "title": title, "cli_host": host, "cli_port": port };
-    }
+    };
 
-    // generate a unique id for newly created contexts.
+    /**
+     * @name generateId
+     * @description generate a unique id for newly created contexts.
+     * @function
+     * @public
+     * @type String
+     * @returns a unique id for newly created contexts
+     */
     function generateId() {
         return "xf"+CROSSFIRE_VERSION + "::" + (++CONTEXT_ID_SEED);
-    }
+    };
 
 //end FBL.ns()
 }});
