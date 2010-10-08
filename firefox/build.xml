@@ -32,6 +32,8 @@
                         </replacetokens>
                 </filterchain>
         </copy>
+    	<!-- clean up build artifacts after we are done -->
+    	<delete includeemptydirs="true" failonerror="false" dir="${build.dir}"/>
     </target>
 
     <target name="prepare" depends="clean">
@@ -69,7 +71,7 @@ category    command-line-handler    m-crossfire-clh    @almaden.ibm.com/crossfir
     </target>
 
     <target name="clean">
-        <delete dir="${build.dir}"/>
-        <delete dir="${dist.dir}"/>
+        <delete includeemptydirs="true" failonerror="false" dir="${build.dir}"/>
+        <delete includeemptydirs="true" failonerror="false" dir="${dist.dir}"/>
     </target>
 </project>
