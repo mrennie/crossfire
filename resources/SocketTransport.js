@@ -3,10 +3,36 @@
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
-
-const CROSSFIRE_HANDSHAKE        = "CrossfireHandshake\r\n";
+/**
+ * @name CROSSFIRE_HANDSHAKE
+ * @description the String representing the handshake that is negotiated when initially connecting
+ * @constant
+ * @public
+ * @memberOf CrossfireSocketTransport
+ * @type String
+ */
+const CROSSFIRE_HANDSHAKE = "CrossfireHandshake\r\n";
+/**
+ * @name HANDSHAKE_RETRY
+ * @description The default time-out in milliseconds to re-try a handshake
+ * @constant
+ * @public
+ * @memberOf CrossfireSocketTransport
+ * @type Integer
+ */
 const HANDSHAKE_RETRY = 1007;
 
+/**
+ * @name EXPORTED_SYMBOLS
+ * @description The symbols being exported:
+ * <ul>
+ * <li><code>CrossfireSocketTransport</code></li>
+ * <li><code>getCrossfireServer</code></li>
+ * <li><code>CROSSFIRE_STATUS</code></li>
+ * </ul>
+ * @public
+ * @memberOf CrossfireSocketTransport
+ */
 var EXPORTED_SYMBOLS = [ "CrossfireSocketTransport", "getCrossfireServer", "CROSSFIRE_STATUS" ];
 
 Cu.import("resource://crossfire/Packet.js");
@@ -18,8 +44,20 @@ try {
     FBTrace = {};
 }
 
+/**
+ * @name CROSSFIRE_STATUS
+ * @description The {@link Array} of valid statuses:
+ * <ul>
+ * <li><code>disconnected</code></li>
+ * <li><code>wait_server</code></li>
+ * <li><code>connecting</code></li>
+ * <li><code>connected_server</code></li>
+ * <li><code>connected_client</code></li>
+ * </ul>
+ * @public
+ * @memberOf CrossfireSocketTransport
+ */
 var CROSSFIRE_STATUS = {
-
         STATUS_DISCONNECTED: "disconnected",
         STATUS_WAIT_SERVER: "wait_server",
         STATUS_CONNECTING: "connecting",
@@ -28,13 +66,23 @@ var CROSSFIRE_STATUS = {
 
 };
 
-
+/**
+ * @name _instance
+ * @description The singleton instance of {@link CrossfireSocketTransport}
+ * @private
+ * @memberOf CrossfireSocketTransport
+ * @type CrossfireSocketTransport
+ */
 var _instance;
 
 /**
- * @name getTransport
+ * @name getCrossfireServer
+ * @description returns the singleton instance of {@link CrossfireSocketTransport}
  * @function
- * @description returns the Singleton instance of Crossfire's SocketTransport object
+ * @public
+ * @memberOf CrossfireSocketTransport
+ * @type CrossfireSocketTransport
+ * @returns the singleton instance of the {@link CrossfireSocketTransport}
  */
 function getCrossfireServer() {
     if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
@@ -48,11 +96,14 @@ function getCrossfireServer() {
 
 /**
  * @name CrossfireSocketTransport
- * @constructor CrossfireSocketTransport
- * @param isServer boolean specifying whether to start the transport as client or server
  * @description Firefox Socket Transport for remote debug protocol.
  * Opens a socket connection to a remote host and handles handshaking and
  * sending/receiving packets.
+ * @constructor
+ * @public
+ * @param isServer boolean specifying whether to start the transport as client or server
+ * @type CrossfireSocketTransport
+ * @returns a new instance of CrossfireSocketTransport
  */
 function CrossfireSocketTransport( isServer) {
 
@@ -79,19 +130,19 @@ function CrossfireSocketTransport( isServer) {
 }
 
 CrossfireSocketTransport.prototype =
-/** @lends CrossfireSocketTransport */
 {
 
     // ----- external API ----
 
     /**
-     * @name CrossfireSocketTransport.addListener
+     * @name addListener
+     * @description Adds a listener to be called when the transport receives requests.
+     * The transport will pass a {@link RequestPacket} as an argument to the listener's <code>handleRequest</code> method.
      * @function
-     * @description Adds listener to be called when the transport receives requests.
-     * The transport will pass a RequestPacket @see Packet.js
-     * as an argument to the listener's "handleRequest" method.
-     *
+     * @public
+     * @memberOf CrossfireSocketTransport
      * @param listener An object which contains a method named "handleRequest".
+     * @see Packet.js
      */
     addListener: function( listener) {
         // don't push the listener again if it is already there
@@ -102,9 +153,11 @@ CrossfireSocketTransport.prototype =
     },
 
     /**
-     * @name CrossfireSocketTransport.sendResponse
-     * @function
+     * @name sendResponse
      * @description Builds and sends a response packet. @see also Packet.js
+     * @function
+     * @public
+     * @memberOf CrossfireSocketTransport
      * @param command The name of the command for the response.
      * @param requestSeq Sequence number of the request that initiated the response.
      * @param body JSON body of the response
@@ -118,9 +171,11 @@ CrossfireSocketTransport.prototype =
     },
 
     /**
-     * @name CrossfireSocketTransport.sendEvent
-     * @function
+     * @name sendEvent
      * @description Send an event packet. @see also Packet.js
+     * @function
+     * @public
+     * @memberOf CrossfireSocketTransport
      * @param event Event name
      * @param data optional JSON object containing additional data about the event.
      */
@@ -131,11 +186,13 @@ CrossfireSocketTransport.prototype =
     },
 
     /**
-     * @name CrossfireSocketTransport.open
+     * @name open
+     * @description Open a connection to the specified host/port.
      * @function
+     * @public
+     * @memberOf CrossfireSocketTransport
      * @param {String} host the hostname.
      * @param {Number} port the port.
-     * @description Open a connection to the specified host/port.
      */
     open: function( host, port) {
         this._destroyTransport();
@@ -145,9 +202,13 @@ CrossfireSocketTransport.prototype =
     },
 
     /**
-     * @name CrossfireSocketTransport.close
+     * @name close
+     * @description Close a previously opened connection.
+     * <br><br>
+     * Fires a <code>closed</code> event.
      * @function
-     * @description close a previously opened connection.
+     * @public
+     * @memberOf CrossfireSocketTransport
      */
     close: function() {
         this.sendEvent("closed",{});
@@ -177,7 +238,19 @@ CrossfireSocketTransport.prototype =
     },
 
     // ----- internal methods -----
-    /** @ignore */
+    /**
+     * @name _createTransport
+     * @description Creates a new {@link CrossfireSocketTransport} for the given host and port
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     * @param host a {@link String} value for the host
+     * @param port an {@link Integer} value for the port
+     * @type CrossfireSocketTransport
+     * @returns a new {@link CrossfireSocketTransport} for the given host and port
+     * @see https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIServerSocket
+     * @see https://developer.mozilla.org/en/nsISocketTransportService
+     */
     _createTransport: function (host, port) {
 
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
@@ -226,6 +299,14 @@ CrossfireSocketTransport.prototype =
         }
     },
 
+    /**
+     * @name _createInputStream
+     * @description Creates a new input stream
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     * @see https://developer.mozilla.org/en/nsScriptableInputStream
+     */
     _createInputStream: function() {
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
             FBTrace.sysout("_createInputStream");
@@ -238,6 +319,14 @@ CrossfireSocketTransport.prototype =
         this._scriptableInputStream.init(this._inputStream);
     },
 
+    /**
+     * @name _createOutputStream
+     * @description Creates an output stream
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     * @see https://developer.mozilla.org/en/nsIOutputStream
+     */
     _createOutputStream: function() {
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
             FBTrace.sysout("_createOutputStream");
@@ -275,6 +364,16 @@ CrossfireSocketTransport.prototype =
             };
     },
 
+    /**
+     * @name _destroyTransport
+     * @description Destroys the input and output streams and the underlying transport
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     * @see https://developer.mozilla.org/en/nsScriptableInputStream
+     * @see https://developer.mozilla.org/en/nsIOutputStream
+     * @see https://developer.mozilla.org/en/nsISocketTransportService
+     */
     _destroyTransport: function() {
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
             FBTrace.sysout("_destroyTransport");
@@ -288,7 +387,16 @@ CrossfireSocketTransport.prototype =
         delete this._transport;
     },
 
-    /** @ignore */
+    /**
+     * @name _defer
+     * @description Defers a call-back for the given delay time (in milliseconds)
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     * @param callback
+     * @param delay the amount of time to wait (in milliseconds)
+     * @see https://developer.mozilla.org/en/nsITimer
+     */
     _defer: function( callback, delay) {
         if (!delay) delay = 1;
         var self = this;
@@ -305,7 +413,13 @@ CrossfireSocketTransport.prototype =
         }, delay, timer.TYPE_ONE_SHOT);
     },
 
-    /** @ignore */
+    /**
+     * @name _sendHandshake
+     * @description Sends the standard handshake ({@link CROSSFIRE_HANDSHAKE}) over the transport.
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     */
     _sendHandshake: function() {
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
             FBTrace.sysout("_sendHandshake");
@@ -335,7 +449,14 @@ CrossfireSocketTransport.prototype =
         }, 0, 0, null);
     },
 
-    /** @ignore */
+    /**
+     * @name _waitHandshake
+     * @description Waits for a handshake acknowledgment for the given timeout interval
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     * @param timeout the amount of time to wait for a handshake acknowledgment
+     */
     _waitHandshake: function( timeout) {
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
             FBTrace.sysout("_waitHandshake");
@@ -368,7 +489,14 @@ CrossfireSocketTransport.prototype =
         }, timeout);
     },
 
-    /** @ignore */
+    /** 
+     * @name _sendPacket
+     * @description Sends the given packet over the underlying transport
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     * @param packet the packet to send over the underlying transport
+     */
     _sendPacket: function( packet) {
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
             FBTrace.sysout("_sendPacket " + packet);
@@ -383,7 +511,14 @@ CrossfireSocketTransport.prototype =
     /** @ignore */
     _buffer: '',
 
-    /** @ignore */
+    /**
+     * @name _waitOnPacket
+     * @description Waits for a packet to be read from the underlying transport
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     * @see https://developer.mozilla.org/en/nsIScriptableInputStream/available
+     */
     _waitOnPacket: function() {
         var avail, response;
         if (!this.connected || !this._inputStream)
@@ -416,7 +551,13 @@ CrossfireSocketTransport.prototype =
         }
     },
 
-    /** @ignore */
+    /**
+     * @name _parseBuffer
+     * @description Reads packets from the backing buffer
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     */
      _parseBuffer: function(){
         /*
          * Buffer always has length header:
@@ -452,7 +593,14 @@ CrossfireSocketTransport.prototype =
         return false;
     },
 
-    /** @ignore */
+    /**
+     * @name _notifyConnection
+     * @description Notifies <code>onConnectionStatusChanged</code> listeners that the connection state has changed
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     * @param status the status of the connection
+     */
     _notifyConnection: function( status) {
         for (var i = 0; i < this.listeners.length; ++i) {
             var listener = this.listeners[i];
@@ -467,7 +615,14 @@ CrossfireSocketTransport.prototype =
     },
 
 
-    /** @ignore */
+    /**
+     * @name _notifyListeners
+     * @description Notifies <code>fireEvent</code> or <code>handleRequest</code> listeners based on the kind of the packet
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     * @param packet the packet that has been read 
+     */
     _notifyListeners: function( packet) {
         var listener, handler;
         for (var i = 0; i < this.listeners.length; ++i) {
