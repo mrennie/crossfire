@@ -44,10 +44,12 @@ FBL.ns(function() { with(FBL) {
          * @param args.stepcount <code>stepcount</code>: currently ignored.
          */
         "continue": function( args) {
-             if (FBTrace.DBG_CROSSFIRE)
-                 FBTrace.sysout("CROSSFIRE CommandAdaptor continue");
-
-            var stepAction = args["stepaction"];
+        	if (FBTrace.DBG_CROSSFIRE)
+        		FBTrace.sysout("CROSSFIRE CommandAdaptor continue");
+        	var stepAction = null;
+            if(args) {
+            	stepAction = args["stepaction"];
+            }
             if (stepAction == "in") {
                 Firebug.Debugger.stepInto(this.context);
             } else if (stepAction == "next") {
