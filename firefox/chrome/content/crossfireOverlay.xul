@@ -3,7 +3,6 @@
 <?xml-stylesheet href="chrome://crossfire/skin/crossfire.css" ?>
 
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" >
-    <script type="application/javascript" src="chrome://crossfire/content/FirebugEventAdaptor.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/FirebugCommandAdaptor.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/crossfire.js"/>
 
