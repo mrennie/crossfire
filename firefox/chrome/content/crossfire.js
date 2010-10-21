@@ -398,7 +398,7 @@ FBL.ns(function() { with(FBL) {
             } catch(e) {
              //do nothing
             }
-            this._sendEvent("onContextChanged", {"context_id": context.Crossfire.context_id, "new_context_id": newContextId, "data": {"href": href, "new_href": newHref}});
+            this._sendEvent("onContextChanged", {"context_id": context.Crossfire.crossfire_id, "new_context_id": newContextId, "data": {"href": href, "new_href": newHref}});
             this.currentContext = context;
         },
 
@@ -681,7 +681,7 @@ FBL.ns(function() { with(FBL) {
 
             context.Crossfire.currentFrame = null;
             context.Crossfire.commandAdaptor.clearRefs();
-            this._sendEvent("onResume", {"context_id": context.Crossfire.context_id});
+            this._sendEvent("onResume", {"context_id": context.Crossfire.crossfire_id});
             this.setRunning(true);
         },
 
@@ -713,7 +713,7 @@ FBL.ns(function() { with(FBL) {
                 FBTrace.sysout("CROSSFIRE: onToggleBreakpoint");
             }
             var data = {"url":url,"line":lineNo,"set":isSet,"props":props};
-            this._sendEvent("onToggleBreakpoint", {"context_id": context.Crossfire.context_id, "data": data});
+            this._sendEvent("onToggleBreakpoint", {"context_id": context.Crossfire.crossfire_id, "data": data});
         },
 
         /**
@@ -773,7 +773,7 @@ FBL.ns(function() { with(FBL) {
                  FBTrace.sysout("CROSSFIRE: onModifyBreakpoint");
              }
              var data = {"xpath":xpath,"type":type};
-             this._sendEvent("onToggleBreakpoint", {"context_id": context.Crossfire.context_id, "data": data});
+             this._sendEvent("onToggleBreakpoint", {"context_id": context.Crossfire.crossfire_id, "data": data});
         },
 
 
@@ -827,7 +827,7 @@ FBL.ns(function() { with(FBL) {
                 if (FBTrace.DBG_CROSSFIRE) {
                     FBTrace.sysout("CROSSFIRE: "+ eventName);
                 }
-                this._sendEvent(eventName, {"context_id": context.Crossfire.context_id, "data": data});
+                this._sendEvent(eventName, {"context_id": context.Crossfire.crossfire_id, "data": data});
             }
         },
 
@@ -858,7 +858,7 @@ FBL.ns(function() { with(FBL) {
             if (typeof FireDiff != 'undefined') { //FIXME: remove dependency on FireDiff
                 var nodePath = FireDiff.Path.getElementPath(node, true);
             }
-            this._sendEvent("onInspectNode", { "context_id": context.Crossfire.context_id, "data": {"node": nodePath}});
+            this._sendEvent("onInspectNode", { "context_id": context.Crossfire.crossfire_id, "data": {"node": nodePath}});
         },
 
         /**
