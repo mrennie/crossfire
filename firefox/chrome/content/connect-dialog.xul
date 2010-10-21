@@ -9,7 +9,8 @@
     buttons="accept,cancel"
     onload="onLoad(this)"
     ondialogaccept="onAccept(this)"
-    ondialogcancel="onCancel(this)">
+    ondialogcancel="onCancel(this)"
+    persist="screenX screenY">
 
     <script type="application/javascript"><![CDATA[
         function onLoad( dialog) {
@@ -18,7 +19,7 @@
 				document.title = params.title;
 
 			if (params.cli_host) {
-				document.getElementById("crossfire_host").value = params.cli_host;
+				params.host = document.getElementById("crossfire_host").value = params.cli_host;
 			}
 
             if (params.cli_port) {
@@ -39,20 +40,24 @@
     ]]></script>
 
     <hbox id="crossfire_host_box">
-        <label value="Host:" control="crossfire_host"/>
+        <label value="Host:" control="crossfire_host" accesskey="H"/>
         <textbox id="crossfire_host"
+        	label="Host:"
             type="autocomplete"
-            value="localhost"/>
+            value="localhost"
+            persist="value"/>
     </hbox>
 
     <hbox id="crossfire_port_box">
-        <label value="Port:" control="crossfire_port"/>
+        <label value="Port:" control="crossfire_port" accesskey="P"/>
         <textbox id="crossfire_port"
-                 type="number"
-                 cols="5"
-                 decimalPlaces="5"
-                 min="1024"
-                 max="65536"
-                 value="5000"/>
+    		label="Port:"
+            type="number"
+            cols="5"
+            decimalPlaces="5"
+            min="1024"
+            max="65536"
+            value="5000"
+			persist="value"/>
     </hbox>
 </dialog>
