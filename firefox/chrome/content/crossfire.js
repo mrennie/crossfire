@@ -855,12 +855,43 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE onInspectNode", node);
             }
-            if (typeof FireDiff != 'undefined') { //FIXME: remove dependency on FireDiff
-                var nodePath = FireDiff.Path.getElementPath(node, true);
+            var path = this._resolveElementPath(node, true);
+            if(path) {
+            	this._sendEvent("onInspectNode", { "context_id": context.Crossfire.crossfire_id, "data": {"node": path}});
             }
-            this._sendEvent("onInspectNode", { "context_id": context.Crossfire.crossfire_id, "data": {"node": nodePath}});
         },
 
+        /**
+         * @name _resolveElementPath
+         * @description resolves the path to the given element within the DOM tree.
+         * @function
+         * @private
+         * @memberOf CrossfireModule
+         * @param element the current DOM node context
+         * @param if we should use the tags names when constructing the path. i.e. <code>/html[1]/body[1]/div[4]/span[21]/...</code>
+         * @since 0.3a1
+         */
+		_resolveElementPath: function(element, useTagNames) {
+			var nameLookup = [];
+			nameLookup[Node.COMMENT_NODE] = "comment()";
+			nameLookup[Node.TEXT_NODE] = "text()";
+			nameLookup[Node.PROCESSING_INSTRUCTION_NODE] = "processing-instruction()";
+			var paths = [];
+			for (; element && element.nodeType != Node.DOCUMENT_NODE; element = element.parentNode) {
+				var tagName = element.localName || nameLookup[element.nodeType];
+				var index = 0;
+				for (var sibling = element.previousSibling; sibling; sibling = sibling.previousSibling) {
+					var siblingTagName = sibling.localName || nameLookup[sibling.nodeType];
+					if (!useTagNames || tagName == siblingTagName || !tagName) {
+						++index;
+					}
+				}
+				var pathIndex = "[" + (index+1) + "]";
+				paths.splice(0, 0, (useTagNames && tagName ? tagName.toLowerCase() : "node()") + pathIndex);
+			}
+			return "/" + paths.join("/");
+		},
+        
         /**
          * @name updateStatusIcon
          * @description Update the Crossfire connection status icon.
