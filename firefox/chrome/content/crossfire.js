@@ -40,7 +40,7 @@ FBL.ns(function() { with(FBL) {
     top.CrossfireModule = extend(Firebug.Module,  {
         contexts: [],
         dispatchName: "Crossfire",
-
+        
         /** 
          * @name initialize
          * @description Initializes Crossfire
@@ -380,26 +380,22 @@ FBL.ns(function() { with(FBL) {
          * @public
          * @memberOf CrossfireModule
          * @param browser the browser the context was changed to in
-         * @param context the context that was switched from
+         * @param context the context that was switched to
          */
         showContext: function(browser, context) {
         	if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE:  showContext");
             }
-        	var newContextId, newHref = "", href = "";
-            newContextId = this.currentContext.Crossfire.crossfire_id;
-            try {
-                href = context.window.location.href;
-            } catch(e) {
-             //do nothing
-            }
-            try {
-                newHref = newContext.window.location.href;
-            } catch(e) {
-             //do nothing
-            }
-            this._sendEvent("onContextChanged", {"context_id": context.Crossfire.crossfire_id, "new_context_id": newContextId, "data": {"href": href, "new_href": newHref}});
-            this.currentContext = context;
+        	if(context) {
+	        	var current = this.currentContext;
+	        	if(!current || !current.Crossfire) {
+	        		current = context;
+	        	}
+	        	var href =  current.window.location.href;
+	            var newHref =  context.window.location.href;
+	            this._sendEvent("onContextChanged", {"context_id": current.Crossfire.crossfire_id, "new_context_id": context.Crossfire.crossfire_id, "data": {"href": href, "new_href": newHref}});
+        	}
+        	this.currentContext = context;
         },
 
         /**
