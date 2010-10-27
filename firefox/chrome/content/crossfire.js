@@ -386,18 +386,16 @@ FBL.ns(function() { with(FBL) {
         	if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE:  showContext");
             }
-        	if(context) {
-	        	var current = this.currentContext;
-	        	if(!current || !current.Crossfire) {
-	        		current = context;
-	        	}
-	        	var href =  current.window.location.href;
+        	if(context && this.currentContext && this.currentContext.Crossfire) {
+	        	var href =  this.currentContext.window.location.href;
 	            var newHref =  context.window.location.href;
-	            this._sendEvent("onContextChanged", {"context_id": current.Crossfire.crossfire_id, "new_context_id": context.Crossfire.crossfire_id, "data": {"href": href, "new_href": newHref}});
+	            if(href != newHref) {
+	            	this._sendEvent("onContextChanged", {"context_id": this.currentContext.Crossfire.crossfire_id, "new_context_id": context.Crossfire.crossfire_id, "data": {"href": href, "new_href": newHref}});
+	            }
         	}
         	this.currentContext = context;
         },
-
+        
         /**
          * @name destroyContext
          * @description Handles a context being destroyed - i.e. a tab has been closed in the browser. 
