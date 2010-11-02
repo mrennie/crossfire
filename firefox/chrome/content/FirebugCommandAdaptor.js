@@ -508,9 +508,15 @@ FBL.ns(function() { with(FBL) {
             try {
                 lines = sourceFile.loadScriptLines(this.context);
             } catch (ex) {
-                lines = [];
-                if (FBTrace.DBG_CROSSFIRE)
-                    FBTrace.sysout("CROSSFIRE: failed to get source lines for script : " +ex);
+                if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE: failed to get source lines for script: "+url+" - exception: " +ex);
+                }
+            }
+            if(!lines) {
+            	if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE: resetting source lines for script: "+url);
+                }
+            	lines = [];
             }
             var srcLen;
             try {
