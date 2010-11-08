@@ -199,7 +199,7 @@ FBL.ns(function() { with(FBL) {
          */
         "setbreakpoint": function( args) {
             var url = args["target"];
-            var line = args["line"];
+            var line = parseInt(args["line"]);
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor setbreakpoint: url => " + url + " line => " + line);
 
@@ -226,11 +226,14 @@ FBL.ns(function() { with(FBL) {
                 var sourceFile = this.context.sourceFileMap[url];
                 if (sourceFile) {
                     Firebug.Debugger.setBreakpoint(sourceFile, line);
+                    if (FBTrace.DBG_CROSSFIRE)
+                        FBTrace.sysout("CROSSFIRE CommandAdaptor breakpoint set "+line+"@"+sourceFile.href);
                 }
-
-                if (FBTrace.DBG_CROSSFIRE)
-                    FBTrace.sysout("CROSSFIRE CommandAdaptor breakpoint set.");
-
+                else
+                {
+                    if (FBTrace.DBG_CROSSFIRE)
+                        FBTrace.sysout("CROSSFIRE CommandAdaptor breakpoint set FAILS no sourceFile for "+url);
+                }
             }
             return {"context_id": this.contextId, "breakpoint": breakpoint  };
 
@@ -263,7 +266,7 @@ FBL.ns(function() { with(FBL) {
             var breakpoint;
             var bpId = args["handle"];
             var target = args["target"];
-            var line = args["line"];
+            var line = parseInt(args["line"]);
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE CommandAdaptor clearbreakpoint id: " + bpId);
             if (bpId || (target && line)) {
