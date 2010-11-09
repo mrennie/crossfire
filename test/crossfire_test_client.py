@@ -35,7 +35,7 @@ class CrossfireClient:
 
     #self.socket.listen(1)
     #self.conn, addr = self.socket.accept()
-    
+
     #self.conn = self.socket.connect((self.host, self.port))
 
     self.socket = socket.create_connection((self.host, self.port))
@@ -70,7 +70,7 @@ class CrossfireClient:
       shake = self.socket.recv(len(HANDSHAKE_STRING))
       print shake
     except socket.error, msg:
-      print msg	
+      print msg
     if shake == HANDSHAKE_STRING:
       print 'Received Crossfire handshake.'
 
@@ -140,6 +140,7 @@ class PacketReader(threading.Thread):
   def readPacket(self, length):
     packet = ""
     read = offset = 0
+    self.conn.recv(2) #next two bytes should be \r\n
     while read < length:
       if length-read < 4096:
         offset = length-read

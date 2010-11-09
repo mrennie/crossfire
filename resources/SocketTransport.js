@@ -457,7 +457,8 @@ CrossfireSocketTransport.prototype =
             try {
                 if (this._inputStream.available() == CROSSFIRE_HANDSHAKE.length) {
                     if (this._scriptableInputStream.read(CROSSFIRE_HANDSHAKE.length) == CROSSFIRE_HANDSHAKE) {
-                        this._outputStream.asyncWait(this._outputStreamCallback,0,0,null);
+                        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                            FBTrace.sysout("_waitHandshake read handshake string");
                         if (this.isServer) {
                             this._sendHandshake();
                         } else {
@@ -472,7 +473,7 @@ CrossfireSocketTransport.prototype =
             } catch (e) {
                 //this.close();
                 if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
-                    FBTrace.sysout("_waitHandshake: " + e);
+                    FBTrace.sysout("_waitHandshake exception: " + e);
 
                 if (this.isServer) {
                     this._waitHandshake(HANDSHAKE_RETRY);
