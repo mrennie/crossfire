@@ -44,11 +44,11 @@ FBL.ns(function() { with(FBL) {
          * @param args.stepcount <code>stepcount</code>: currently ignored.
          */
         "continue": function( args) {
-        	if (FBTrace.DBG_CROSSFIRE)
-        		FBTrace.sysout("CROSSFIRE CommandAdaptor continue");
-        	var stepAction = null;
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CROSSFIRE CommandAdaptor continue");
+            var stepAction = null;
             if(args) {
-            	stepAction = args["stepaction"];
+                stepAction = args["stepaction"];
             }
             if (stepAction == "in") {
                 Firebug.Debugger.stepInto(this.context);
@@ -516,10 +516,10 @@ FBL.ns(function() { with(FBL) {
                 }
             }
             if(!lines) {
-            	if (FBTrace.DBG_CROSSFIRE) {
+                if (FBTrace.DBG_CROSSFIRE) {
                     FBTrace.sysout("CROSSFIRE: resetting source lines for script: "+url);
                 }
-            	lines = [];
+                lines = [];
             }
             var srcLen;
             try {
@@ -738,7 +738,7 @@ FBL.ns(function() { with(FBL) {
             if (incContext) {
                 ref["context_id"] = this.contextId;
             }
-            for (var i in this.refs) {
+            for (var i = 0; i < this.refs.length; i++) {
                 if (this.refs[i] === obj) {
                     //if (FBTrace.DBG_CROSSFIRE)
                       //  FBTrace.sysout("CROSSFIRE CommandAdaptor getRef ref exists with handle: " + i, obj);
