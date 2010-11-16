@@ -287,6 +287,7 @@ FBL.ns(function() { with(FBL) {
                     return context;
                 }
             }
+        	return null;
         },
         
         /**
@@ -1691,7 +1692,7 @@ FBL.ns(function() { with(FBL) {
         _getRef: function(obj, context_id) {
             if (obj && obj.type && obj.type == "ref" && obj.handle) {
                 FBTrace.sysout("CROSSFIRE CommandAdaptor getRef tried to get ref for serialized obj");
-                return;
+                return null;
             }
             var ref = { "type":"ref", "handle": -1 };
             if (context_id) {
@@ -1919,7 +1920,7 @@ FBL.ns(function() { with(FBL) {
             title = "Crossfire - Connect to Server";
         }
         return { "host": null, "port": null, "title": title, "cli_host": host, "cli_port": port };
-    };
+    }
 
     /**
      * @name generateId
@@ -1932,5 +1933,5 @@ FBL.ns(function() { with(FBL) {
      */
     function generateId() {
         return "xf"+CROSSFIRE_VERSION + "::" + (++CONTEXT_ID_SEED);
-    };
+    }
 }});
