@@ -47,6 +47,7 @@ var Packet = {
             //return eval('(' + str + ')'); //FIXME: dangerous
             return JSON.parse(str);
         }
+        return null;
     },
 
     /**
@@ -97,7 +98,7 @@ function EventPacket( event, data) {
         if (json && json.seq)
             Packet.seq = json.seq+1;
     }
-};
+}
 
 EventPacket.prototype = Packet;
 
@@ -117,7 +118,7 @@ function RequestPacket( packetString) {
     }
     if (json && json.seq)
         Packet.seq = json.seq+1;
-};
+}
 
 RequestPacket.prototype = Packet;
 
@@ -149,6 +150,6 @@ function ResponsePacket( command, requestSeq, body, running, success) {
     var json = this.toJSON(packet);
     this.data = this.toPacketString(json);
     this.length = this.data.length;
-};
+}
 
 ResponsePacket.prototype = Packet;
