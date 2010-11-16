@@ -536,7 +536,7 @@ CrossfireSocketTransport.prototype =
 
                 while(this._parseBuffer()){
                     // until nothing more is recognized
-                };
+                }
             }
         }
         if (this.connected) {
