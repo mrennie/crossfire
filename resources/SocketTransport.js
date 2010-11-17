@@ -36,6 +36,9 @@ try {
     FBTrace = {};
 }
 
+const PrefService = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefService);
+
+
 /**
  * @name CROSSFIRE_STATUS
  * @description The {@link Array} of valid statuses:
@@ -253,28 +256,50 @@ CrossfireSocketTransport.prototype =
             var serverSocket = Cc["@mozilla.org/network/server-socket;1"]
                                   .createInstance(Ci.nsIServerSocket);
 
-            serverSocket.init(port, true, -1);
-
-            var self = this;
-
-            serverSocket.asyncListen({
-                QueryInterface: function(iid) {
-                    if(!iid.equals(Ci.nsISupports) && !iid.equals(Ci.nsIServerSocketListener))
-                        throw NS_ERROR_NO_INTERFACE;
-                    return this;
-                },
-
-                onSocketAccepted: function( socket, transport) {
-                    self._transport = transport;
-
-                    self._createInputStream();
-
-                    self._createOutputStream();
-
-                    self._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTING);
-                    self._waitHandshake();
+            // mcollins: issue 3606
+            // create a preference to pass to serverSocket.init() so we can connect to more than loopback.
+            // https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIServerSocket#init%28%29
+            var isLoopbackOnly = true;
+            try {
+                var prefBranch = PrefService.getBranch("extensions.firebug.crossfire.");
+                if (prefBranch) {
+                    isLoopbackOnly = prefBranch.getBoolPref("loopbackOnly");
+                    if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                        FBTrace.sysout("Crossfire got loopbackOnly pref: " + isLoopbackOnly);
                 }
-            });
+            } catch (e1) {
+                if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                    FBTrace.sysout("Exception getting loopbackOnly pref. Crossfire will only accept connections from localhost.");
+            }
+            try {
+                serverSocket.init(port, isLoopbackOnly, -1);
+
+                var self = this;
+
+                serverSocket.asyncListen({
+                    QueryInterface: function(iid) {
+                        if(!iid.equals(Ci.nsISupports) && !iid.equals(Ci.nsIServerSocketListener))
+                            throw NS_ERROR_NO_INTERFACE;
+                        return this;
+                    },
+
+                    onSocketAccepted: function( socket, transport) {
+                        self._transport = transport;
+
+                        self._createInputStream();
+
+                        self._createOutputStream();
+
+                        self._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTING);
+                        self._waitHandshake();
+                    }
+                });
+
+            } catch (e2) {
+                if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                    FBTrace.sysout("exception creating crossfire server: " + e2);
+                // TODO: notifyConnection of failure
+            }
 
             this._notifyConnection(CROSSFIRE_STATUS.STATUS_WAIT_SERVER);
         } else {
@@ -482,7 +507,7 @@ CrossfireSocketTransport.prototype =
         }, timeout);
     },
 
-    /** 
+    /**
      * @name _sendPacket
      * @description Sends the given packet over the underlying transport
      * @function
@@ -614,7 +639,7 @@ CrossfireSocketTransport.prototype =
      * @function
      * @private
      * @memberOf CrossfireSocketTransport
-     * @param packet the packet that has been read 
+     * @param packet the packet that has been read
      */
     _notifyListeners: function( packet) {
         var listener, handler;
