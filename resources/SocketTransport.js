@@ -487,9 +487,9 @@ CrossfireSocketTransport.prototype =
                         if (this.isServer) {
                             this._sendHandshake();
                         } else {
+                            this.connected = true;
                             this._waitOnPacket();
                             this._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT);
-                            this.connected = true;
                         }
                         return;
                     }
@@ -498,7 +498,7 @@ CrossfireSocketTransport.prototype =
             } catch (e) {
                 //this.close();
                 if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
-                    FBTrace.sysout("_waitHandshake exception: " + e);
+                    FBTrace.sysout("_waitHandshake exception: " + e, e);
 
                 if (this.isServer) {
                     this._waitHandshake(HANDSHAKE_RETRY);
