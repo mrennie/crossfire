@@ -984,7 +984,7 @@ FBL.ns(function() { with(FBL) {
          * @since 0.3a1
          */
         _sendEvent: function(event, data) {
-            if (this.transport && this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) 
+            if (this.transport && this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
                 if (FBTrace.DBG_CROSSFIRE)
                     FBTrace.sysout("CROSSFIRE: _sendEvent => " + event + " ["+data+"]");
                 this.transport.sendEvent(event, data);
