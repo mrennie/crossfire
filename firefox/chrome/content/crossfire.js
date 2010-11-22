@@ -268,7 +268,12 @@ FBL.ns(function() { with(FBL) {
                 this.transport.sendResponse(command, request.seq, {}, this.running, false);
             }
         },
-        
+
+        fireEvent: function(packet)
+        {
+            dispatch(this.fbListeners, "onExecute", [packet]);
+        },
+
         /**
          * @name _findContext
          * @description Returns the Context for the given id, or <code>null</code> if no context matches the given id
@@ -979,14 +984,13 @@ FBL.ns(function() { with(FBL) {
          * @since 0.3a1
          */
         _sendEvent: function(event, data) {
-        	if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE:  _sendEvent => " + event + " ["+data+"]");
-            }
-        	if (this.transport && this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
-            	this.transport.sendEvent(event, data);
+            if (this.transport && this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) 
+                if (FBTrace.DBG_CROSSFIRE)
+                    FBTrace.sysout("CROSSFIRE: _sendEvent => " + event + " ["+data+"]");
+                this.transport.sendEvent(event, data);
             }
         },
-        
+
         // ----- firebug listeners -----
         /**
          * @name onSourceFileCreated
