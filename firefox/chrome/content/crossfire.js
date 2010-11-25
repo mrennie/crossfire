@@ -8,7 +8,7 @@
  * @memberOf Crossfire
  * @type String
  */
-const CROSSFIRE_VERSION = "0.3";
+var CROSSFIRE_VERSION = "0.3";
 /**
  * @name CONTEXT_ID_SEED
  * @description The seed to use when creating new context ids for Crossfire
@@ -85,7 +85,7 @@ FBL.ns(function() { with(FBL) {
 	        }
 	        catch(e) {
 	        	this._removeListeners();
-	        	FBTrace.sysout(e);
+	        	FBTrace.sysout("failed to connect client "+e);
 	        }
         },
 
@@ -110,7 +110,7 @@ FBL.ns(function() { with(FBL) {
                 this.transport.open(host, port);
             } catch(e) {
             	this._removeListeners();
-                FBTrace.sysout(e);
+                FBTrace.sysout("failed to start server "+e);
             }
         },
         
@@ -177,6 +177,29 @@ FBL.ns(function() { with(FBL) {
             this._clearBreakpoints();
         },
 
+        /**
+         * @name _getDialogParams
+         * @description Fetches the entered parameters from the server-start dialog
+         * @function
+         * @private
+         * @memberOf Crossfire
+         * @param isServer if the dialog should ask for server start-up parameters or client connect parameters
+         * @type Array
+         * @returns an Array of dialog parameters
+         */
+        _getDialogParams: function(isServer) {
+            var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
+            var host = commandLine.getHost();
+            var port = commandLine.getPort();
+            var title;
+            if (isServer) {
+                title = "Crossfire - Start Server";
+            } else {
+                title = "Crossfire - Connect to Server";
+            }
+            return { "host": null, "port": null, "title": title, "cli_host": host, "cli_port": port };
+        },
+        
         // ----- Crossfire transport listener -----
 
         /**
@@ -689,15 +712,34 @@ FBL.ns(function() { with(FBL) {
          */
         doLookup: function(context, args) {
             var handle = args["handle"];
+            var source = args["includeSource"];
             if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE CommandAdaptor lookup: handle => " + handle);
+                FBTrace.sysout("CROSSFIRE doLookup: handle => " + handle);
             }
             if (handle) {
             	var obj;
                 for (var i in this.refs) {
                     if (i == handle) {
                         obj = this.refs[i];
-                        return {"context_id": context.Crossfire.crossfire_id, "type": typeof(obj), "value": this._serialize(obj, null) };
+                        if(source) {
+                        	try {
+                        		var src = obj.toSource();
+                        		if(src) {
+                        			var cid = context.Crossfire.crossfire_id;
+                        			var arr = this._serialize(obj, cid);
+                        			arr["context_id"] = cid;
+                        			arr["source"] = src;
+                        			return arr;
+                        		}
+                        	}
+                        	catch(e) {
+                        		//do nothing, return no source
+                        	}
+                        	var cid = context.Crossfire.crossfire_id;
+                			var arr = this._serialize(obj, cid);
+                			arr["context_id"] = cid;
+                        	return arr;
+                        }
                     }
                 }
             }
@@ -1044,7 +1086,7 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE:  initContext");
             }
-            context.Crossfire = { "crossfire_id" : generateId() };
+            context.Crossfire = { "crossfire_id" : this._generateId() };
             this.contexts.push(context);
             var href = "";
             try {
@@ -1055,6 +1097,20 @@ FBL.ns(function() { with(FBL) {
             this._sendEvent("onContextCreated", { "context_id": context.Crossfire.crossfire_id, "data": {"href": href}});
         },
 
+        /**
+         * @name _generateId
+         * @description Generates a unique id to map to a Firebug context
+         * @function
+         * @private
+         * @memberOf CrossfireModule
+         * @type String
+         * @return a new ID to map to a Firebug context
+         * @since 0.3a2
+         */
+        _generateId: function() {
+        	return "xf"+CROSSFIRE_VERSION + "::" + (++CONTEXT_ID_SEED);
+        },
+        
         /**
          * @name loadedContext
          * @description Handles a context being loaded - i.e. the scripts in a given context have completed being compiled.
@@ -1476,7 +1532,11 @@ FBL.ns(function() { with(FBL) {
 
         /**
          * @name logFormatted
-         * @description Generates event packets based on the className (log,debug,info,warn,error). 
+         * @description 
+         * This function is a callback for <code>Firebug.ConsoleBase</code> located 
+         * in <code>/firebug1.7/content/firebug/console.js</code>.
+         * <br><br>
+         * Generates event packets based on the className (log,debug,info,warn,error). 
          * The object or message logged is contained in the packet's <code>data</code> property.
          * <br><br>
          * Fires one of the following events:
@@ -1694,18 +1754,18 @@ FBL.ns(function() { with(FBL) {
          * @since 0.3a1
          */
         _getRef: function(obj, context_id) {
-            if (obj && obj.type && obj.type == "ref" && obj.handle) {
-                FBTrace.sysout("CROSSFIRE CommandAdaptor getRef tried to get ref for serialized obj");
+            if (obj && obj.type && obj.handle) {
+                FBTrace.sysout("CROSSFIRE _getRef tried to get ref for serialized obj");
                 return null;
             }
-            var ref = { "type":"ref", "handle": -1 };
+            var ref = { "type":typeof(obj), "handle": -1 };
             if (context_id) {
                 ref["context_id"] = context_id;
             }
             for (var i = 0; i < this.refs.length; i++) {
                 if (this.refs[i] === obj) {
                     if (FBTrace.DBG_CROSSFIRE) {
-                        FBTrace.sysout("CROSSFIRE CommandAdaptor getRef ref exists with handle: " + i + " type = "+typeof(i), obj);
+                        FBTrace.sysout("CROSSFIRE _getRef ref exists with handle: " + i + " type = "+typeof(obj), obj);
                     }
                     ref["handle"] = i;
                     return ref;
@@ -1714,7 +1774,7 @@ FBL.ns(function() { with(FBL) {
             var handle = ++this.refCount;
             this.refs[handle] = obj;
             if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE CommandAdaptor getRef new ref created with handle: " + handle, obj);
+                FBTrace.sysout("CROSSFIRE _getRef new ref created with handle: " + handle, obj);
             }
             ref["handle"] = handle;
             return ref;
@@ -1734,8 +1794,8 @@ FBL.ns(function() { with(FBL) {
         },
         
         /**
-         * @name _clearRefs
-         * @description clears the reference id cache
+         * @name _clearBreakpoints
+         * @description clears the breakpoint reference ids and resets the id counter
          * @function
          * @private
          * @memberOf CrossfireModule
@@ -1765,10 +1825,10 @@ FBL.ns(function() { with(FBL) {
                 if (contextid) {
                     serialized["context_id"] = contextid;
                 }
-                if (type == "object") {
+                if (type == "object" || type == "function") {
                     if (obj == null) {
                          serialized["value"] = "null";
-                    } else if (obj.type && obj.type == "ref" && obj.handle) {
+                    } else if (obj.type && obj.handle) {
                         // already serialized
                         serialized = obj;
                     } else if (obj instanceof Array) {
@@ -1782,33 +1842,8 @@ FBL.ns(function() { with(FBL) {
                         serialized["value"] = arr + "]";
                     } else {
                         var ref = this._getRef(obj);
-                        var o = {};
-                        for (var p in obj) {
-                            try {
-                                if (obj.hasOwnProperty(p) /*&& !(p in ignoreVars)*/) {
-                                    var prop = obj[p];
-                                    if (typeof(prop) == "object") {
-                                        if (prop == null) {
-                                            o[p] = "null";
-                                        } else if (prop && prop.type && prop.type == "ref" && prop.handle) {
-                                            o[p] = prop;
-                                        } else  {
-                                            o[p] = this._getRef(prop);
-                                        }
-                                    } else if (p === obj) {
-                                        o[p] = ref;
-                                    } else {
-                                        o[p] = this._serialize(prop, contextid);
-                                    }
-                                }
-                            } catch (x) {
-                                o[p] =  { "type": "string", "value": "crossfire serialization exception: " + x };
-                            }
-                        }
-                        serialized["value"] = o;
+                        serialized["value"] = this._serializeProperties(obj, ref, contextid);
                     }
-                } else if (type == "function") {
-                    serialized["value"] =  obj.name ? obj.name + "()" : "function()";
                 } else {
                     serialized["value"] = obj;
                 }
@@ -1819,6 +1854,58 @@ FBL.ns(function() { with(FBL) {
             	}
                 return { "type": "string", "value": "crossfire serialization exception: " + e }
             }
+        },
+        
+        /**
+         * @name _serializeProperties
+         * @description Serializes the properties for the given object
+         * @function
+         * @private
+         * @memberOf CrossfireModule
+         * @param obj the {@link Object} to serialize the properties for
+         * @param the computed reference id for <code>obj</code>
+         * @param contextid the id for the current context
+         * @type Object
+         * @returns an object describing the serialized properties of the given object
+         * @since 0.3a2
+         */
+        _serializeProperties: function(obj, ref, contextid) {
+        	var o = {};
+            for (var p in obj) {
+                try {
+                    if (obj.hasOwnProperty(p) /*&& !(p in ignoreVars)*/) {
+                        var prop = obj[p];
+                        if (typeof(prop) == "object" || typeof(prop) == "function") {
+                            if (prop == null) {
+                                o[p] = "null";
+                            } else if (prop && prop.type && prop.handle) {
+                                o[p] = prop;
+                            } else  {
+                                o[p] = this._getRef(prop);
+                            }
+                        } else if (p === obj) {
+                            o[p] = ref;
+                        } else {
+                            o[p] = this._serialize(prop, contextid);
+                        }
+                    }
+                    else if(FBTrace.DBG_CROSSFIRE){
+                    	FBTrace.sysout("ignoring property -> "+p+" from -> "+obj.toString()+" during serialization");
+                    }
+                } catch (x) {
+                    o[p] =  null;
+                }
+            }
+            if(obj.constructor && obj.constructor != obj) {
+            	o["constructor"] = this._getRef(obj.constructor);
+            }
+        	if(obj.prototype && obj.prototype != obj) {
+    			o["proto"] = this._getRef(obj.prototype);
+    		}
+            if(obj.arguments) {
+            	o["Arguments"] = this._getRef(obj.arguments);
+            }
+            return o;
         },
         
         /**
@@ -1870,7 +1957,7 @@ FBL.ns(function() { with(FBL) {
      * @memberOf Crossfire
      */
     Crossfire.startServer = function() {
-        var params = _getDialogParams(true);
+        var params = CrossfireModule._getDialogParams(true);
         window.openDialog("chrome://crossfire/content/connect-dialog.xul", "crossfire-connect","chrome,modal,dialog", params);
         if (params.host && params.port) {
             CrossfireModule.startServer(params.host, parseInt(params.port));
@@ -1885,7 +1972,7 @@ FBL.ns(function() { with(FBL) {
      * @memberOf Crossfire
      */
     Crossfire.connect = function() {
-        var params = _getDialogParams(false);
+        var params = CrossfireModule._getDialogParams(false);
         window.openDialog("chrome://crossfire/content/connect-dialog.xul", "crossfire-connect","chrome,modal,dialog", params);
         if (params.host && params.port) {
             CrossfireModule.connectClient(params.host, parseInt(params.port));
@@ -1902,40 +1989,4 @@ FBL.ns(function() { with(FBL) {
     Crossfire.disconnect = function() {
         CrossfireModule.disconnect();
     };
-    
-    /**
-     * @name _getDialogParams
-     * @description Fetches the entered parameters from the server-start dialog
-     * @function
-     * @private
-     * @memberOf Crossfire
-     * @param isServer if the dialog should ask for server start-up parameters or client connect parameters
-     * @type Array
-     * @returns an Array of dialog parameters
-     */
-    function _getDialogParams( isServer) {
-        var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
-        var host = commandLine.getHost();
-        var port = commandLine.getPort();
-        var title;
-        if (isServer) {
-            title = "Crossfire - Start Server";
-        } else {
-            title = "Crossfire - Connect to Server";
-        }
-        return { "host": null, "port": null, "title": title, "cli_host": host, "cli_port": port };
-    }
-
-    /**
-     * @name generateId
-     * @description generate a unique id for newly created contexts.
-     * @function
-     * @public
-     * @memberOf Crossfire
-     * @type String
-     * @returns a unique id for newly created contexts
-     */
-    function generateId() {
-        return "xf"+CROSSFIRE_VERSION + "::" + (++CONTEXT_ID_SEED);
-    }
 }});
