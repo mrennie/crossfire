@@ -35,14 +35,15 @@ FBL.ns(function() { with(FBL) {
     top.CrossfireModule = extend(Firebug.Module,  {
         contexts: [],
         dispatchName: "Crossfire",
-        
-        /** 
+        toolName: "all", // receive all packets, regardless of 'tool' header
+
+        /**
          * @name initialize
          * @description Initializes Crossfire
          * @function
          * @private
          * @memberOf CrossfireModule
-         * @extends Firebug.Module 
+         * @extends Firebug.Module
          */
         initialize: function() {
             var host, port, serverPort;
@@ -76,17 +77,18 @@ FBL.ns(function() { with(FBL) {
             this.host = host;
             this.port = port;
             try {
-	            this._addListeners();
-	            if (!this.clientTransport) {
-	                this.clientTransport = new CrossfireSocketTransport();
-	            }
-	            this.clientTransport.addListener(this);
-	            this.clientTransport.open(host, port);
-	        }
-	        catch(e) {
-	        	this._removeListeners();
-	        	FBTrace.sysout("failed to connect client "+e);
-	        }
+                this._addListeners();
+
+                if (!this.clientTransport) {
+                    this.clientTransport = new CrossfireSocketTransport();
+                }
+                this.clientTransport.addListener(this);
+                this.clientTransport.open(host, port);
+            }
+            catch(e) {
+                this._removeListeners();
+                if (FBTrace.DBG_CROSSFIRE) FBTrace.sysout(e);
+            }
         },
 
         /**
@@ -107,13 +109,26 @@ FBL.ns(function() { with(FBL) {
                 this.transport = getCrossfireServer();
                 this._addListeners();
                 this.transport.addListener(this);
+
+                // notify tools of transport
+                if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                    FBTrace.sysout("CROSSFIRE notify tools onTransportCreated", this.transport);
+                for (var tool in this.registeredTools) {
+                    try {
+                        this.registeredTools[tool].onTransportCreated(this.transport);
+                    } catch( e) {
+                         if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                             FBTrace.sysout("CROSSFIRE exception notifying tool: " + tool, e);
+                    }
+                }
+
                 this.transport.open(host, port);
             } catch(e) {
-            	this._removeListeners();
-                FBTrace.sysout("failed to start server "+e);
+                if (FBTrace.DBG_CROSSFIRE) FBTrace.sysout("CROSSFIRE failed to start server "+e);
+                this._removeListeners();
             }
         },
-        
+
         /**
          * @name _addListeners
          * @description Adds Crossfire as a listener to the core modules
@@ -122,12 +137,31 @@ FBL.ns(function() { with(FBL) {
          * @memberOf CrossfireModule
          */
         _addListeners: function() {
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CROSSFIRE _addListeners");
+
             Firebug.Debugger.addListener(this);
-            Firebug.Console.addListener(this);
-            Firebug.Inspector.addListener(this);
             Firebug.HTMLModule.addListener(this);
+
+            // -- add tools --
+            //mcollins TODO: make these activable, instead of automatically adding the kitchen sink.
+            var consoleTool = new Crossfire.ConsoleTool();
+            if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                FBTrace.sysout("CROSSFIRE created ConsoleTool: " + consoleTool);
+            this.registerTool("console", consoleTool);
+
+            var inspectorTool = new Crossfire.InspectorTool();
+            if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                FBTrace.sysout("CROSSFIRE created InspectorTool: " + inspectorTool);
+            this.registerTool("inspector", inspectorTool);
+
+            var netTool = new Crossfire.NetTool();
+            if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                FBTrace.sysout("CROSSFIRE created NetTool: " + netTool);
+            this.registerTool("net", netTool);
+
         },
-        
+
         /**
          * @name _removeListeners
          * @description Removes Crossfire as a listener from the core modules
@@ -137,12 +171,13 @@ FBL.ns(function() { with(FBL) {
          * @since 0.3a1
          */
         _removeListeners: function() {
-        	Firebug.Debugger.removeListener(this);
-            Firebug.Console.removeListener(this);
-            Firebug.Inspector.removeListener(this);
+            Firebug.Debugger.removeListener(this);
             Firebug.HTMLModule.removeListener(this);
+
+            this.unregisterTool("console");
+            this.unregisterTool("inspector");
         },
-        
+
         /**
          * @name stopServer
          * @description Stops the server and closes the socket
@@ -151,7 +186,7 @@ FBL.ns(function() { with(FBL) {
          * @memberOf CrossfireModule
          */
         stopServer: function() {
-        	this._removeListeners();
+            this._removeListeners();
             this.transport.close();
             this.transport = null;
             this._clearRefs();
@@ -169,7 +204,7 @@ FBL.ns(function() { with(FBL) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE disconnect");
             if (this.status != CROSSFIRE_STATUS.STATUS_DISCONNECTED && this.transport) {
-            	this._removeListeners();
+                this._removeListeners();
                 this.transport.close();
                 this.transport = null;
             }
@@ -199,7 +234,7 @@ FBL.ns(function() { with(FBL) {
             }
             return { "host": null, "port": null, "title": title, "cli_host": host, "cli_port": port };
         },
-        
+
         // ----- Crossfire transport listener -----
 
         /**
@@ -224,60 +259,57 @@ FBL.ns(function() { with(FBL) {
                 response =  { "version": CROSSFIRE_VERSION };
             }
             else if(command == "getbreakpoint") {
-    			response = this.getBreakpoint(args);
-    		}
+                response = this.getBreakpoint(args);
+            }
             else {
-            	var context = this._findContext(request.context_id);
-            	if(context) {
-            		if(command == "backtrace") {
-            			response = this.getBacktrace(context, args);
-            		}
-            		else if(command == "changebreakpoint") {
-            			response = this.changeBreakpoint(context, args);
-            		}
-            		else if(command == "clearbreakpoint") {
-            			response = this.clearBreakpoint(context, args);
-            		}
-            		else if(command == "continue") {
-            			response = this.doContinue(context);
-            		}
-            		else if(command == "evaluate") {
-            			response = this.doEvaluate(context, args);
-            		}
-            		else if(command == "frame") {
-            			response = this.getFrame(context, args);
-            		}
-            		else if(command == "getbreakpoints") {
-            			response = this.getBreakpoints(context);
-            		}
-            		else if(command == "inspect") {
-            			response = this.doInspect(context, args);
-            		}
-            		else if(command == "lookup") {
-            			response = this.doLookup(context, args);
-            		}
-            		else if(command == "scopes") {
-            			response = this.getScopes(context, args);
-            		}
-            		else if(command == "scope") {
-            			response = this.getScope(context, args);
-            		}
-            		else if(command == "script") {
-            			response = this.getScript(context, args);
-            		}
-            		else if(command == "scripts") {
-            			response = this.getScripts(context, args);
-            		}
-            		else if(command == "setbreakpoint") {
-            			response = this.setBreakpoint(context, args);
-            		}
-            		else if(command == "source") {
-            			response = this.getSource(context, args);
-            		}
-            		else if(command == "suspend") {
-            			response = this.doSuspend(context);
-            		}
-            	}
+                var context = this.findContext(request.context_id);
+                if(context) {
+                    if(command == "backtrace") {
+                        response = this.getBacktrace(context, args);
+                    }
+                    else if(command == "changebreakpoint") {
+                        response = this.changeBreakpoint(context, args);
+                    }
+                    else if(command == "clearbreakpoint") {
+                        response = this.clearBreakpoint(context, args);
+                    }
+                    else if(command == "continue") {
+                        response = this.doContinue(context);
+                    }
+                    else if(command == "evaluate") {
+                        response = this.doEvaluate(context, args);
+                    }
+                    else if(command == "frame") {
+                        response = this.getFrame(context, args);
+                    }
+                    else if(command == "getbreakpoints") {
+                        response = this.getBreakpoints(context);
+                    }
+                    else if(command == "lookup") {
+                        response = this.doLookup(context, args);
+                    }
+                    else if(command == "scopes") {
+                        response = this.getScopes(context, args);
+                    }
+                    else if(command == "scope") {
+                        response = this.getScope(context, args);
+                    }
+                    else if(command == "script") {
+                        response = this.getScript(context, args);
+                    }
+                    else if(command == "scripts") {
+                        response = this.getScripts(context, args);
+                    }
+                    else if(command == "setbreakpoint") {
+                        response = this.setBreakpoint(context, args);
+                    }
+                    else if(command == "source") {
+                        response = this.getSource(context, args);
+                    }
+                    else if(command == "suspend") {
+                        response = this.doSuspend(context);
+                    }
+                }
             }
             if (response) {
                 if (FBTrace.DBG_CROSSFIRE) {
@@ -285,7 +317,7 @@ FBL.ns(function() { with(FBL) {
                 }
                 this.transport.sendResponse(command, request.seq, response, this.running, true);
             } else {
-            	 if (FBTrace.DBG_CROSSFIRE) {
+                 if (FBTrace.DBG_CROSSFIRE) {
                      FBTrace.sysout("CROSSFIRE sending failure response => " + response.toSource());
                  }
                 this.transport.sendResponse(command, request.seq, {}, this.running, false);
@@ -298,26 +330,25 @@ FBL.ns(function() { with(FBL) {
         },
 
         /**
-         * @name _findContext
+         * @name findContext
          * @description Returns the Context for the given id, or <code>null</code> if no context matches the given id
          * @function
-         * @private
          * @memberOf CrossfireModule
          * @param the String id to look up
          * @type Context
          * @returns the Context for the given id or <code>null</code>
          * @since 0.3a1
          */
-        _findContext: function(contextid) {
-        	for (var i = 0; i < this.contexts.length; i++) {
+        findContext: function(contextid) {
+            for (var i = 0; i < this.contexts.length; i++) {
                 var context = this.contexts[i];
                 if (contextid == context.Crossfire.crossfire_id) {
                     return context;
                 }
             }
-        	return null;
+            return null;
         },
-        
+
         /**
          * @name getBacktrace
          * @description Returns a backtrace (stacktrace) of frames.
@@ -328,8 +359,8 @@ FBL.ns(function() { with(FBL) {
          * @returns an {@link Array} of the backtrace information or <code>null</code> if the backtrace could not be computed
          * @param context the associated context {@link Object}
          * @param args the argument {@link Array} which contains:
-         * <ul> 
-         * <li>an {@link Integer} <code>fromFrame</code>, which denotes the stack frame to start the backtrace from</li> 
+         * <ul>
+         * <li>an {@link Integer} <code>fromFrame</code>, which denotes the stack frame to start the backtrace from</li>
          * <li>optionally an {@link Integer} <code>toFrame</code>, which denotes the stack frame to end the backtrace at. If
          * left out all stack frames will be included in the backtrace</li>
          * <li>and optionally a {@link Boolean} <code>includeScopes</code>, which will cause the associated scopes to be included
@@ -342,14 +373,14 @@ FBL.ns(function() { with(FBL) {
                 FBTrace.sysout("CROSSFIRE backtrace");
             }
             if (context && context.Crossfire.currentFrame) {
-            	if(!args) {
-            		args = [];
-            	}
+                if(!args) {
+                    args = [];
+                }
                 var fromFrame, toFrame;
                 var stack = context.Crossfire.currentFrame.stack;
                 var scopes = args["includeScopes"];
                 if(!scopes) {
-                	scopes = true;
+                    scopes = true;
                 }
                 if (stack) {
                     fromFrame = args["fromFrame"] || 0;
@@ -380,7 +411,7 @@ FBL.ns(function() { with(FBL) {
             }
             return null;
         },
-        
+
         /**
          * @name changeBreakpoint
          * @description Changes the specified breakpoint, if it exists, with the given information. If the change was successful
@@ -392,7 +423,7 @@ FBL.ns(function() { with(FBL) {
          * @returns an {@link Array} of the new breakpoint information or <code>null</code> if the change did not succeed.
          * @param context the associated context {@link Object}
          * @param args the array of arguments which contains:
-         * <ul> 
+         * <ul>
          * <li>an {@link Integer} <code>breakpoint</code>, which is the id of the breakpoint to change</li>
          * </ul>
          * @since 0.3a1
@@ -403,7 +434,7 @@ FBL.ns(function() { with(FBL) {
             //TODO: this needs to be implemented or dumped
             return null;
         },
-        
+
         /**
          * @name clearBreakpoint
          * @description Remove the breakpoint object with the specified id.
@@ -416,7 +447,7 @@ FBL.ns(function() { with(FBL) {
          * @param args the array of arguments which contains:
          * <ul>
          * <li>an {@link Integer} <code>handle</code>, which is the id of the breakpoint to clear</li>
-         * <li>an {@link String} <code>target</code>, which is the URL of the script the breakpoint is set on</li> 
+         * <li>an {@link String} <code>target</code>, which is the URL of the script the breakpoint is set on</li>
          * <li>and an {@link Integer} <code>line</code>, which is the line number the breakpoint is set on</li>
          * </ul>
          * <br><br>
@@ -425,31 +456,31 @@ FBL.ns(function() { with(FBL) {
          * @since 0.3a1
          */
         clearBreakpoint: function(context, args) {
-        	if(this.breakpoints) {
-	            var bpId = args["handle"];
-	            var target = args["target"];
-	            var line = args["line"];
-	            if (bpId || (target && line)) {
-	                for (var i = 0; i < this.breakpoints.length; i++) {
-	                    if ((bpId && this.breakpoints[i].handle == bpId)
-	                        || (target && line && this.breakpoints[i].target == target && this.breakpoints[i].line == line) ) {
-	                        var breakpoint = this.breakpoints[i];
-	                        Firebug.Debugger.clearBreakpoint({"href": breakpoint.target }, breakpoint.line);
-	                        this.breakpoints.splice(i, 1);
-	                        return {"context_id": context.Crossfire.crossfire_id, "breakpoint": breakpoint.handle};
-	                    }
-	                }
-	                // if we get here crossfire didn't know about the breakpoint,
-	                // but if we have target and line arguments, try to clear it anyway.
-	                if (target && line) {
-	                    Firebug.Debugger.clearBreakpoint({"href": target}, line);
-	                    return {"context_id": context.Crossfire.crossfire_id};
-	                }
-	            }
-        	}
+            if(this.breakpoints) {
+                var bpId = args["handle"];
+                var target = args["target"];
+                var line = args["line"];
+                if (bpId || (target && line)) {
+                    for (var i = 0; i < this.breakpoints.length; i++) {
+                        if ((bpId && this.breakpoints[i].handle == bpId)
+                            || (target && line && this.breakpoints[i].target == target && this.breakpoints[i].line == line) ) {
+                            var breakpoint = this.breakpoints[i];
+                            Firebug.Debugger.clearBreakpoint({"href": breakpoint.target }, breakpoint.line);
+                            this.breakpoints.splice(i, 1);
+                            return {"context_id": context.Crossfire.crossfire_id, "breakpoint": breakpoint.handle};
+                        }
+                    }
+                    // if we get here crossfire didn't know about the breakpoint,
+                    // but if we have target and line arguments, try to clear it anyway.
+                    if (target && line) {
+                        Firebug.Debugger.clearBreakpoint({"href": target}, line);
+                        return {"context_id": context.Crossfire.crossfire_id};
+                    }
+                }
+            }
             return null;
         },
-        
+
         /**
          * @name doContinue
          * @description Continue execution of JavaScript if suspended, if no <code>stepaction</code> is passed, simply resumes execution.
@@ -467,9 +498,9 @@ FBL.ns(function() { with(FBL) {
          * @since 0.3a1
          */
         doContinue: function(context, args) {
-        	var stepAction = null;
+            var stepAction = null;
             if(args) {
-            	stepAction = args["stepaction"];
+                stepAction = args["stepaction"];
             }
             if (stepAction == "in") {
                 Firebug.Debugger.stepInto(context);
@@ -482,7 +513,7 @@ FBL.ns(function() { with(FBL) {
             }
             return {};
         },
-        
+
         /**
          * @name doEvaluate
          * @description Evaluate a Javascript expression.
@@ -495,8 +526,8 @@ FBL.ns(function() { with(FBL) {
          * @returns an {@link Array} of the value returned from the evaluation
          * @param context the associated context {@link Object}
          * @param args the array of arguments which contains:
-         * <ul> 
-         * <li>optionally an {@link Integer} <code>frame</code>, which is the index of the stackframe in the current stack to evaluate in</li> 
+         * <ul>
+         * <li>optionally an {@link Integer} <code>frame</code>, which is the index of the stackframe in the current stack to evaluate in</li>
          * <li>a {@link String} <code>expression</code>, which is what will be evaluated</li>
          * </ul>
          * @since 0.3a1
@@ -526,7 +557,7 @@ FBL.ns(function() { with(FBL) {
             }
             return {"context_id": this.contextId, "result": result};
         },
-        
+
         /**
          * @name getFrame
          * @description Returns a new stack frame object.
@@ -547,7 +578,7 @@ FBL.ns(function() { with(FBL) {
             var number = args["number"];
             var includeScopes = args["includeScopes"];
             if(!includeScopes) {
-            	includeScopes = true;
+                includeScopes = true;
             }
             var frame = context.Crossfire.currentFrame;
             if (frame) {
@@ -584,7 +615,7 @@ FBL.ns(function() { with(FBL) {
             }
             return null;
         },
-        
+
         /**
          * @name getBreakpoint
          * @description Returns the breakpoint object with the specified id. This function will not
@@ -596,7 +627,7 @@ FBL.ns(function() { with(FBL) {
          * @returns an {@link Array} of the breakpoint information or <code>null</code> if the breakpoint could not be found.
          * @param context the associated context {@link Object}
          * @param args the array of arguments which contains:
-         * <ul> 
+         * <ul>
          * <li>an {@link Integer} <code>breakpoint</code>, which is the id of the breakpoint to return</li>
          * </ul>
          * @since 0.3a1
@@ -611,11 +642,11 @@ FBL.ns(function() { with(FBL) {
             }
             return null;
         },
-        
+
         /**
          * @name getBreakpoints
          * @description Returns all the breakpoints. This method requests all breakpoints from Firebug directly
-         * for all known source files. 
+         * for all known source files.
          * @function
          * @public
          * @memberOf CrossfireModule
@@ -652,56 +683,16 @@ FBL.ns(function() { with(FBL) {
             this.breakpoints = bps;
             return {"context_id": context.Crossfire.crossfire_id, "breakpoints": bps};
         },
-        
-        /**
-         * @name doInspect
-         * @description Tells Firebug to enter 'inspect' mode.
-         * @function
-         * @private
-         * @memberOf CrossfireModule
-         * @type Array
-         * @returns always returns <code>null</code>
-         * @param context the associated context {@link Object}
-         * @param args the arguments array that contains:
-         * <ul>
-         * <li>optionally a {@link String} <code>xpath</code>, which is the xpath to the item to be inspected.</li> 
-         * <li>optionally a {@link String} <code>selector</code>, which is the selector to the item to be inspected.</li>
-         * </ul>
-         * <br><br>
-         * If both <code>xpath</code> and <code>selector</code> are given <code>xpath</code> is used.
-         * @since 0.3a1
-         */
-        doInspect: function(context, args) {
-            var selector = args["selector"];
-            var xpath = args["xpath"];
-            var doc = context.window.document;
-            var node;
-            if (xpath) {
-                node = FBL.getElementsByXPath(doc, xpath)[0];
-            } else if (selector) {
-                node = FBL.getElementsBySelector(doc, selector)[0];
-            }
-            Firebug.toggleBar(true);
-            Firebug.Inspector.startInspecting(this.context);
-            if (node) {
-                if (node.wrappedJSObject) {
-                    node = node.wrappedJSObject;
-                }
-                setTimeout(function() {
-                    Firebug.Inspector.inspectNode(node);
-                    FirebugChrome.select(node, 'html');
-                });
-            }
-            return {};
-        },
-        
+
+
+
         /**
          * @name doLookup
          * @description Lookup an object by it's handle.
          * @private
          * @memberOf CrossfireModule
          * @type Array
-         * @returns an {@link Array} of the serialized object with the given id or <code>null</code> if the given id does not represent 
+         * @returns an {@link Array} of the serialized object with the given id or <code>null</code> if the given id does not represent
          * an existing object
          * @param context the associated context {@link Object}
          * @param args the arguments array that contains:
@@ -717,35 +708,35 @@ FBL.ns(function() { with(FBL) {
                 FBTrace.sysout("CROSSFIRE doLookup: handle => " + handle);
             }
             if (handle) {
-            	var obj;
+                var obj;
                 for (var i in this.refs) {
                     if (i == handle) {
                         obj = this.refs[i];
                         if(source) {
-                        	try {
-                        		var src = obj.toSource();
-                        		if(src) {
-                        			var cid = context.Crossfire.crossfire_id;
-                        			var arr = this._serialize(obj, cid);
-                        			arr["context_id"] = cid;
-                        			arr["source"] = src;
-                        			return arr;
-                        		}
-                        	}
-                        	catch(e) {
-                        		//do nothing, return no source
-                        	}
-                        	var cid = context.Crossfire.crossfire_id;
-                			var arr = this._serialize(obj, cid);
-                			arr["context_id"] = cid;
-                        	return arr;
+                            try {
+                                var src = obj.toSource();
+                                if(src) {
+                                    var cid = context.Crossfire.crossfire_id;
+                                    var arr = this._serialize(obj, cid);
+                                    arr["context_id"] = cid;
+                                    arr["source"] = src;
+                                    return arr;
+                                }
+                            }
+                            catch(e) {
+                                //do nothing, return no source
+                            }
+                            var cid = context.Crossfire.crossfire_id;
+                            var arr = this._serialize(obj, cid);
+                            arr["context_id"] = cid;
+                            return arr;
                         }
                     }
                 }
             }
             return null;
         },
-        
+
         /**
          * @name getScopes
          * @description  Returns all the scopes for a frame.
@@ -756,7 +747,7 @@ FBL.ns(function() { with(FBL) {
          * @returns the {@link Array} of scopes for a given frame number or <code>null</code>
          * @param context the associated context {@link Object}
          * @param args the request arguments that contains:
-         * <ul> 
+         * <ul>
          * <li>an {@link Integer} <code>number</code>, which is the number of scopes to return</li>
          * <li>an {@link Integer} <code>frameNumber</code>, which is the number of the stack frame to collect scopes from</li>
          * </ul>
@@ -783,7 +774,7 @@ FBL.ns(function() { with(FBL) {
             }
             return null;
         },
-        
+
         /**
          * @name getScope
          * @description Returns a scope for the specified frame.
@@ -857,17 +848,17 @@ FBL.ns(function() { with(FBL) {
             var scripts = [];
             var script;
             for (var url in srcMap) {
-            	if(url) {
-	                script = this.getScript(context, { "url": url, "includeSource": incSrc });
-	                if (script) {
-	                    delete script.context_id;
-	                    scripts.push( script );
-	                }
-            	}
+                if(url) {
+                    script = this.getScript(context, { "url": url, "includeSource": incSrc });
+                    if (script) {
+                        delete script.context_id;
+                        scripts.push( script );
+                    }
+                }
             }
             return {"context_id": context.Crossfire.crossfire_id, "scripts": scripts};
         },
-        
+
         /**
          * @name getScript
          * @description Retrieve a single script and optionally its source.
@@ -890,7 +881,7 @@ FBL.ns(function() { with(FBL) {
             var url = args["url"];
             sourceFile = context.sourceFileMap[url];
             var lines = [];
-        	try {
+            try {
                 lines = sourceFile.loadScriptLines(context);
             } catch (ex) {
                 if (FBTrace.DBG_CROSSFIRE) {
@@ -920,7 +911,7 @@ FBL.ns(function() { with(FBL) {
             }
             return { "context_id": context.Crossfire.crossfire_id, "script": script };
         },
-        
+
         /**
          * @name setBreakpoint
          * @description Set a breakpoint and return its {@link Integer} id.
@@ -928,7 +919,7 @@ FBL.ns(function() { with(FBL) {
          * @public
          * @memberOf CrossfireModule
          * @type Array
-         * @returns the {@link Array} of breakpoint information if the set 
+         * @returns the {@link Array} of breakpoint information if the set
          * @param context the associated context {@link Object}
          * @param args the arguments array that contains:
          * <ul>
@@ -965,7 +956,7 @@ FBL.ns(function() { with(FBL) {
             }
             return {"context_id": context.Crossfire.crossfire_id, "breakpoint": breakpoint};
         },
-        
+
         /**
          * @name getSource
          * @description Returns the source code for every script in the requested context
@@ -983,7 +974,7 @@ FBL.ns(function() { with(FBL) {
             args["includeSource"] = true;
             return this.getScripts(context, args);
         },
-        
+
         /**
          * @name doSuspend
          * @description Try to suspend any currently running Javascript.
@@ -998,7 +989,7 @@ FBL.ns(function() { with(FBL) {
             Firebug.Debugger.suspend(context);
             return {};
         },
-        
+
         /**
          * @name onConnectionStatusChanged
          * @description Called when the status of the transport's connection changes.
@@ -1031,6 +1022,125 @@ FBL.ns(function() { with(FBL) {
                     FBTrace.sysout("CROSSFIRE: _sendEvent => " + event + " ["+data+"]");
                 this.transport.sendEvent(event, data);
             }
+        },
+
+        // ----- Crossfire Protocol Extensions (Tools API) -----
+
+        registeredTools: {},
+
+        /**
+         *
+         */
+        registerTool: function( toolName, toolListener) {
+            if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                FBTrace.sysout("CROSSFIRE: registerTool " + toolName, toolListener);
+
+            try {
+                this.registeredTools[toolName] = toolListener;
+                if (toolListener.onRegistered) {
+                    toolListener.onRegistered();
+                }
+                if (this.transport != null) {
+                    toolListener.onTransportCreated(this.transport);
+                }
+            } catch(e) {
+                if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                    FBTrace.sysout("CROSSFIRE: registerTool fails: " + e, e);
+            }
+
+        },
+
+        /**
+         *
+         */
+        unregisterTool: function( toolName) {
+            if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                FBTrace.sysout("CROSSFIRE: unregisterTool " + toolName);
+            try {
+                var tool = this.registeredTools[toolName];
+                delete this.registeredTools[toolName];
+                if (tool.onUnregistered)
+                tool.onUnregistered();
+            } catch (e) {
+                if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                    FBTrace.sysout("CROSSFIRE: unregisterTool fails: " + e, e);
+            }
+        },
+
+        /**
+         *
+         */
+        getTools: function() {
+            var tools = [];
+            for (var name in this.registeredTools) {
+                tools.push(name);
+            }
+            return tools;
+        },
+
+        /**
+         *
+         */
+        getToolInfo: function(moduleName /* , moduleName, moduleName */) {
+            var tool, toolInfo = [];
+            for (var arg in arguments) {
+                tool = this.registeredTools[arg];
+                if (tool) {
+                    toolInfo[arg] = {
+                        "commands": tool.commands,
+                        "events": tool.events
+                    };
+                }
+            }
+            return toolInfo;
+        },
+
+
+        /**
+         * A Tool is an extension that registers itself to crossfire
+         * for the purpose of sending and receiving commands and events
+         * via the crossfire protocol/connection.
+         */
+        ToolListener: {
+
+            commands: [],
+            events: [],
+
+            supportsRequest: function( request) {
+                // default is return true if the command name is in our array of commands
+                return (request.command && request.command in this.commands);
+            },
+
+            handleRequest: function( request) {
+
+            },
+
+            onTransportCreated: function( transport) {
+                if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                    FBTrace.sysout("onTransportCreated recieved by: " + this.toolName);
+                this.transport = transport;
+                this.transport.addListener(this);
+            },
+
+            onTransportDestroyed: function() {
+
+            },
+
+            onRegistered: function() {
+
+            },
+
+            onUnregistered: function() {
+
+            },
+
+            onConnectionStatusChanged: function( status) {
+
+            },
+
+            getInfo: function() {
+
+            },
         },
 
         // ----- firebug listeners -----
@@ -1092,25 +1202,12 @@ FBL.ns(function() { with(FBL) {
             try {
                 href = context.window.location.href;
             } catch(e) {
-            	//do nothing
+                //do nothing
             }
             this._sendEvent("onContextCreated", { "context_id": context.Crossfire.crossfire_id, "data": {"href": href}});
         },
 
-        /**
-         * @name _generateId
-         * @description Generates a unique id to map to a Firebug context
-         * @function
-         * @private
-         * @memberOf CrossfireModule
-         * @type String
-         * @return a new ID to map to a Firebug context
-         * @since 0.3a2
-         */
-        _generateId: function() {
-        	return "xf"+CROSSFIRE_VERSION + "::" + (++CONTEXT_ID_SEED);
-        },
-        
+
         /**
          * @name loadedContext
          * @description Handles a context being loaded - i.e. the scripts in a given context have completed being compiled.
@@ -1135,14 +1232,14 @@ FBL.ns(function() { with(FBL) {
             try {
                 href = context.window.location.href;
             } catch(e) {
-            	//do nothing
+                //do nothing
             }
             this._sendEvent("onContextLoaded", {"context_id": context.Crossfire.crossfire_id, "data": {"href": href}});
         },
 
         /**
          * @name showContext
-         * @description Handles a context being shown - i.e. a tab has been switched to. 
+         * @description Handles a context being shown - i.e. a tab has been switched to.
          * <br><br>
          * Fires an <code>onContextChanged</code> event
          * <br><br>
@@ -1159,22 +1256,22 @@ FBL.ns(function() { with(FBL) {
          * @param context the context that was switched to
          */
         showContext: function(browser, context) {
-        	if (FBTrace.DBG_CROSSFIRE) {
+            if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE:  showContext");
             }
-        	if(context && this.currentContext && this.currentContext.Crossfire) {
-	        	var href =  this.currentContext.window.location.href;
-	            var newHref =  context.window.location.href;
-	            if(href != newHref) {
-	            	this._sendEvent("onContextChanged", {"context_id": this.currentContext.Crossfire.crossfire_id, "new_context_id": context.Crossfire.crossfire_id, "data": {"href": href, "new_href": newHref}});
-	            }
-        	}
-        	this.currentContext = context;
+            if(context && this.currentContext && this.currentContext.Crossfire) {
+                var href =  this.currentContext.window.location.href;
+                var newHref =  context.window.location.href;
+                if(href != newHref) {
+                    this._sendEvent("onContextChanged", {"context_id": this.currentContext.Crossfire.crossfire_id, "new_context_id": context.Crossfire.crossfire_id, "data": {"href": href, "new_href": newHref}});
+                }
+            }
+            this.currentContext = context;
         },
-        
+
         /**
          * @name destroyContext
-         * @description Handles a context being destroyed - i.e. a tab has been closed in the browser. 
+         * @description Handles a context being destroyed - i.e. a tab has been closed in the browser.
          * <br><br>
          * Fires an <code>onContextDestroyed</code> event.
          * <br><br>
@@ -1228,6 +1325,22 @@ FBL.ns(function() { with(FBL) {
                                  "current"      : this.currentContext == context });
             }
             return { "contexts": contexts };
+        },
+
+        // ----- helpers
+
+        /**
+         * @name _generateId
+         * @description Generates a unique id to map to a Firebug context
+         * @function
+         * @private
+         * @memberOf CrossfireModule
+         * @type String
+         * @return a new ID to map to a Firebug context
+         * @since 0.3a2
+         */
+        _generateId: function() {
+            return "xf"+CROSSFIRE_VERSION + "::" + (++CONTEXT_ID_SEED);
         },
 
         /**
@@ -1320,7 +1433,7 @@ FBL.ns(function() { with(FBL) {
                 return [ this._copyFrame(aFrame, context, false) ];
             }
         },
-        
+
         /**
          * @name _copyScope
          * @description recursively copies the given scope and returns a new serialized scope
@@ -1350,7 +1463,7 @@ FBL.ns(function() { with(FBL) {
             }
             return this._serialize(copiedScope, null);
         },
-        
+
         // ----- Firebug Debugger listener -----
 
         /**
@@ -1399,7 +1512,7 @@ FBL.ns(function() { with(FBL) {
          * <br><br>
          * Fires an <code>onStop</code> event.
          * @function
-         * @public 
+         * @public
          * @memberOf CrossfireModule
          * @param context the current Crossfire context
          * @param frame the current stackframe
@@ -1445,7 +1558,7 @@ FBL.ns(function() { with(FBL) {
          * The event body contains the following:
          * <ul>
          * <li><code>context_id</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug which contains 
+         * <li><code>data</code> - the event payload from Firebug which contains
          * the <code>url</code>, <code>line</code>, <code>set</code> and <code>props</code> entries</li>
          * </ul>
          * @function
@@ -1454,7 +1567,7 @@ FBL.ns(function() { with(FBL) {
          * @param context the current Crossfire context
          * @param url the URL that the breakpoint was toggled within
          * @param lineNo the number of the line the breakpoint was toggled on
-         * @param isSet the toggled state of the breakpoint. 
+         * @param isSet the toggled state of the breakpoint.
          * <code>true</code> if the breakpoint was toggled on (created), <code>false</code> otherwise
          * @param props a collection of additional properties from Firebug
          * @see FirebugEventAdapter.onToggleBreakpoint
@@ -1476,7 +1589,7 @@ FBL.ns(function() { with(FBL) {
          * The event body contains the following:
          * <ul>
          * <li><code>context_id</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug which contains 
+         * <li><code>data</code> - the event payload from Firebug which contains
          * the <code>url</code>, <code>line</code>, <code>set</code> and <code>props</code> entries</li>
          * </ul>
          * @function
@@ -1485,7 +1598,7 @@ FBL.ns(function() { with(FBL) {
          * @param context the current Crossfire context
          * @param url the URL that the breakpoint was toggled within
          * @param lineNo the number of the line the breakpoint was toggled on
-         * @param isSet the toggled state of the breakpoint. 
+         * @param isSet the toggled state of the breakpoint.
          * <code>true</code> if the breakpoint was toggled on (created), <code>false</code> otherwise
          * @param props a collection of additional properties from Firebug
          * @see FirebugEventAdapter.onToggleBreakpoint
@@ -1509,7 +1622,7 @@ FBL.ns(function() { with(FBL) {
          * The event body contains the following:
          * <ul>
          * <li><code>context_id</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug which contains 
+         * <li><code>data</code> - the event payload from Firebug which contains
          * the <code>xpath</code> and <code>type</code> entries</li>
          * </ul>
          * @function
@@ -1527,123 +1640,6 @@ FBL.ns(function() { with(FBL) {
              this._sendEvent("onToggleBreakpoint", {"context_id": context.Crossfire.crossfire_id, "data": data});
         },
 
-
-        // ----- Firebug Console listener -----
-
-        /**
-         * @name logFormatted
-         * @description 
-         * This function is a callback for <code>Firebug.ConsoleBase</code> located 
-         * in <code>/firebug1.7/content/firebug/console.js</code>.
-         * <br><br>
-         * Generates event packets based on the className (log,debug,info,warn,error). 
-         * The object or message logged is contained in the packet's <code>data</code> property.
-         * <br><br>
-         * Fires one of the following events:
-         * <ul>
-         * <li><code>onConsoleLog</code></li>
-         * <li><code>onConsoleDebug</code></li>
-         * <li><code>onConsoleInfo</code></li>
-         * <li><code>onConsoleWarn</code></li>
-         * <li><code>onConsoleError</code></li>
-         * </ul>
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug</li>
-         * </ul>
-         * @function
-         * @public
-         * @memberOf CrossfireModule
-         * @param context the current Crossfire context
-         * @param objects
-         * @param className the name of the kind of console event.
-         * <br>
-         * One of:
-         * <ul>
-         * <li>log</li>
-         * <li>debug</li>
-         * <li>info</li>
-         * <li>warn</li>
-         * <li>error</li>
-         * </ul>
-         * @param sourceLink
-         */
-        logFormatted: function(context, objects, className, sourceLink) {
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE logFormatted");
-            }
-            var win = context.window;
-            var winFB = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug;
-            if (winFB) {
-                var eventName = "onConsole" + className.substring(0,1).toUpperCase() + className.substring(1);
-                var obj = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug.userObjects;
-                this._sendEvent(eventName, {"context_id": context.Crossfire.crossfire_id, "data": obj});
-            }
-        },
-
-        // ----- Firebug.Inspector Listener -----
-
-        /**
-         * @name onInspectNode
-         * @description Handles a node being inspected in Firebug.
-         * <br><br>
-         * Fires an <code>onInspectNode</code> event.
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug with the <code>node</code> value set</li>
-         * </ul>
-         * @function
-         * @public
-         * @memberOf CrossfireModule
-         * @param context the current Crossfire context
-         * @param node the node being inspected
-         */
-        onInspectNode: function(context, node) {
-            node = node.wrappedJSObject;
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE onInspectNode", node);
-            }
-            var path = this._resolveElementPath(node, true);
-            if(path) {
-            	this._sendEvent("onInspectNode", { "context_id": context.Crossfire.crossfire_id, "data": {"node": path}});
-            }
-        },
-
-        /**
-         * @name _resolveElementPath
-         * @description resolves the path to the given element within the DOM tree.
-         * @function
-         * @private
-         * @memberOf CrossfireModule
-         * @param element the current DOM node context
-         * @param if we should use the tags names when constructing the path. i.e. <code>/html[1]/body[1]/div[4]/span[21]/...</code>
-         * @since 0.3a1
-         */
-		_resolveElementPath: function(element, useTagNames) {
-			var nameLookup = [];
-			nameLookup[Node.COMMENT_NODE] = "comment()";
-			nameLookup[Node.TEXT_NODE] = "text()";
-			nameLookup[Node.PROCESSING_INSTRUCTION_NODE] = "processing-instruction()";
-			var paths = [];
-			for (; element && element.nodeType != Node.DOCUMENT_NODE; element = element.parentNode) {
-				var tagName = element.localName || nameLookup[element.nodeType];
-				var index = 0;
-				for (var sibling = element.previousSibling; sibling; sibling = sibling.previousSibling) {
-					var siblingTagName = sibling.localName || nameLookup[sibling.nodeType];
-					if (!useTagNames || tagName == siblingTagName || !tagName) {
-						++index;
-					}
-				}
-				var pathIndex = "[" + (index+1) + "]";
-				paths.splice(0, 0, (useTagNames && tagName ? tagName.toLowerCase() : "node()") + pathIndex);
-			}
-			return "/" + paths.join("/");
-		},
-        
         /**
          * @name updateStatusIcon
          * @description Update the Crossfire connection status icon.
@@ -1741,7 +1737,7 @@ FBL.ns(function() { with(FBL) {
             }
             this.running = isRunning;
         },
-        
+
         /**
          * @name _getRef
          * @description Returns a reference id for the given object handle
@@ -1792,7 +1788,7 @@ FBL.ns(function() { with(FBL) {
             this.refCount = 0;
             this.refs = [];
         },
-        
+
         /**
          * @name _clearBreakpoints
          * @description clears the breakpoint reference ids and resets the id counter
@@ -1802,10 +1798,10 @@ FBL.ns(function() { with(FBL) {
          * @since 0.3a1
          */
         _clearBreakpoints: function() {
-        	this.breakpointIds = 1;
-        	this.breakpoints = [];
+            this.breakpointIds = 1;
+            this.breakpoints = [];
         },
-        
+
         /**
          * @name _serialize
          * @description prepare a javascript object to be serialized into JSON.
@@ -1849,13 +1845,13 @@ FBL.ns(function() { with(FBL) {
                 }
                 return serialized;
             } catch (e) {
-            	if(FBTrace.DBG_CROSSFIRE) {
-            		FBTrace.sysout("CROSSFIRE serialize failed: "+e);
-            	}
+                if(FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE serialize failed: "+e);
+                }
                 return { "type": "string", "value": "crossfire serialization exception: " + e }
             }
         },
-        
+
         /**
          * @name _serializeProperties
          * @description Serializes the properties for the given object
@@ -1870,7 +1866,7 @@ FBL.ns(function() { with(FBL) {
          * @since 0.3a2
          */
         _serializeProperties: function(obj, ref, contextid) {
-        	var o = {};
+            var o = {};
             for (var p in obj) {
                 try {
                     if (obj.hasOwnProperty(p) /*&& !(p in ignoreVars)*/) {
@@ -1890,24 +1886,24 @@ FBL.ns(function() { with(FBL) {
                         }
                     }
                     else if(FBTrace.DBG_CROSSFIRE){
-                    	FBTrace.sysout("ignoring property -> "+p+" from -> "+obj.toString()+" during serialization");
+                        FBTrace.sysout("ignoring property -> "+p+" from -> "+obj.toString()+" during serialization");
                     }
                 } catch (x) {
                     o[p] =  null;
                 }
             }
             if(obj.constructor && obj.constructor != obj) {
-            	o["constructor"] = this._getRef(obj.constructor);
+                o["constructor"] = this._getRef(obj.constructor);
             }
-        	if(obj.prototype && obj.prototype != obj) {
-    			o["proto"] = this._getRef(obj.prototype);
-    		}
+            if(obj.prototype && obj.prototype != obj) {
+                o["proto"] = this._getRef(obj.prototype);
+            }
             if(obj.arguments) {
-            	o["Arguments"] = this._getRef(obj.arguments);
+                o["Arguments"] = this._getRef(obj.arguments);
             }
             return o;
         },
-        
+
         /**
          * @name sourceFileLoaded
          * @description callback that the given source file has been loaded, which we hook
@@ -1917,18 +1913,18 @@ FBL.ns(function() { with(FBL) {
          * @since 0.3a1
          */
         sourceFileLoaded: function(sourceFile) {
-        	if(FBTrace.DBG_CROSSFIRE) {
-        		FBTrace.sysout("CROSSFIRE sourceFileLoaded: "+sourceFile.href);
-        	}
-        	if(this.breakpoints) {
-        		var line = -1;
-	            for (var bp in this.breakpoints) {
-	                if (bp.target == sourceFile.href) {
-	                    line = bp.line;
-	                    Firebug.Debugger.setBreakpoint(sourceFile, line);
-	                }
-	            }
-        	}
+            if(FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE sourceFileLoaded: "+sourceFile.href);
+            }
+            if(this.breakpoints) {
+                var line = -1;
+                for (var bp in this.breakpoints) {
+                    if (bp.target == sourceFile.href) {
+                        line = bp.line;
+                        Firebug.Debugger.setBreakpoint(sourceFile, line);
+                    }
+                }
+            }
         }
     });
 
@@ -1943,12 +1939,25 @@ FBL.ns(function() { with(FBL) {
      * @function
      * @public
      * @memberOf Crossfire
-     * @param el 
+     * @param el
      */
     Crossfire.onStatusClick = function( el) {
         $("crossfireStatusMenu").openPopup(el, "before_end", 0,0,false,false);
     };
-    
+
+    /**
+     * @name Crossfire.onStatusMenuShowing
+     * @description Call-back for the menu showing
+     * @function
+     * @public
+     * @memberOf Crossfire
+     * @param menu the menu showing
+     */
+    Crossfire.onStatusMenuShowing = function( menu) {
+        //CrossfireModule.onStatusMenuShowing(menu);
+    };
+
+
     /**
      * @name Crossfire.startServer
      * @description Delegate to {@link CrossfireModule#startServer(host, port)}
@@ -1989,4 +1998,41 @@ FBL.ns(function() { with(FBL) {
     Crossfire.disconnect = function() {
         CrossfireModule.disconnect();
     };
+
+    /**
+     * @name _getDialogParams
+     * @description Fetches the entered parameters from the server-start dialog
+     * @function
+     * @private
+     * @memberOf Crossfire
+     * @param isServer if the dialog should ask for server start-up parameters or client connect parameters
+     * @type Array
+     * @returns an Array of dialog parameters
+     */
+    function _getDialogParams( isServer) {
+        var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
+        var host = commandLine.getHost();
+        var port = commandLine.getPort();
+        var title;
+        if (isServer) {
+            title = "Crossfire - Start Server";
+        } else {
+            title = "Crossfire - Connect to Server";
+        }
+        return { "host": null, "port": null, "title": title, "cli_host": host, "cli_port": port };
+    };
+
+    /**
+     * @name generateId
+     * @description generate a unique id for newly created contexts.
+     * @function
+     * @public
+     * @memberOf Crossfire
+     * @type String
+     * @returns a unique id for newly created contexts
+     */
+    function generateId() {
+        return "xf"+CROSSFIRE_VERSION + "::" + (++CONTEXT_ID_SEED);
+    };
+
 }});

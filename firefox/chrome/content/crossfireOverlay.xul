@@ -5,6 +5,11 @@
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" >
     <script type="application/javascript" src="chrome://crossfire/content/crossfire.js"/>
 
+    <!-- Load tool files. TODO: lazily load via 'require' or similar -->
+    <script type="application/javascript" src="chrome://crossfire/content/tools/console-tool.js"/>
+    <script type="application/javascript" src="chrome://crossfire/content/tools/inspector-tool.js"/>
+    <script type="application/javascript" src="chrome://crossfire/content/tools/net-tool.js"/>
+
     <statusbar id="status-bar">
         <statusbarpanel id="crossfireStatusBar" context="crossfireContextMenu" onmousedown="Crossfire.onStatusClick(this)">
             <image id="crossfireIcon" class="disconnected" tooltiptext="Crossfire: disconnected"/>

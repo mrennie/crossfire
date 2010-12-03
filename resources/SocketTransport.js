@@ -11,7 +11,7 @@ const Cu = Components.utils;
  * @memberOf CrossfireSocketTransport
  * @type String
  */
-const CROSSFIRE_HANDSHAKE = "CrossfireHandshake\r\n";
+const CROSSFIRE_HANDSHAKE = "CrossfireHandshake";
 /**
  * @name HANDSHAKE_RETRY
  * @description The default time-out in milliseconds to re-try a handshake
@@ -159,7 +159,7 @@ CrossfireSocketTransport.prototype =
      * @param running boolean indicates if execution is continuing.
      * @param success boolean indicates whether the command was successful.
      */
-    sendResponse: function(command, requestSeq, body, running, success) {
+    sendResponse: function(command, requestSeq, body, running, success, tool) {
         if (running == null || running == undefined) running = true; // assume we are running unless explicitly told otherwise
         success = !!(success); // convert to boolean
         this._defer(function() { this._sendPacket(new ResponsePacket(command, requestSeq, body, running, success)); });
@@ -174,7 +174,7 @@ CrossfireSocketTransport.prototype =
      * @param event Event name
      * @param data optional JSON object containing additional data about the event.
      */
-    sendEvent: function( event, data) {
+    sendEvent: function( event, data, tool) {
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
             FBTrace.sysout("sendEvent " + event + " :: " + data);
         this._defer(function() { this._sendPacket(new EventPacket(event, data)); });
@@ -193,7 +193,7 @@ CrossfireSocketTransport.prototype =
         this._destroyTransport();
         this.host = host;
         this.port = port;
-        this._createTransport(host, port, this.isServer);
+        this._createTransport(host, port);
     },
 
     /**
@@ -449,8 +449,14 @@ CrossfireSocketTransport.prototype =
                 return this;
             },
             onOutputStreamReady: function( outputStream) {
-                outputStream.flush();
-                outputStream.write(CROSSFIRE_HANDSHAKE, CROSSFIRE_HANDSHAKE.length);
+                if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                    FBTrace.sysout("_sendHandshake output stream is ready.");
+                var tools = self._collectToolNames();
+                if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                    FBTrace.sysout("_sendHandshake toolString is: " + tools);
+                var handshake = CROSSFIRE_HANDSHAKE + "," + tools + "\r\n";
+                //outputStream.flush();
+                outputStream.write(handshake, handshake.length);
                 outputStream.flush();
 
                 if (self.isServer) {
@@ -480,11 +486,12 @@ CrossfireSocketTransport.prototype =
 
         this._defer(function() {
             try {
-                if (this._inputStream.available() == CROSSFIRE_HANDSHAKE.length) {
+                if (this._inputStream.available() >= CROSSFIRE_HANDSHAKE.length) {
                     if (this._scriptableInputStream.read(CROSSFIRE_HANDSHAKE.length) == CROSSFIRE_HANDSHAKE) {
                         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
                             FBTrace.sysout("_waitHandshake read handshake string");
                         if (this.isServer) {
+                            //TODO: read tool string
                             this._sendHandshake();
                         } else {
                             this.connected = true;
@@ -605,7 +612,7 @@ CrossfireSocketTransport.prototype =
             } else {
                 packet = new RequestPacket(block);
             }
-            this._notifyListeners(packet);
+            this._notifyListeners(packet, headers);
             return true;
         }
         return false;
@@ -641,7 +648,7 @@ CrossfireSocketTransport.prototype =
      * @memberOf CrossfireSocketTransport
      * @param packet the packet that has been read
      */
-    _notifyListeners: function( packet) {
+    _notifyListeners: function( packet, headers) {
         var listener, handler;
         for (var i = 0; i < this.listeners.length; ++i) {
             listener = this.listeners[i];
@@ -651,7 +658,10 @@ CrossfireSocketTransport.prototype =
                     //FIXME: mcollins handle events/requests based on packet type, not server/client mode
                     handler = listener["fireEvent"];
                 } else {
-                    handler = listener["handleRequest"];
+                    if (headers["tool"] && listener.toolName
+                            && ( headers["tool"] == listener.toolName || "all" == listener.toolName )) {
+                        handler = listener["handleRequest"];
+                    }
                 }
 
                 if (handler)
@@ -661,5 +671,45 @@ CrossfireSocketTransport.prototype =
                 if (FBTrace.DBG_CROSSFIRE_TRANSPORT) FBTrace.sysout("_notifyListeners " + e);
             }
         }
+    },
+
+    /**
+     * @name _collectToolNames
+     * @description collects a comma-separated list of all tool names from registered listeners
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     */
+    _collectToolNames: function() {
+        var i, j,
+        listener,
+        toolName,
+        toolNames = [];
+
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            FBTrace.sysout("_collectToolNames");
+
+        for (i = 0; i < this.listeners.length; ++i) {
+            listener = this.listeners[i];
+            if (listener.toolName) {
+                try {
+                    toolName = listener.toolName;
+                    if (toolName != "all") {
+                        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                            FBTrace.sysout("_collectToolNames adding " + toolName);
+                        toolNames.push(toolName);
+                    }
+
+                } catch( e) {
+                    if (FBTrace.DBG_CROSSFIRE_TRANSPORT) FBTrace.sysout("_collectToolNames " + e);
+                }
+            }
+        }
+
+        if (toolNames.length > 0)
+            return toolNames.join(",");
+
+        return "";
     }
+
 };
