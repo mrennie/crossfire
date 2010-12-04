@@ -47,6 +47,23 @@ FBL.ns(function() {
          */
         initialize: function() {
             var host, port, serverPort;
+
+            // -- add tools --
+            var consoleTool = new Crossfire.ConsoleTool();
+            if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                FBTrace.sysout("CROSSFIRE created ConsoleTool: " + consoleTool);
+            this.registerTool("console", consoleTool);
+
+            var inspectorTool = new Crossfire.InspectorTool();
+            if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                FBTrace.sysout("CROSSFIRE created InspectorTool: " + inspectorTool);
+            this.registerTool("inspector", inspectorTool);
+
+            var netTool = new Crossfire.NetTool();
+            if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                FBTrace.sysout("CROSSFIRE created NetTool: " + netTool);
+            this.registerTool("net", netTool);
+
             Components.utils.import("resource://crossfire/SocketTransport.js");
             var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
             serverPort = commandLine.getServerPort();
@@ -110,18 +127,6 @@ FBL.ns(function() {
                 this._addListeners();
                 this.transport.addListener(this);
 
-                // notify tools of transport
-                if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                    FBTrace.sysout("CROSSFIRE notify tools onTransportCreated", this.transport);
-                for (var tool in this.registeredTools) {
-                    try {
-                        this.registeredTools[tool].onTransportCreated(this.transport);
-                    } catch( e) {
-                         if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                             FBTrace.sysout("CROSSFIRE exception notifying tool: " + tool, e);
-                    }
-                }
-
                 this.transport.open(host, port);
             } catch(e) {
                 if (FBTrace.DBG_CROSSFIRE) FBTrace.sysout("CROSSFIRE failed to start server "+e);
@@ -142,24 +147,6 @@ FBL.ns(function() {
 
             Firebug.Debugger.addListener(this);
             Firebug.HTMLModule.addListener(this);
-
-            // -- add tools --
-            //mcollins TODO: make these activable, instead of automatically adding the kitchen sink.
-            var consoleTool = new Crossfire.ConsoleTool();
-            if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                FBTrace.sysout("CROSSFIRE created ConsoleTool: " + consoleTool);
-            this.registerTool("console", consoleTool);
-
-            var inspectorTool = new Crossfire.InspectorTool();
-            if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                FBTrace.sysout("CROSSFIRE created InspectorTool: " + inspectorTool);
-            this.registerTool("inspector", inspectorTool);
-
-            var netTool = new Crossfire.NetTool();
-            if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                FBTrace.sysout("CROSSFIRE created NetTool: " + netTool);
-            this.registerTool("net", netTool);
-
         },
 
         /**
@@ -176,6 +163,7 @@ FBL.ns(function() {
 
             this.unregisterTool("console");
             this.unregisterTool("inspector");
+            this.unregisterTool("net");
         },
 
         /**
@@ -684,8 +672,6 @@ FBL.ns(function() {
             return {"context_id": context.Crossfire.crossfire_id, "breakpoints": bps};
         },
 
-
-
         /**
          * @name doLookup
          * @description Lookup an object by it's handle.
@@ -1040,9 +1026,6 @@ FBL.ns(function() {
                 if (toolListener.onRegistered) {
                     toolListener.onRegistered();
                 }
-                if (this.transport != null) {
-                    toolListener.onTransportCreated(this.transport);
-                }
             } catch(e) {
                 if (FBTrace.DBG_CROSSFIRE_TOOLS)
                     FBTrace.sysout("CROSSFIRE: registerTool fails: " + e, e);
@@ -1067,6 +1050,30 @@ FBL.ns(function() {
             }
         },
 
+        activateTool: function( toolName) {
+            if (toolName in this.registeredTools) {
+                 if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                     FBTrace.sysout("Crossfire activating tool: " + toolName);
+                 try {
+                     this.registeredTools[toolName].onTransportCreated(this.transport);
+                 } catch (e) {
+                     FBTrace.sysout("exception deactivationg tool: " + e);
+                 }
+            }
+        },
+
+        deactivateTool: function( toolName) {
+            if (toolName in this.registeredTools) {
+                if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                    FBTrace.sysout("Crossfire activating tool: " + toolName);
+                try {
+                    this.registeredTools[toolName].onTransportDestroyed(this.transport);
+                } catch (e) {
+                    FBTrace.sysout("exception deactivationg tool: " + e);
+                }
+            }
+        },
+
         /**
          *
          */
@@ -1081,12 +1088,19 @@ FBL.ns(function() {
         /**
          *
          */
-        getToolInfo: function(moduleName /* , moduleName, moduleName */) {
-            var tool, toolInfo = [];
+        getToolDescription: function(moduleName /* , moduleName, moduleName */) {
+            var desc, tool, toolInfo = [];
             for (var arg in arguments) {
                 tool = this.registeredTools[arg];
                 if (tool) {
+                    if (typeof(tool.getDescription) == "function") {
+                        desc = tool.getDescription();
+                    } else {
+                        desc = "";
+                    }
                     toolInfo[arg] = {
+                        "name": tool.toolName,
+                        "desc": desc,
                         "commands": tool.commands,
                         "events": tool.events
                     };
@@ -1115,6 +1129,15 @@ FBL.ns(function() {
 
             },
 
+            supportsEvent: function( event) {
+                // default is return true if the command name is in our array of commands
+                return (event.name && event.name in this.events);
+            },
+
+            handleEvent: function( event) {
+
+            },
+
             onTransportCreated: function( transport) {
                 if (FBTrace.DBG_CROSSFIRE_TOOLS)
                     FBTrace.sysout("onTransportCreated recieved by: " + this.toolName);
@@ -1138,9 +1161,9 @@ FBL.ns(function() {
 
             },
 
-            getInfo: function() {
+            getDescription: function() {
 
-            },
+            }
         },
 
         // ----- firebug listeners -----

@@ -18,6 +18,7 @@ import json, readline, socket, sys, threading, time
 current_seq = 0
 
 HANDSHAKE_STRING = "CrossfireHandshake"
+TOOL_STRING = "console,net,debugger"
 
 class CrossfireClient:
 
@@ -46,6 +47,9 @@ class CrossfireClient:
 
     self.socket.settimeout(10)
     self.socket.send(HANDSHAKE_STRING)
+    self.socket.send("\r\n")
+    self.socket.send(TOOL_STRING)
+    self.socket.send("\r\n")
 
     self.waitHandshake()
 
@@ -74,9 +78,15 @@ class CrossfireClient:
     if shake == HANDSHAKE_STRING:
       print 'Received Crossfire handshake.'
 
-      length = 0
-      tools = prev = curr = ""
+      prev = curr = ""
+      while prev != '\r' and curr != '\n':
+        prev = curr
+        try:
+          curr = self.socket.recv(1)
+        except socket.error:
+          break
 
+      tools = prev = curr = ""
       while prev != '\r' and curr != '\n':
         prev = curr
         try:
