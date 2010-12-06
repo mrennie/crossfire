@@ -174,11 +174,15 @@ FBL.ns(function() {
          * @memberOf CrossfireModule
          */
         stopServer: function() {
-            this._removeListeners();
-            this.transport.close();
-            this.transport = null;
-            this._clearRefs();
-            this._clearBreakpoints();
+        	try {
+	            this.transport.close();
+        	}
+        	finally {
+        		this._removeListeners();
+	            this.transport = null;
+	            this._clearRefs();
+	            this._clearBreakpoints();
+        	}
         },
 
         /**
@@ -532,8 +536,9 @@ FBL.ns(function() {
                 }
             }
             var result = {};
+            var contextId = context.Crossfire.crossfire_id;
             if (frame) {
-                if (frame.eval(expression, "crossfire_eval_" + this.contextId, 1, result)) {
+                if (frame.eval(expression, "crossfire_eval_" + contextId, 1, result)) {
                     result = unwrapIValue(result.value);
                 }
             } else {
@@ -543,7 +548,7 @@ FBL.ns(function() {
                     throw new Error("Failure to evaluate expression: " + expression);
                 });
             }
-            return {"context_id": this.contextId, "result": result};
+            return {"context_id": contextId, "result": result};
         },
 
         /**
@@ -658,7 +663,7 @@ FBL.ns(function() {
                         }
                     }
                     if (!found) {
-                        var bp = {
+                        bp = {
                                 "handle": self.breakpointIds++,
                                 "type": "line",
                                 "line": line,
@@ -698,25 +703,21 @@ FBL.ns(function() {
                 for (var i in this.refs) {
                     if (i == handle) {
                         obj = this.refs[i];
+                        var arr = this._serialize(obj);
                         if(source) {
-                            try {
-                                var src = obj.toSource();
-                                if(src) {
-                                    var cid = context.Crossfire.crossfire_id;
-                                    var arr = this._serialize(obj, cid);
-                                    arr["context_id"] = cid;
-                                    arr["source"] = src;
-                                    return arr;
-                                }
-                            }
-                            catch(e) {
-                                //do nothing, return no source
-                            }
+                        	try {
+                        		var src = obj.toSource();
+                        		if(src) {
+                        			arr["source"] = src;
+                        		}
+                        	}
+                        	catch(e) {}
                             var cid = context.Crossfire.crossfire_id;
                             var arr = this._serialize(obj, cid);
                             arr["context_id"] = cid;
                             return arr;
                         }
+                    	return arr;
                     }
                 }
             }
@@ -1411,7 +1412,7 @@ FBL.ns(function() {
                         FBTrace.sysout("copying thisValue from frame...");
                     try {
                        var thisVal = frame.thisValue.getWrappedValue();
-                       frameCopy["thisValue"] = this._serialize(thisVal, null);
+                       frameCopy["thisValue"] = this._serialize(thisVal);
                     } catch( e) {
                         if (FBTrace.DBG_CROSSFIRE) FBTrace.sysout("Exception copying thisValue => " + e);
                     }
@@ -1484,7 +1485,7 @@ FBL.ns(function() {
             } catch (ex) {
                 if (FBTrace.DBG_CROSSFIRE_FRAMES) FBTrace.sysout("Exception copying scope => " + e);
             }
-            return this._serialize(copiedScope, null);
+            return this._serialize(copiedScope);
         },
 
         // ----- Firebug Debugger listener -----
@@ -1663,6 +1664,156 @@ FBL.ns(function() {
              this._sendEvent("onToggleBreakpoint", {"context_id": context.Crossfire.crossfire_id, "data": data});
         },
 
+        // ----- Firebug Console listener -----
+
+        /**
+         * @name logFormatted
+         * @description 
+         * This function is a callback for <code>Firebug.ConsoleBase</code> located 
+         * in <code>/firebug1.7/content/firebug/console.js</code>.
+         * <br><br>
+         * Generates event packets based on the className (log,debug,info,warn). 
+         * The object or message logged is contained in the packet's <code>data</code> property.
+         * <br><br>
+         * Fires one of the following events:
+         * <ul>
+         * <li><code>onConsoleLog</code></li>
+         * <li><code>onConsoleDebug</code></li>
+         * <li><code>onConsoleInfo</code></li>
+         * <li><code>onConsoleWarn</code></li>
+         * </ul>
+         * <br><br>
+         * The event body contains the following:
+         * <ul>
+         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>data</code> - the event payload from Firebug</li>
+         * </ul>
+         * @function
+         * @public
+         * @memberOf CrossfireModule
+         * @param context the current context
+         * @param objects
+         * @param className the name of the kind of console event.
+         * <br>
+         * One of:
+         * <ul>
+         * <li>log</li>
+         * <li>debug</li>
+         * <li>info</li>
+         * <li>warn</li>
+         * </ul>
+         * @param sourceLink
+         */
+        logFormatted: function(context, objects, className, sourceLink) {
+            if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE logFormatted");
+            }
+            var win = context.window;
+            var winFB = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug;
+            if (winFB) {
+                var eventName = "onConsole" + className.substring(0,1).toUpperCase() + className.substring(1);
+                var obj = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug.userObjects;
+                this._sendEvent(eventName, {"context_id": context.Crossfire.crossfire_id, "data": obj});
+            }
+        },
+
+        /**
+         * @name log
+         * @description 
+         * This function is a callback for <code>Firebug.ConsoleBase</code> located 
+         * in <code>/firebug1.7/content/firebug/console.js</code>.
+         * <br><br>
+         * Generates event packets based on the className (error). 
+         * The object or message logged is contained in the packet's <code>data</code> property.
+         * <br><br>
+         * Fires the <code>onConsoleError</code> event.
+         * <br><br>
+         * The event body contains the following:
+         * <ul>
+         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>data</code> - the event payload from Firebug</li>
+         * </ul>
+         * @function
+         * @public
+         * @memberOf CrossfireModule
+         * @param object the object causing the error
+         * @param context the current context
+         * @param className the name of the kind of console event.
+         * @param rep
+         * @param noThrottle
+         * @param sourceLink
+         */
+        log: function(object, context, className, rep, noThrottle, sourceLink) {
+        	if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE log");
+            }
+        	if(context && context.context && context.trace) {
+        		var cid = context.context.Crossfire.crossfire_id;
+        		this._sendEvent("onConsoleError", {"context_id": cid, "data": this._serialize(context.trace.frames)});
+        	}
+        },
+        
+        // ----- Firebug.Inspector Listener -----
+
+        /**
+         * @name onInspectNode
+         * @description Handles a node being inspected in Firebug.
+         * <br><br>
+         * Fires an <code>onInspectNode</code> event.
+         * <br><br>
+         * The event body contains the following:
+         * <ul>
+         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>data</code> - the event payload from Firebug with the <code>node</code> value set</li>
+         * </ul>
+         * @function
+         * @public
+         * @memberOf CrossfireModule
+         * @param context the current Crossfire context
+         * @param node the node being inspected
+         */
+        onInspectNode: function(context, node) {
+            node = node.wrappedJSObject;
+            if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE onInspectNode", node);
+            }
+            var path = this._resolveElementPath(node, true);
+            if(path) {
+            	this._sendEvent("onInspectNode", { "context_id": context.Crossfire.crossfire_id, "data": {"node": path}});
+            }
+        },
+
+        /**
+         * @name _resolveElementPath
+         * @description resolves the path to the given element within the DOM tree.
+         * @function
+         * @private
+         * @memberOf CrossfireModule
+         * @param element the current DOM node context
+         * @param if we should use the tags names when constructing the path. i.e. <code>/html[1]/body[1]/div[4]/span[21]/...</code>
+         * @since 0.3a1
+         */
+		_resolveElementPath: function(element, useTagNames) {
+			var nameLookup = [];
+			nameLookup[Node.COMMENT_NODE] = "comment()";
+			nameLookup[Node.TEXT_NODE] = "text()";
+			nameLookup[Node.PROCESSING_INSTRUCTION_NODE] = "processing-instruction()";
+			var paths = [];
+			for (; element && element.nodeType != Node.DOCUMENT_NODE; element = element.parentNode) {
+				var tagName = element.localName || nameLookup[element.nodeType];
+				var index = 0;
+				for (var sibling = element.previousSibling; sibling; sibling = sibling.previousSibling) {
+					var siblingTagName = sibling.localName || nameLookup[sibling.nodeType];
+					if (!useTagNames || tagName == siblingTagName || !tagName) {
+						++index;
+					}
+				}
+				var pathIndex = "[" + (index+1) + "]";
+				paths.splice(0, 0, (useTagNames && tagName ? tagName.toLowerCase() : "node()") + pathIndex);
+			}
+			return "/" + paths.join("/");
+		},
+
         /**
          * @name updateStatusIcon
          * @description Update the Crossfire connection status icon.
@@ -1835,17 +1986,13 @@ FBL.ns(function() {
          * @private
          * @memberOf CrossfireModule
          * @param obj the JavaScript {@link Object} to serialize
-         * @param contextid the {@link String} id of the context to be included or <code>null</code>
          */
-        _serialize: function(obj, contextid) {
+        _serialize: function(obj) {
             try {
                 var type = typeof(obj);
                 var serialized = {
                         "type": type,
                         "value": ""
-                }
-                if (contextid) {
-                    serialized["context_id"] = contextid;
                 }
                 if (type == "object" || type == "function") {
                     if (obj == null) {
@@ -1854,17 +2001,14 @@ FBL.ns(function() {
                         // already serialized
                         serialized = obj;
                     } else if (obj instanceof Array) {
-                        var arr = "[";
+                        var arr = [];
                         for (var i = 0; i < obj.length; i++) {
-                            arr += JSON.stringify(this._serialize(obj[i], null));
-                            if (i < obj.length-1) {
-                                arr += ',';
-                            }
+                            arr.push(this._serialize(obj[i]));
                         }
-                        serialized["value"] = arr + "]";
+                        serialized["value"] = arr;
                     } else {
                         var ref = this._getRef(obj);
-                        serialized["value"] = this._serializeProperties(obj, ref, contextid);
+                        serialized["value"] = this._serializeProperties(obj, ref);
                     }
                 } else {
                     serialized["value"] = obj;
@@ -1874,7 +2018,7 @@ FBL.ns(function() {
                 if(FBTrace.DBG_CROSSFIRE) {
                     FBTrace.sysout("CROSSFIRE serialize failed: "+e);
                 }
-                return { "type": "string", "value": "crossfire serialization exception: " + e }
+                return null;
             }
         },
 
@@ -1886,12 +2030,11 @@ FBL.ns(function() {
          * @memberOf CrossfireModule
          * @param obj the {@link Object} to serialize the properties for
          * @param the computed reference id for <code>obj</code>
-         * @param contextid the id for the current context
          * @type Object
          * @returns an object describing the serialized properties of the given object
          * @since 0.3a2
          */
-        _serializeProperties: function(obj, ref, contextid) {
+        _serializeProperties: function(obj, ref) {
             var o = {};
             for (var p in obj) {
                 try {
@@ -1908,7 +2051,7 @@ FBL.ns(function() {
                         } else if (p === obj) {
                             o[p] = ref;
                         } else {
-                            o[p] = this._serialize(prop, contextid);
+                            o[p] = this._serialize(prop);
                         }
                     }
                     else if(FBTrace.DBG_CROSSFIRE){
@@ -1923,9 +2066,6 @@ FBL.ns(function() {
             }
             if(obj.prototype && obj.prototype != obj) {
                 o["proto"] = this._getRef(obj.prototype);
-            }
-            if(obj.arguments) {
-                o["Arguments"] = this._getRef(obj.arguments);
             }
             return o;
         },
