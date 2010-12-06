@@ -713,7 +713,6 @@ FBL.ns(function() {
                         	}
                         	catch(e) {}
                             var cid = context.Crossfire.crossfire_id;
-                            var arr = this._serialize(obj, cid);
                             arr["context_id"] = cid;
                             return arr;
                         }
@@ -929,12 +928,12 @@ FBL.ns(function() {
                 }
             }
             if (!breakpoint) {
-                var breakpoint = {
-                        "handle": this.breakpointIds++,
-                        "type": "line",
-                        "line": line,
-                        "target": url
-                    };
+            	breakpoint = {
+                    "handle": this.breakpointIds++,
+                    "type": "line",
+                    "line": line,
+                    "target": url
+                };
                 breakpoints.push(breakpoint);
                 var sourceFile = context.sourceFileMap[url];
                 if (sourceFile) {
