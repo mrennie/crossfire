@@ -519,31 +519,33 @@ CrossfireSocketTransport.prototype =
 
     _readToolString: function() {
         var tools, prev, cur, toolString = "";
-        while(prev != '\r' && cur != '\n') {
-            cur = this._scriptableInputStream.read(1);
-            toolString += cur;
-            prev = cur;
-        }
-        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
-            FBTrace.sysout("toolString is: " + toolString);
-
-        tools = toolString.split(",");
-
-        var activationListener;
-        for (var i = 0; i < this.listeners.length; ++i) {
-            listener = this.listeners[i];
-            if (typeof(listener.activateTool) == "function") {
-                activationListener = listener;
-                break;
+        if (this._inputStream.available() > 0) {
+            while(prev != '\r' && cur != '\n') {
+                cur = this._scriptableInputStream.read(1);
+                toolString += cur;
+                prev = cur;
             }
-        }
-        if (activationListener) {
-            for (var i in tools) {
-                try {
-                    activationListener.activateTool(tools[i]);
-                } catch (e) {
-                    if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
-                        FBTrace.sysout("exception activating tool: " + tools[i] + ", " + e);
+            if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                FBTrace.sysout("toolString is: " + toolString);
+
+            tools = toolString.split(",");
+
+            var activationListener;
+            for (var i = 0; i < this.listeners.length; ++i) {
+                listener = this.listeners[i];
+                if (typeof(listener.activateTool) == "function") {
+                    activationListener = listener;
+                    break;
+                }
+            }
+            if (activationListener) {
+                for (var i in tools) {
+                    try {
+                        activationListener.activateTool(tools[i]);
+                    } catch (e) {
+                        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                            FBTrace.sysout("exception activating tool: " + tools[i] + ", " + e);
+                    }
                 }
             }
         }
