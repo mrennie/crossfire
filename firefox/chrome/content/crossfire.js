@@ -174,15 +174,15 @@ FBL.ns(function() {
          * @memberOf CrossfireModule
          */
         stopServer: function() {
-        	try {
-	            this.transport.close();
-        	}
-        	finally {
-        		this._removeListeners();
-	            this.transport = null;
-	            this._clearRefs();
-	            this._clearBreakpoints();
-        	}
+            try {
+                this.transport.close();
+            }
+            finally {
+                this._removeListeners();
+                this.transport = null;
+                this._clearRefs();
+                this._clearBreakpoints();
+            }
         },
 
         /**
@@ -305,12 +305,12 @@ FBL.ns(function() {
             }
             if (response) {
                 if (FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE sending success response => " + response.toSource());
+                    FBTrace.sysout("CROSSFIRE sending success response => " + response);
                 }
                 this.transport.sendResponse(command, request.seq, response, this.running, true);
             } else {
                  if (FBTrace.DBG_CROSSFIRE) {
-                     FBTrace.sysout("CROSSFIRE sending failure response => " + response.toSource());
+                     FBTrace.sysout("CROSSFIRE sending failure response => " + response);
                  }
                 this.transport.sendResponse(command, request.seq, {}, this.running, false);
             }
@@ -705,18 +705,18 @@ FBL.ns(function() {
                         obj = this.refs[i];
                         var arr = this._serialize(obj);
                         if(source) {
-                        	try {
-                        		var src = obj.toSource();
-                        		if(src) {
-                        			arr["source"] = src;
-                        		}
-                        	}
-                        	catch(e) {}
+                            try {
+                                var src = obj.toSource();
+                                if(src) {
+                                    arr["source"] = src;
+                                }
+                            }
+                            catch(e) {}
                             var cid = context.Crossfire.crossfire_id;
                             arr["context_id"] = cid;
                             return arr;
                         }
-                    	return arr;
+                        return arr;
                     }
                 }
             }
@@ -928,7 +928,7 @@ FBL.ns(function() {
                 }
             }
             if (!breakpoint) {
-            	breakpoint = {
+                breakpoint = {
                     "handle": this.breakpointIds++,
                     "type": "line",
                     "line": line,
@@ -1130,7 +1130,7 @@ FBL.ns(function() {
             },
 
             supportsEvent: function( event) {
-                // default is return true if the command name is in our array of commands
+                // default is return true if the event name is in our array of events
                 return (event.name && event.name in this.events);
             },
 
@@ -1423,7 +1423,7 @@ FBL.ns(function() {
                 frameCopy["eval"] = function() { return frame.eval.apply(frame, arguments); };
                 if (shouldCopyStack) {
                     if (frame.callingFrame) {
-                        var stack = this._copyStack(frame.callingFrame);
+                        var stack = this._copyStack(frame.callingFrame, ctx);
                         frameCopy["stack"] = stack;
                         frameCopy["frameIndex"] = stack.length -1;
                     } else {
@@ -1445,15 +1445,15 @@ FBL.ns(function() {
          * @returns the Array for the copied stack
          * @since 0.3a1
          */
-        _copyStack: function(aFrame) {
+        _copyStack: function(aFrame, aCtx) {
             if (FBTrace.DBG_CROSSFIRE_FRAMES) {}
                 FBTrace.sysout("CROSSFIRE copyStack: calling frame is => ", aFrame.callingFrame);
             if (aFrame.callingFrame && aFrame.callingFrame.isValid) {
                 var stack = this._copyStack(aFrame.callingFrame);
-                stack.splice(0,0,this._copyFrame(aFrame, context, false));
+                stack.splice(0,0,this._copyFrame(aFrame, aCtx, false));
                 return stack;
             } else {
-                return [ this._copyFrame(aFrame, context, false) ];
+                return [ this._copyFrame(aFrame, aCtx, false) ];
             }
         },
 
@@ -1662,156 +1662,6 @@ FBL.ns(function() {
              var data = {"xpath":xpath,"type":type};
              this._sendEvent("onToggleBreakpoint", {"context_id": context.Crossfire.crossfire_id, "data": data});
         },
-
-        // ----- Firebug Console listener -----
-
-        /**
-         * @name logFormatted
-         * @description 
-         * This function is a callback for <code>Firebug.ConsoleBase</code> located 
-         * in <code>/firebug1.7/content/firebug/console.js</code>.
-         * <br><br>
-         * Generates event packets based on the className (log,debug,info,warn). 
-         * The object or message logged is contained in the packet's <code>data</code> property.
-         * <br><br>
-         * Fires one of the following events:
-         * <ul>
-         * <li><code>onConsoleLog</code></li>
-         * <li><code>onConsoleDebug</code></li>
-         * <li><code>onConsoleInfo</code></li>
-         * <li><code>onConsoleWarn</code></li>
-         * </ul>
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug</li>
-         * </ul>
-         * @function
-         * @public
-         * @memberOf CrossfireModule
-         * @param context the current context
-         * @param objects
-         * @param className the name of the kind of console event.
-         * <br>
-         * One of:
-         * <ul>
-         * <li>log</li>
-         * <li>debug</li>
-         * <li>info</li>
-         * <li>warn</li>
-         * </ul>
-         * @param sourceLink
-         */
-        logFormatted: function(context, objects, className, sourceLink) {
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE logFormatted");
-            }
-            var win = context.window;
-            var winFB = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug;
-            if (winFB) {
-                var eventName = "onConsole" + className.substring(0,1).toUpperCase() + className.substring(1);
-                var obj = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug.userObjects;
-                this._sendEvent(eventName, {"context_id": context.Crossfire.crossfire_id, "data": obj});
-            }
-        },
-
-        /**
-         * @name log
-         * @description 
-         * This function is a callback for <code>Firebug.ConsoleBase</code> located 
-         * in <code>/firebug1.7/content/firebug/console.js</code>.
-         * <br><br>
-         * Generates event packets based on the className (error). 
-         * The object or message logged is contained in the packet's <code>data</code> property.
-         * <br><br>
-         * Fires the <code>onConsoleError</code> event.
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug</li>
-         * </ul>
-         * @function
-         * @public
-         * @memberOf CrossfireModule
-         * @param object the object causing the error
-         * @param context the current context
-         * @param className the name of the kind of console event.
-         * @param rep
-         * @param noThrottle
-         * @param sourceLink
-         */
-        log: function(object, context, className, rep, noThrottle, sourceLink) {
-        	if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE log");
-            }
-        	if(context && context.context && context.trace) {
-        		var cid = context.context.Crossfire.crossfire_id;
-        		this._sendEvent("onConsoleError", {"context_id": cid, "data": this._serialize(context.trace.frames)});
-        	}
-        },
-        
-        // ----- Firebug.Inspector Listener -----
-
-        /**
-         * @name onInspectNode
-         * @description Handles a node being inspected in Firebug.
-         * <br><br>
-         * Fires an <code>onInspectNode</code> event.
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug with the <code>node</code> value set</li>
-         * </ul>
-         * @function
-         * @public
-         * @memberOf CrossfireModule
-         * @param context the current Crossfire context
-         * @param node the node being inspected
-         */
-        onInspectNode: function(context, node) {
-            node = node.wrappedJSObject;
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE onInspectNode", node);
-            }
-            var path = this._resolveElementPath(node, true);
-            if(path) {
-            	this._sendEvent("onInspectNode", { "context_id": context.Crossfire.crossfire_id, "data": {"node": path}});
-            }
-        },
-
-        /**
-         * @name _resolveElementPath
-         * @description resolves the path to the given element within the DOM tree.
-         * @function
-         * @private
-         * @memberOf CrossfireModule
-         * @param element the current DOM node context
-         * @param if we should use the tags names when constructing the path. i.e. <code>/html[1]/body[1]/div[4]/span[21]/...</code>
-         * @since 0.3a1
-         */
-		_resolveElementPath: function(element, useTagNames) {
-			var nameLookup = [];
-			nameLookup[Node.COMMENT_NODE] = "comment()";
-			nameLookup[Node.TEXT_NODE] = "text()";
-			nameLookup[Node.PROCESSING_INSTRUCTION_NODE] = "processing-instruction()";
-			var paths = [];
-			for (; element && element.nodeType != Node.DOCUMENT_NODE; element = element.parentNode) {
-				var tagName = element.localName || nameLookup[element.nodeType];
-				var index = 0;
-				for (var sibling = element.previousSibling; sibling; sibling = sibling.previousSibling) {
-					var siblingTagName = sibling.localName || nameLookup[sibling.nodeType];
-					if (!useTagNames || tagName == siblingTagName || !tagName) {
-						++index;
-					}
-				}
-				var pathIndex = "[" + (index+1) + "]";
-				paths.splice(0, 0, (useTagNames && tagName ? tagName.toLowerCase() : "node()") + pathIndex);
-			}
-			return "/" + paths.join("/");
-		},
 
         /**
          * @name updateStatusIcon

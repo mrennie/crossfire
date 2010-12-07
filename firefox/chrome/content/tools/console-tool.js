@@ -12,7 +12,7 @@ FBL.ns(function() {
 
     Crossfire.ConsoleTool.prototype = FBL.extend(CrossfireModule.ToolListener, {
         toolName: "console",
-        commands: [],
+        commands: ["setloglevel", "setloglimit"],
         events: ["onConsoleLog", "onConsoleDebug", "onConsoleInfo", "onConsoleWarn", "onConsoleError" ],
 
         handleRequest: function( request) {
@@ -36,9 +36,37 @@ FBL.ns(function() {
         /**
          * @name log
          * @description
+         * This function is a callback for <code>Firebug.ConsoleBase</code> located
+         * in <code>/firebug1.7/content/firebug/console.js</code>.
+         * <br><br>
+         * Generates event packets based on the className (error).
+         * The object or message logged is contained in the packet's <code>data</code> property.
+         * <br><br>
+         * Fires the <code>onConsoleError</code> event.
+         * <br><br>
+         * The event body contains the following:
+         * <ul>
+         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>data</code> - the event payload from Firebug</li>
+         * </ul>
+         * @function
+         * @public
+         * @memberOf CrossfireModule
+         * @param object the object causing the error
+         * @param context the current context
+         * @param className the name of the kind of console event.
+         * @param rep
+         * @param noThrottle
+         * @param sourceLink
          */
-        log: function() {
-            //TODO:
+        log: function(object, context, className, rep, noThrottle, sourceLink) {
+            if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE log");
+            }
+            if(context && context.context && context.trace) {
+                var cid = context.context.Crossfire.crossfire_id;
+                this._sendEvent("onConsoleError", {"context_id": cid, "data": this._serialize(context.trace.frames)});
+            }
         },
 
         /**
