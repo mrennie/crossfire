@@ -676,7 +676,6 @@ CrossfireSocketTransport.prototype =
         }
     },
 
-
     /**
      * @name _notifyListeners
      * @description Notifies <code>fireEvent</code> or <code>handleRequest</code> listeners based on the kind of the packet
@@ -687,16 +686,33 @@ CrossfireSocketTransport.prototype =
      */
     _notifyListeners: function( packet, headers) {
         var listener, handler;
+
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            FBTrace.sysout("SocketTransport notifying " + this.listeners.length + " listeners");
+
         for (var i = 0; i < this.listeners.length; ++i) {
             listener = this.listeners[i];
-            try {
 
+            if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                FBTrace.sysout("notifying " + listener.toolName);
+
+            try {
+                handler = null;
                 if (!this.isServer) {
                     //FIXME: mcollins handle events/requests based on packet type, not server/client mode
-                    handler = listener["fireEvent"];
+
+                    if ("all" == listener.toolName) {
+                        handler = listener["fireEvent"];
+                    } else if ( headers["tool"] && listener.toolName
+                            &&  headers["tool"] == listener.toolName
+                            && listener.supportsEvent(packet)) {
+                        handler = listener["handleEvent"];
+                    }
                 } else {
-                    if (headers["tool"] && listener.toolName
-                            && ( headers["tool"] == listener.toolName || "all" == listener.toolName )) {
+                    if ("all" == listener.toolName
+                        || ( headers["tool"] && listener.toolName
+                            &&  headers["tool"] == listener.toolName
+                            && listener.supportsRequest(packet))) {
                         handler = listener["handleRequest"];
                     }
                 }
