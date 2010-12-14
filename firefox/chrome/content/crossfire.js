@@ -421,10 +421,56 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         changeBreakpoint: function(context, args) {
-            var bp;
-            var bpId = args["breakpoint"];
-            //TODO: this needs to be implemented or dumped
-            return null;
+            var bp,
+            condition,
+            enabled = true,
+            success = false,
+            fbs = FBL.fbs;
+
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CROSSFIRE changeBreakpoint: args => " + args.toSource());
+
+            try {
+                bp = this.getBreakpoint(args);
+
+                if (bp) {
+
+                    if (typeof (args["condition"]) != "undefined") {
+                        condition = args["condition"];
+
+                        if (FBTrace.DBG_CROSSFIRE)
+                            FBTrace.sysout("CROSSFIRE changeBreakpoint set condition => " + condition);
+
+                        fbs.setBreakpointCondition({"href": bp.target}, bp.line, condition, Firebug.Debugger);
+                        success = true;
+                    }
+
+                    if (typeof (args["enabled"]) != "undefined") {
+                        enabled = !!args["enabled"];
+                        if (FBTrace.DBG_CROSSFIRE)
+                            FBTrace.sysout("CROSSFIRE changeBreakpoint set enabled => " + enabled);
+
+                        if (enabled) {
+                            fbs.enableBreakpoint(bp.target, bp.line);
+                        } else {
+                            fbs.disableBreakpoint(bp.target, bp.line);
+                        }
+                        bp.enabled = enabled;
+
+                        success = true;
+                    }
+                }
+            } catch ( e) {
+                if (FBTrace.DBG_CROSSFIRE)
+                    FBTrace.sysout("CROSSFIRE changeBreakpoint exception: " + e);
+                success = false;
+            }
+
+            if (success) {
+                return {"context_id": context.Crossfire.crossfire_id, "breakpoint": bp.handle};
+            } else {
+                return null;
+            }
         },
 
         /**
@@ -626,10 +672,13 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         getBreakpoint: function(args) {
-            var bpId = args["breakpoint"];
+            var handle = args["breakpoint"];
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CROSSFIRE getBreakpoint with handle: " + handle);
+
             for (var i in this.breakpoints) {
                 var bp = this.breakpoints[i];
-                if (bp && bp.handle == bpId) {
+                if (bp && bp.handle == handle) {
                     return bp;
                 }
             }
@@ -649,17 +698,27 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         getBreakpoints: function(context) {
-            var found, newBp;
-            var bps = [];
-            var self = this;
+            var found,
+            bp,
+            bps = [],
+            self = this;
+
+            FBTrace.sysout("this.breakpoints => " + this.breakpoints);
             for (var url in context.sourceFileMap) {
                 FBL.fbs.enumerateBreakpoints(url, {"call": function(url, line, props, script) {
+                    FBTrace.sysout("CROSSFIRE enumerating breakpoints called for: " + url + " line: " +line);
+                    FBTrace.sysout("got a bp at line: " + line + "with props: " + props.toSource());
                     found = false;
-                    for(var bp in self.breakpoints) {
-                        if((bp.url == url) && (bp.line == line)) {
-                            found = true;
-                            bps.push(bp);
-                            break;
+                    if (self.breakpoints) {
+                        for(var i in self.breakpoints) {
+                            bp = self.breakpoints[i];
+                            FBTrace.sysout("checking bp " +bp.target +"@"+bp.line);
+                            if((bp.target == props.href) && (bp.line == props.lineNo)) {
+                                FBTrace.sysout("matched: " + bp.toSource());
+                                found = true;
+                                bps.push(bp);
+                                break;
+                            }
                         }
                     }
                     if (!found) {
@@ -667,7 +726,8 @@ FBL.ns(function() {
                                 "handle": self.breakpointIds++,
                                 "type": "line",
                                 "line": line,
-                                "target": url
+                                "target": url,
+                                "enabled": !props.disabled
                             };
                         bps.push(bp);
                     }
@@ -915,10 +975,24 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         setBreakpoint: function(context, args) {
-            var url = args["target"];
-            var line = args["line"];
-            var bp, breakpoint;
-            var breakpoints = this.breakpoints;
+            var bp,
+            breakpoint,
+            sourceFile,
+            condition,
+            enabled = true,
+            url = args["target"],
+            line = args["line"],
+            breakpoints = this.breakpoints,
+            fbs = FBL.fbs;
+
+            if (typeof (args["condition"]) != "undefined") {
+                condition = args["condition"];
+            }
+
+            if (typeof (args["enabled"]) != "undefined") {
+                enabled = !!args["enabled"];
+            }
+
             for (var i = 0; i < breakpoints.length; i++) {
                 bp = breakpoints[i];
                 if (bp.line == line
@@ -932,12 +1006,26 @@ FBL.ns(function() {
                     "handle": this.breakpointIds++,
                     "type": "line",
                     "line": line,
-                    "target": url
+                    "target": url,
+                    "enabled": enabled,
                 };
+
+                if (condition) {
+                    breakpoint.condition = condition;
+                }
                 breakpoints.push(breakpoint);
-                var sourceFile = context.sourceFileMap[url];
+                sourceFile = context.sourceFileMap[url];
                 if (sourceFile) {
                     Firebug.Debugger.setBreakpoint(sourceFile, line);
+                }
+
+                if (condition) {
+                    fbs.setBreakpointCondition({"href": target}, line, condition, Firebug.Debugger);
+                }
+
+                // by default, setting a new breakpoint is enabled, so only check if we want to disable it.
+                if (!enabled) {
+                    fbs.disableBreakpoint(bp.target, bp.line);
                 }
             }
             return {"context_id": context.Crossfire.crossfire_id, "breakpoint": breakpoint};
@@ -1824,6 +1912,8 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         _clearBreakpoints: function() {
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CROSSFIRE _clearBreakpoints");
             this.breakpointIds = 1;
             this.breakpoints = [];
         },
