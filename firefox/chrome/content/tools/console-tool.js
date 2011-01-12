@@ -33,7 +33,7 @@ FBL.ns(function() {
 
         // ----- Firebug Console listener -----
 
-        /**
+        /* xxxMCollins Commenting this listener out for now in favor of the 'onError' listener in crossfire.js.
          * @name log
          * @description
          * This function is a callback for <code>Firebug.ConsoleBase</code> located
@@ -58,16 +58,16 @@ FBL.ns(function() {
          * @param rep
          * @param noThrottle
          * @param sourceLink
-         */
-        log: function(object, context, className, rep, noThrottle, sourceLink) {
+         *
+        log: function(context, object, className, rep, noThrottle, sourceLink) {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE log");
             }
             if(context && context.context && context.trace) {
                 var cid = context.context.Crossfire.crossfire_id;
-                this._sendEvent("onConsoleError", {"context_id": cid, "data": this._serialize(context.trace.frames)});
+                this.transport.sendEvent("onConsoleError", {"context_id": cid, "data": CrossfireModule.serialize(context.trace.frames)});
             }
-        },
+        },*/
 
         /**
          * @name logFormatted
@@ -115,7 +115,7 @@ FBL.ns(function() {
                 var eventName = "onConsole" + className.substring(0,1).toUpperCase() + className.substring(1);
                 var obj = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug.userObjects;
                 if (this.transport && this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
-                    this.transport.sendEvent(eventName, {"context_id": context.Crossfire.crossfire_id, "data": obj}, "console");
+                    this.transport.sendEvent(eventName, {"context_id": context.Crossfire.crossfire_id, "data": CrossfireModule.serialize(obj)}, "console");
                 }
             }
         }

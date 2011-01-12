@@ -18,7 +18,7 @@ import json, readline, socket, sys, threading, time
 current_seq = 0
 
 HANDSHAKE_STRING = "CrossfireHandshake"
-TOOL_STRING = "console,net,debugger"
+TOOL_STRING = "console,net,inspector,dom,debugger"
 
 class CrossfireClient:
 
@@ -57,9 +57,9 @@ class CrossfireClient:
     try:
       #self.conn.close()
       self.socket.close()
-      self.socketCondition.acquire()
-      self.reader.join(10)
-      self.writer.join(10)
+      #self.socketCondition.acquire()
+      self.reader.join(0)
+      self.writer.join(0)
     except (AttributeError, KeyboardInterrupt):
       pass
 
@@ -129,41 +129,65 @@ class PacketReader(threading.Thread):
     while True:
       try:
         self.cv.acquire()
-        length = self.readPacketLength()
-        if length > 0:
-          packet = self.readPacket(length)
-          if packet:
-            obj = json.loads(packet)
-            current_seq = obj['seq'] +1
-            self.packetQueue.append(obj)
+        headers = self.readPacketHeaders()
+        if "Content-Length" in headers:
+          print "\nheaders => " + str(headers)
+          length = int(headers["Content-Length"])
+          if length > 0:
+            packet = self.readPacket(length)
+            if packet:
+              obj = json.loads(packet)
+              current_seq = obj['seq'] +1
+              if "tool" in headers:
+                obj['tool'] = headers["tool"]
+              self.packetQueue.append(obj)
         self.cv.notifyAll()
         self.cv.wait()
-      except Exception:
+      except Exception as doh:
+        print "Doh!"
+        print doh
         break
 
-  def readPacketLength(self):
-    length = 0
+  def readPacketHeaders(self):
+    headers = {}
+    readHeaders = True
     buff = prev = curr = ""
 
-    while prev != '\r' and curr != '\n':
-      prev = curr
-      try:
-        curr = self.conn.recv(1)
-        buff += str(curr)
-      except socket.error:
-        break
+    #read past any old \r\n in the stream
+    #buff = self.conn.recv(2)
+    #while buff == "\r\n":
+    # buff = self.conn.recv(2)
 
-    cLen = buff.find("Content-Length:")
-
-    if cLen > -1 and len(buff) > 16:
-      length = int(buff[cLen+15:len(buff)-2])
-
-    return length
+    while readHeaders:
+      while prev != '\r' and curr != '\n':
+        prev = curr
+        try:
+          curr = self.conn.recv(1)
+          buff += str(curr)
+        except socket.error:
+          readHeaders = False
+          break
+      readHeaders = len(buff) > 0
+      if readHeaders:
+        ci = buff.find(":")
+        name = buff[:ci]
+        value = buff[ci+1:len(buff)-2]
+        headers[name] = value
+        name = value = buff = ""
+    return headers
 
   def readPacket(self, length):
     packet = ""
     read = offset = 0
-    self.conn.recv(2) #next two bytes should be \r\n
+
+    #read past any old \r\n in the stream
+    buff = self.conn.recv(2)
+    while buff == "\r\n":
+      buff = self.conn.recv(2)
+    if buff != "\r\n":
+      packet += buff
+      read = 2
+
     while read < length:
       if length-read < 4096:
         offset = length-read
@@ -171,6 +195,7 @@ class PacketReader(threading.Thread):
         offset = 4096
       packet += self.conn.recv(offset)
       read += offset
+    self.conn.recv(2) #next two bytes should be \r\n
     return packet
 
 
@@ -192,7 +217,11 @@ class PacketWriter(threading.Thread):
         if len(self.packetQueue) > 0:
           packet = self.packetQueue.pop()
           json_str = json.dumps(packet.packet)
-          packet_string = "Content-Length:" + str(len(json_str)) + "\r\n\r\n" + json_str
+          packet_string = "Content-Length:" + str(len(json_str)) + "\r\n"
+          if packet.tool:
+            packet_string += "tool:" + str(packet.tool) + "\r\n"
+          packet_string  += "\r\n" + json_str
+          print "Sending a packet\n" + packet_string
           self.conn.send(packet_string)
 
         self.cv.notifyAll()
@@ -203,11 +232,12 @@ class PacketWriter(threading.Thread):
 
 
 class Command:
-  def __init__(self, context_id, command_name, **arguments):
+  def __init__(self, context_id, command_name, tool_name="debugger", **arguments):
     global current_seq
     current_seq += 1
     self.seq = current_seq
     self.command = command_name
+    self.tool = tool_name
     self.packet = { "type": "request", "seq": self.seq, "context_id" : context_id, "command": command_name }
     if arguments:
       self.packet.update(arguments)
@@ -258,11 +288,19 @@ class CommandLine(threading.Thread):
           line = line.strip()
           space = line.find(' ')
           argstr = None
+          tool = None
+
           if space == -1:
             command = line
           else:
             command = line[:space].strip()
             argstr = line[space:].strip()
+
+          if "::" in command:
+            ci = command.find("::")
+            tool = command[:ci]
+            command = command[ci+2:]
+
           if command in Commands:
             if command == "entercontext":
               self.current_context = argstr
@@ -274,7 +312,7 @@ class CommandLine(threading.Thread):
                   args = json.loads(argstr)
                 except ValueError:
                   print "Failed to parse arguments."
-              self.commands.append(Command(self.current_context, command, arguments=args))
+              self.commands.append(Command(self.current_context, command, tool, arguments=args))
           elif command:
             print "Unknown command: " + command
       except (ValueError, EOFError):
@@ -287,7 +325,7 @@ if __name__ == "__main__":
   commandLine = None
 
   def main():
-    global server
+    global client
     global commandLine
 
     host = None
@@ -327,7 +365,7 @@ if __name__ == "__main__":
               readline.redisplay()
 
               if 'event' in packet and packet['event'] == "closed":
-                  client.restart()
+                  quit()
 
             command = commandLine.getCommand()
             if command:
@@ -343,13 +381,13 @@ if __name__ == "__main__":
     quit()
 
   def quit():
-    global server
+    global client
     global commandLine
 
     print "\nShutting down..."
 
     try:
-      server.stop()
+      client.stop()
     except Exception:
       pass
 

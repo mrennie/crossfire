@@ -162,7 +162,13 @@ CrossfireSocketTransport.prototype =
     sendResponse: function(command, requestSeq, body, running, success, tool) {
         if (running == null || running == undefined) running = true; // assume we are running unless explicitly told otherwise
         success = !!(success); // convert to boolean
-        this._defer(function() { this._sendPacket(new ResponsePacket(command, requestSeq, body, running, success)); });
+        var packet;
+        if (tool) {
+            packet = new ResponsePacket(command, requestSeq, body, running, success, ["tool:"+tool]);
+        } else {
+            packet = new ResponsePacket(command, requestSeq, body, running, success);
+        }
+        this._defer(function() { this._sendPacket(packet); });
     },
 
     /**
@@ -177,7 +183,16 @@ CrossfireSocketTransport.prototype =
     sendEvent: function( event, data, tool) {
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
             FBTrace.sysout("sendEvent " + event + " :: " + data);
-        this._defer(function() { this._sendPacket(new EventPacket(event, data)); });
+        var packet;
+
+        if (tool) {
+            packet = new EventPacket(event, data, ["tool:"+tool]);
+        } else {
+            packet = new EventPacket(event, data);
+        }
+
+        FBTrace.sysout("tool => " + tool);
+        this._defer(function() { this._sendPacket(packet); });
     },
 
     /**
@@ -609,7 +624,7 @@ CrossfireSocketTransport.prototype =
             }
         }
         if (this.connected) {
-            this._defer(function() { this._waitOnPacket();},50);
+            this._defer(function() { this._waitOnPacket();},5);
         }
     },
 

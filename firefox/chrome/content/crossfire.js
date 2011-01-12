@@ -49,22 +49,31 @@ FBL.ns(function() {
             var host, port, serverPort;
 
             // -- add tools --
+
+            //Components.utils.import("resource://crossfire/tools/console-tool.js");
             var consoleTool = new Crossfire.ConsoleTool();
             if (FBTrace.DBG_CROSSFIRE_TOOLS)
                 FBTrace.sysout("CROSSFIRE created ConsoleTool: " + consoleTool);
             this.registerTool("console", consoleTool);
 
+            //Components.utils.import("resource://crossfire/tools/inspector-tool.js");
             var inspectorTool = new Crossfire.InspectorTool();
             if (FBTrace.DBG_CROSSFIRE_TOOLS)
                 FBTrace.sysout("CROSSFIRE created InspectorTool: " + inspectorTool);
             this.registerTool("inspector", inspectorTool);
 
+            //Components.utils.import("resource://crossfire/tools/net-tool.js");
             var netTool = new Crossfire.NetTool();
             if (FBTrace.DBG_CROSSFIRE_TOOLS)
                 FBTrace.sysout("CROSSFIRE created NetTool: " + netTool);
             this.registerTool("net", netTool);
 
-            Components.utils.import("resource://crossfire/SocketTransport.js");
+            //Components.utils.import("resource://crossfire/tools/dom-tool.js");
+            var domTool = new Crossfire.DomTool();
+            if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                FBTrace.sysout("CROSSFIRE created DomTool: " + domTool);
+            this.registerTool("dom", domTool);
+
             var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
             serverPort = commandLine.getServerPort();
             if (serverPort) {
@@ -91,6 +100,9 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE connect: host => " + host + " port => " + port);
             }
+
+            this._ensureTransport();
+
             this.host = host;
             this.port = port;
             try {
@@ -121,6 +133,9 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE startServer: host => " + host + " port => " + port);
             }
+
+            this._ensureTransport();
+
             this.serverPort = port;
             try {
                 this.transport = getCrossfireServer();
@@ -135,6 +150,25 @@ FBL.ns(function() {
         },
 
         /**
+         * @name _ensureTransport
+         * @description tries to load the transport module if it has not already been loaded
+         * @function
+         * @private
+         */
+        _ensureTransport: function() {
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("Crossfire _ensureTransport");
+
+            if (typeof CrossfireSocketTransport == "undefined") {
+                try {
+                    Components.utils.import("resource://crossfire/SocketTransport.js");
+                } catch (e) {
+                    FBTrace.sysout("exception loading transport module: " + e);
+                }
+            }
+        },
+
+        /**
          * @name _addListeners
          * @description Adds Crossfire as a listener to the core modules
          * @function
@@ -145,6 +179,7 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE _addListeners");
 
+            Firebug.Console.addListener(this);
             Firebug.Debugger.addListener(this);
             Firebug.HTMLModule.addListener(this);
         },
@@ -158,12 +193,14 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         _removeListeners: function() {
+            Firebug.Console.removeListener(this);
             Firebug.Debugger.removeListener(this);
             Firebug.HTMLModule.removeListener(this);
 
             this.unregisterTool("console");
             this.unregisterTool("inspector");
             this.unregisterTool("net");
+            this.unregisterTool("dom");
         },
 
         /**
@@ -763,7 +800,7 @@ FBL.ns(function() {
                 for (var i in this.refs) {
                     if (i == handle) {
                         obj = this.refs[i];
-                        var arr = this._serialize(obj);
+                        var arr = this.serialize(obj);
                         if(source) {
                             try {
                                 var src = obj.toSource();
@@ -1138,6 +1175,7 @@ FBL.ns(function() {
             }
         },
 
+        // called by transport listener after receiving tool string in handshake
         activateTool: function( toolName) {
             if (toolName in this.registeredTools) {
                  if (FBTrace.DBG_CROSSFIRE_TOOLS)
@@ -1499,7 +1537,7 @@ FBL.ns(function() {
                         FBTrace.sysout("copying thisValue from frame...");
                     try {
                        var thisVal = frame.thisValue.getWrappedValue();
-                       frameCopy["thisValue"] = this._serialize(thisVal);
+                       frameCopy["thisValue"] = this.serialize(thisVal);
                     } catch( e) {
                         if (FBTrace.DBG_CROSSFIRE) FBTrace.sysout("Exception copying thisValue => " + e);
                     }
@@ -1572,7 +1610,7 @@ FBL.ns(function() {
             } catch (ex) {
                 if (FBTrace.DBG_CROSSFIRE_FRAMES) FBTrace.sysout("Exception copying scope => " + e);
             }
-            return this._serialize(copiedScope);
+            return this.serialize(copiedScope);
         },
 
         // ----- Firebug Debugger listener -----
@@ -1751,6 +1789,232 @@ FBL.ns(function() {
              this._sendEvent("onToggleBreakpoint", {"context_id": context.Crossfire.crossfire_id, "data": data});
         },
 
+        // ----- Firebug Console listener -----
+
+        /**
+         * @name log
+         * @description
+         * This function is a callback for <code>Firebug.ConsoleBase</code> located
+         * in <code>content/firebug/console.js</code>.
+         * <br><br>
+         * Generates event packets based on the className (error).
+         * The object or message logged is contained in the packet's <code>data</code> property.
+         * <br><br>
+         * Fires the <code>onError</code> event.
+         * <br><br>
+         * The event body contains the following:
+         * <ul>
+         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>data</code> - the event payload from Firebug</li>
+         * </ul>
+         * @function
+         * @public
+         * @memberOf CrossfireModule
+         * @param object the object causing the error
+         * @param context the current context
+         * @param className the name of the kind of console event.
+         * @param rep
+         * @param noThrottle
+         * @param sourceLink
+         */
+        log: function(context, object, className, rep, noThrottle, sourceLink) {
+            if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE log");
+            }
+            if(context && context.Crossfire) {
+                var cid = context.Crossfire.crossfire_id;
+
+                if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE sending onError ");
+                }
+
+                this._sendEvent("onError", {"context_id": cid, "data": this.serialize(object)});
+            }
+        },
+
+        /**
+         * @name _getRef
+         * @description Returns a reference id for the given object handle
+         * @function
+         * @private
+         * @memberOf CrossfireModule
+         * @type Array
+         * @returns the Array object describing the object handle, contains <code>ref.handle</code>,
+         * <code>ref.type</code> and optionally <code>ref.context_id</code>
+         * @since 0.3a1
+         */
+        _getRef: function(obj, context_id) {
+            if (obj && obj.type && obj.handle) {
+                FBTrace.sysout("CROSSFIRE _getRef tried to get ref for serialized obj");
+                return null;
+            }
+            var ref = { "type":typeof(obj), "handle": -1 };
+            if (context_id) {
+                ref["context_id"] = context_id;
+            }
+            for (var i = 0; i < this.refs.length; i++) {
+                if (this.refs[i] === obj) {
+                    if (FBTrace.DBG_CROSSFIRE) {
+                        FBTrace.sysout("CROSSFIRE _getRef ref exists with handle: " + i + " type = "+typeof(obj), obj);
+                    }
+                    ref["handle"] = i;
+                    return ref;
+                }
+            }
+            var handle = ++this.refCount;
+            this.refs[handle] = obj;
+            if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE _getRef new ref created with handle: " + handle, obj);
+            }
+            ref["handle"] = handle;
+            return ref;
+        },
+
+        /**
+         * @name _clearRefs
+         * @description clears the reference id cache
+         * @function
+         * @private
+         * @memberOf CrossfireModule
+         * @since 0.3a1
+         */
+        _clearRefs: function() {
+            this.refCount = 0;
+            this.refs = [];
+        },
+
+        /**
+         * @name _clearBreakpoints
+         * @description clears the breakpoint reference ids and resets the id counter
+         * @function
+         * @private
+         * @memberOf CrossfireModule
+         * @since 0.3a1
+         */
+        _clearBreakpoints: function() {
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CROSSFIRE _clearBreakpoints");
+            this.breakpointIds = 1;
+            this.breakpoints = [];
+        },
+
+        /**
+         * @name serialize
+         * @description prepare a javascript object to be serialized into JSON.
+         * @function
+         * @private
+         * @memberOf CrossfireModule
+         * @param obj the JavaScript {@link Object} to serialize
+         */
+        serialize: function(obj) {
+            try {
+                var type = typeof(obj);
+                var serialized = {
+                        "type": type,
+                        "value": ""
+                }
+                if (type == "object" || type == "function") {
+                    if (obj == null) {
+                         serialized["value"] = "null";
+                    } else if (obj.type && obj.handle) {
+                        // already serialized
+                        serialized = obj;
+                    } else if (obj instanceof Array) {
+                        var arr = [];
+                        for (var i = 0; i < obj.length; i++) {
+                            arr.push(this.serialize(obj[i]));
+                        }
+                        serialized["value"] = arr;
+                    } else {
+                        var ref = this._getRef(obj);
+                        serialized["value"] = this._serializeProperties(obj, ref);
+                    }
+                } else {
+                    serialized["value"] = obj;
+                }
+                return serialized;
+            } catch (e) {
+                if(FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE serialize failed: "+e);
+                }
+                return null;
+            }
+        },
+
+        /**
+         * @name _serializeProperties
+         * @description Serializes the properties for the given object
+         * @function
+         * @private
+         * @memberOf CrossfireModule
+         * @param obj the {@link Object} to serialize the properties for
+         * @param the computed reference id for <code>obj</code>
+         * @type Object
+         * @returns an object describing the serialized properties of the given object
+         * @since 0.3a2
+         */
+        _serializeProperties: function(obj, ref) {
+            var o = {};
+            for (var p in obj) {
+                try {
+                    if (obj.hasOwnProperty(p) /*&& !(p in ignoreVars)*/) {
+                        var prop = obj[p];
+                        if (typeof(prop) == "object" || typeof(prop) == "function") {
+                            if (prop == null) {
+                                o[p] = "null";
+                            } else if (prop && prop.type && prop.handle) {
+                                o[p] = prop;
+                            } else  {
+                                o[p] = this._getRef(prop);
+                            }
+                        } else if (p === obj) {
+                            o[p] = ref;
+                        } else {
+                            o[p] = this.serialize(prop);
+                        }
+                    }
+                    else if(FBTrace.DBG_CROSSFIRE){
+                        FBTrace.sysout("ignoring property -> "+p+" from -> "+obj.toString()+" during serialization");
+                    }
+                } catch (x) {
+                    o[p] =  null;
+                }
+            }
+            if(obj.constructor && obj.constructor != obj) {
+                o["constructor"] = this._getRef(obj.constructor);
+            }
+            if(obj.prototype && obj.prototype != obj) {
+                o["proto"] = this._getRef(obj.prototype);
+            }
+            return o;
+        },
+
+        /**
+         * @name sourceFileLoaded
+         * @description callback that the given source file has been loaded, which we hook
+         * to make sure breakpoints 'set' before the file has bee loaded are set when the file actually loads
+         * @function
+         * @public
+         * @since 0.3a1
+         */
+        sourceFileLoaded: function(sourceFile) {
+            if(FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE sourceFileLoaded: "+sourceFile.href);
+            }
+            if(this.breakpoints) {
+                var line = -1;
+                for (var bp in this.breakpoints) {
+                    if (bp.target == sourceFile.href) {
+                        line = bp.line;
+                        Firebug.Debugger.setBreakpoint(sourceFile, line);
+                    }
+                }
+            }
+        },
+
+
+        // -----Crossfire UI functions -----
+
         /**
          * @name updateStatusIcon
          * @description Update the Crossfire connection status icon.
@@ -1827,7 +2091,6 @@ FBL.ns(function() {
                     $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connected to " + this.host + ":" + this.port);
                 }
             }
-
         },
 
         /**
@@ -1851,186 +2114,6 @@ FBL.ns(function() {
             }
             this.running = isRunning;
         },
-
-        /**
-         * @name _getRef
-         * @description Returns a reference id for the given object handle
-         * @function
-         * @private
-         * @memberOf CrossfireModule
-         * @type Array
-         * @returns the Array object describing the object handle, contains <code>ref.handle</code>,
-         * <code>ref.type</code> and optionally <code>ref.context_id</code>
-         * @since 0.3a1
-         */
-        _getRef: function(obj, context_id) {
-            if (obj && obj.type && obj.handle) {
-                FBTrace.sysout("CROSSFIRE _getRef tried to get ref for serialized obj");
-                return null;
-            }
-            var ref = { "type":typeof(obj), "handle": -1 };
-            if (context_id) {
-                ref["context_id"] = context_id;
-            }
-            for (var i = 0; i < this.refs.length; i++) {
-                if (this.refs[i] === obj) {
-                    if (FBTrace.DBG_CROSSFIRE) {
-                        FBTrace.sysout("CROSSFIRE _getRef ref exists with handle: " + i + " type = "+typeof(obj), obj);
-                    }
-                    ref["handle"] = i;
-                    return ref;
-                }
-            }
-            var handle = ++this.refCount;
-            this.refs[handle] = obj;
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE _getRef new ref created with handle: " + handle, obj);
-            }
-            ref["handle"] = handle;
-            return ref;
-        },
-
-        /**
-         * @name _clearRefs
-         * @description clears the reference id cache
-         * @function
-         * @private
-         * @memberOf CrossfireModule
-         * @since 0.3a1
-         */
-        _clearRefs: function() {
-            this.refCount = 0;
-            this.refs = [];
-        },
-
-        /**
-         * @name _clearBreakpoints
-         * @description clears the breakpoint reference ids and resets the id counter
-         * @function
-         * @private
-         * @memberOf CrossfireModule
-         * @since 0.3a1
-         */
-        _clearBreakpoints: function() {
-            if (FBTrace.DBG_CROSSFIRE)
-                FBTrace.sysout("CROSSFIRE _clearBreakpoints");
-            this.breakpointIds = 1;
-            this.breakpoints = [];
-        },
-
-        /**
-         * @name _serialize
-         * @description prepare a javascript object to be serialized into JSON.
-         * @function
-         * @private
-         * @memberOf CrossfireModule
-         * @param obj the JavaScript {@link Object} to serialize
-         */
-        _serialize: function(obj) {
-            try {
-                var type = typeof(obj);
-                var serialized = {
-                        "type": type,
-                        "value": ""
-                }
-                if (type == "object" || type == "function") {
-                    if (obj == null) {
-                         serialized["value"] = "null";
-                    } else if (obj.type && obj.handle) {
-                        // already serialized
-                        serialized = obj;
-                    } else if (obj instanceof Array) {
-                        var arr = [];
-                        for (var i = 0; i < obj.length; i++) {
-                            arr.push(this._serialize(obj[i]));
-                        }
-                        serialized["value"] = arr;
-                    } else {
-                        var ref = this._getRef(obj);
-                        serialized["value"] = this._serializeProperties(obj, ref);
-                    }
-                } else {
-                    serialized["value"] = obj;
-                }
-                return serialized;
-            } catch (e) {
-                if(FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE serialize failed: "+e);
-                }
-                return null;
-            }
-        },
-
-        /**
-         * @name _serializeProperties
-         * @description Serializes the properties for the given object
-         * @function
-         * @private
-         * @memberOf CrossfireModule
-         * @param obj the {@link Object} to serialize the properties for
-         * @param the computed reference id for <code>obj</code>
-         * @type Object
-         * @returns an object describing the serialized properties of the given object
-         * @since 0.3a2
-         */
-        _serializeProperties: function(obj, ref) {
-            var o = {};
-            for (var p in obj) {
-                try {
-                    if (obj.hasOwnProperty(p) /*&& !(p in ignoreVars)*/) {
-                        var prop = obj[p];
-                        if (typeof(prop) == "object" || typeof(prop) == "function") {
-                            if (prop == null) {
-                                o[p] = "null";
-                            } else if (prop && prop.type && prop.handle) {
-                                o[p] = prop;
-                            } else  {
-                                o[p] = this._getRef(prop);
-                            }
-                        } else if (p === obj) {
-                            o[p] = ref;
-                        } else {
-                            o[p] = this._serialize(prop);
-                        }
-                    }
-                    else if(FBTrace.DBG_CROSSFIRE){
-                        FBTrace.sysout("ignoring property -> "+p+" from -> "+obj.toString()+" during serialization");
-                    }
-                } catch (x) {
-                    o[p] =  null;
-                }
-            }
-            if(obj.constructor && obj.constructor != obj) {
-                o["constructor"] = this._getRef(obj.constructor);
-            }
-            if(obj.prototype && obj.prototype != obj) {
-                o["proto"] = this._getRef(obj.prototype);
-            }
-            return o;
-        },
-
-        /**
-         * @name sourceFileLoaded
-         * @description callback that the given source file has been loaded, which we hook
-         * to make sure breakpoints 'set' before the file has bee loaded are set when the file actually loads
-         * @function
-         * @public
-         * @since 0.3a1
-         */
-        sourceFileLoaded: function(sourceFile) {
-            if(FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE sourceFileLoaded: "+sourceFile.href);
-            }
-            if(this.breakpoints) {
-                var line = -1;
-                for (var bp in this.breakpoints) {
-                    if (bp.target == sourceFile.href) {
-                        line = bp.line;
-                        Firebug.Debugger.setBreakpoint(sourceFile, line);
-                    }
-                }
-            }
-        }
     });
 
     // register module

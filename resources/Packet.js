@@ -60,8 +60,13 @@ var Packet = {
      * @type String
      * @returns the given {@link String} with the <code>Content-Length</code> header and lines feed added
      */
-    toPacketString: function( str) {
-        return "Content-Length:" + str.length + "\r\n\r\n" + str; // HTTP-ish style
+    toPacketString: function( body, headers) {
+        if (!headers) {
+            headers = [];
+        }
+        headers.push("Content-Length:" + body.length);
+        headers = headers.join("\r\n");
+        return headers + "\r\n\r\n" + body + "\r\n"; // HTTP-ish style
     }
 };
 
@@ -75,19 +80,19 @@ var Packet = {
  * @type EventPacket
  * @returns a new {@link EventPacket}
  */
-function EventPacket( event, data) {
+function EventPacket( event, data, headers) {
     if (data) {
         var sequence = Packet.seq++;
         var packet = {
                 "seq": sequence,
-                "type":	"event",
+                "type": "event",
                 "event": event
         };
         for (var prop in data) {
             packet[prop] = data[prop];
         }
         var json = this.toJSON(packet);
-        this.data = this.toPacketString(json);
+        this.data = this.toPacketString(json, headers);
         this.length = this.data.length;
     } else {
         //FIXME: incoming event hack
@@ -135,7 +140,7 @@ RequestPacket.prototype = Packet;
  * @type ResponsePacket
  * @returns a new {@link ResponsePacket}
  */
-function ResponsePacket( command, requestSeq, body, running, success) {
+function ResponsePacket( command, requestSeq, body, running, success, headers) {
     var sequence = Packet.seq++;
     var packet = {
             "seq": sequence,
@@ -148,7 +153,7 @@ function ResponsePacket( command, requestSeq, body, running, success) {
     };
     if (body.context_id) packet.context_id = body.context_id;
     var json = this.toJSON(packet);
-    this.data = this.toPacketString(json);
+    this.data = this.toPacketString(json, headers);
     this.length = this.data.length;
 }
 

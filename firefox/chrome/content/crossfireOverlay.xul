@@ -9,6 +9,7 @@
     <script type="application/javascript" src="chrome://crossfire/content/tools/console-tool.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/tools/inspector-tool.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/tools/net-tool.js"/>
+    <script type="application/javascript" src="chrome://crossfire/content/tools/dom-tool.js"/>
 
     <statusbar id="status-bar">
         <statusbarpanel id="crossfireStatusBar" context="crossfireContextMenu" onmousedown="Crossfire.onStatusClick(this)">
