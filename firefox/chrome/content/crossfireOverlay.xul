@@ -11,6 +11,7 @@
     <script type="application/javascript" src="chrome://crossfire/content/tools/net-tool.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/tools/dom-tool.js"/>
 
+    <!-- Firefox 3.6 Status Bar Icon -->
     <statusbar id="status-bar">
         <statusbarpanel id="crossfireStatusBar" context="crossfireContextMenu" onmousedown="Crossfire.onStatusClick(this)">
             <image id="crossfireIcon" class="disconnected" tooltiptext="Crossfire: disconnected"/>
@@ -21,4 +22,11 @@
             <menuitem id="menu_disconnectCrossfire" class="hidden" label="Disconnect..." onclick="Crossfire.disconnect()"/>
         </menupopup>
     </statusbar>
+
+    <!-- Fennec button -->
+    <vbox id="browser-controls">
+        <toolbarbutton class="button-control">
+            <image id="crossfireIcon" class="disconnected" tooltiptext="Crossfire: disconnected"/>
+        </toolbarbutton>
+    </vbox>
 </overlay>
