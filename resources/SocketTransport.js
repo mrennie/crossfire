@@ -191,7 +191,6 @@ CrossfireSocketTransport.prototype =
             packet = new EventPacket(event, data);
         }
 
-        FBTrace.sysout("tool => " + tool);
         this._defer(function() { this._sendPacket(packet); });
     },
 

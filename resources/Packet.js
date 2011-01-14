@@ -64,9 +64,10 @@ var Packet = {
         if (!headers) {
             headers = [];
         }
-        headers.push("Content-Length:" + body.length);
-        headers = headers.join("\r\n");
-        return headers + "\r\n\r\n" + body + "\r\n"; // HTTP-ish style
+        // insert content-length header at beginning of headers
+        headers.splice(0,0,"Content-Length:" + body.length);
+        headers = headers.join("\r\n"); // only adds \r\n if more than one header
+        return headers + "\r\n\r\n" + body; // HTTP-ish style
     }
 };
 

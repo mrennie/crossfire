@@ -153,11 +153,6 @@ class PacketReader(threading.Thread):
     readHeaders = True
     buff = prev = curr = ""
 
-    #read past any old \r\n in the stream
-    #buff = self.conn.recv(2)
-    #while buff == "\r\n":
-    # buff = self.conn.recv(2)
-
     while readHeaders:
       while prev != '\r' and curr != '\n':
         prev = curr
@@ -167,26 +162,19 @@ class PacketReader(threading.Thread):
         except socket.error:
           readHeaders = False
           break
-      readHeaders = len(buff) > 0
+      readHeaders = len(buff) > 2
       if readHeaders:
         ci = buff.find(":")
         name = buff[:ci]
         value = buff[ci+1:len(buff)-2]
         headers[name] = value
-        name = value = buff = ""
+        # reset everything before next loop
+        prev = curr = name = value = buff = ""
     return headers
 
   def readPacket(self, length):
     packet = ""
     read = offset = 0
-
-    #read past any old \r\n in the stream
-    buff = self.conn.recv(2)
-    while buff == "\r\n":
-      buff = self.conn.recv(2)
-    if buff != "\r\n":
-      packet += buff
-      read = 2
 
     while read < length:
       if length-read < 4096:
@@ -195,7 +183,6 @@ class PacketReader(threading.Thread):
         offset = 4096
       packet += self.conn.recv(offset)
       read += offset
-    self.conn.recv(2) #next two bytes should be \r\n
     return packet
 
 
