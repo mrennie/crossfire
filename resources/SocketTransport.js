@@ -634,15 +634,24 @@ CrossfireSocketTransport.prototype =
      * @private
      * @memberOf CrossfireSocketTransport
      */
-     _parseBuffer: function(){
+     _parseBuffer: function() {
         /*
          * Buffer always has length header:
          *   "Content-Length:" + str.length + "\r\n"
          */
         var block, packet, length, i, headers = {}, header,
-            headersEnd       = this._buffer.indexOf("\r\n\r\n"),
-            contentBegin     = headersEnd + 4,
-            headersRaw       = this._buffer.substring(0,headersEnd);
+            headersRaw, contentBegin,
+            headersEnd = this._buffer.indexOf("\r\n\r\n");
+
+        if (headersEnd <= 4) {
+            // xxxMcollins then we got junk whitespace in the stream
+            // this happens on the client side, but is probably the server side's fault?
+            this._buffer = this._buffer.slice(4);
+            headersEnd = this._buffer.indexOf("\r\n\r\n");
+        }
+
+        contentBegin = headersEnd + 4;
+        headersRaw = this._buffer.substring(0,headersEnd);
 
         headersRaw = headersRaw.split("\r\n");
         for (i=0; i < headersRaw.length; i++)
