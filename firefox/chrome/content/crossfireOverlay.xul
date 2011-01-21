@@ -4,6 +4,7 @@
 
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" >
     <script type="application/javascript" src="chrome://crossfire/content/crossfire.js"/>
+    <script type="application/javascript" src="chrome://crossfire/content/crossfire-firefox.js"/>
 
     <!-- Load tool files. TODO: lazily load via 'require' or similar -->
     <script type="application/javascript" src="chrome://crossfire/content/tools/console-tool.js"/>
@@ -18,7 +19,7 @@
         </statusbarpanel>
         <menupopup id="crossfireStatusMenu">
             <menuitem id="menu_startCrossfireServer" label="Start Server" onclick="Crossfire.startServer()"/>
-            <menuitem id="menu_connectCrossfireClient" label="Connect as client" onclick="Crossfire.connect()"/>
+            <menuitem id="menu_connectCrossfireClient" label="Connect as client" onclick="Crossfire.Firefox.onConnect()"/>
             <menuitem id="menu_disconnectCrossfire" class="hidden" label="Disconnect..." onclick="Crossfire.disconnect()"/>
         </menupopup>
     </statusbar>
