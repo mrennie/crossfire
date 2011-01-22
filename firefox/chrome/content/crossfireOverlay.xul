@@ -4,6 +4,7 @@
 
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" >
     <script type="application/javascript" src="chrome://crossfire/content/crossfire.js"/>
+    <script type="application/javascript" src="chrome://firebug/content/bti_mozilla/ClientBrowserTools.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/crossfire-firefox.js"/>
 
     <!-- Load tool files. TODO: lazily load via 'require' or similar -->
@@ -15,7 +16,7 @@
     <!-- Firefox 3.6 Status Bar Icon -->
     <statusbar id="status-bar">
         <statusbarpanel id="crossfireStatusBar" context="crossfireContextMenu" onmousedown="Crossfire.onStatusClick(this)">
-            <image id="crossfireIcon" class="disconnected" tooltiptext="Crossfire: disconnected"/>
+            <image id="crossfireIcon" class="disconnected" tooltiptext="Crossfire: no status set"/>
         </statusbarpanel>
         <menupopup id="crossfireStatusMenu">
             <menuitem id="menu_startCrossfireServer" label="Start Server" onclick="Crossfire.startServer()"/>
@@ -27,7 +28,7 @@
     <!-- Fennec button -->
     <vbox id="browser-controls">
         <toolbarbutton class="button-control">
-            <image id="crossfireIcon" class="disconnected" tooltiptext="Crossfire: disconnected"/>
+            <image id="crossfireIcon" class="disconnected" tooltiptext="Crossfire: no status set"/>
         </toolbarbutton>
     </vbox>
 </overlay>

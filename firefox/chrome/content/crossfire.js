@@ -50,6 +50,8 @@ FBL.ns(function() {
 
             // -- add tools --
 
+            // XXXjjb: I think the registerTool should be at the bottom of the tool code.
+
             //Components.utils.import("resource://crossfire/tools/console-tool.js");
             var consoleTool = new Crossfire.ConsoleTool();
             if (FBTrace.DBG_CROSSFIRE_TOOLS)
@@ -355,7 +357,17 @@ FBL.ns(function() {
 
         fireEvent: function(packet)
         {
-            FBL.dispatch(this.fbListeners, "onExecute", [packet]);
+            if (packet.type !== 'event')
+                FBTrace.sysout("crossfire.fireevent. ERROR not an event ", packet);
+
+            // switch and call Firebug.ClientBrowserTools
+            var bti = Firebug.ClientBrowserTools;
+            var event = packet.event;
+            if (event === 'onContextCreated')
+            {
+                var href = packet.data.href;
+                bti.createContext(packet.context_id, href);
+            }
         },
 
         /**
