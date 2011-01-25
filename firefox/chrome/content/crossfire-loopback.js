@@ -48,10 +48,13 @@ Crossfire.Loopback = FBL.extend(CrossfireModule.ToolListener, {
             });
         }
 
-        // TODO make sure Firebug is off
-        Firebug.Debugger = Firebug.JavaScriptModule; // command go out here
-        FBTrace.sysout("openFirebugClient overwrite Firebug.Debugger ", Firebug.Debugger);
-        Firebug.detachBar();
+        var FirebugCopy = FBL.extend({}, Firebug);
+
+        FirebugCopy.Debugger = Firebug.JavaScriptModule; // commands go out here
+        FBTrace.sysout("openFirebugClient overwrite FirebugCopy.Debugger ", FirebugCopy.Debugger);
+
+        // In detachBar, |this| will be a one-level deep copy of the Firebug in this window, but with a different Debugger.
+        FirebugCopy.detachBar();
     },
 
     createClientBrowserTools: function()
