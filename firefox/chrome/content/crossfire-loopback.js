@@ -67,9 +67,42 @@ CrossfireModule.registerTool(Crossfire.Loopback.toolName, Crossfire.Loopback);
 
 // --------------------------------------------------------------------------------------
 // Prototype for front end module providing BTI via crossfire
+
+// Begin transitional code
+Cu.import("resource://firebug/modules/bti/browser.js");
+// End transitional code
+
+Browser.prototype.getTools = function()
+{
+	// Some crossfire thing
+    return [];
+};
+
 Firebug.JavaScriptModule = FBL.extend(Firebug.ActivableModule,
 {
-    dispatchName: "debugger",
+    dispatchName: "debugger",    // extends Module
+
+    initialize: function()
+    {
+        $("cmd_breakOnErrors").setAttribute("checked", Firebug.breakOnErrors);
+        $("cmd_decompileEvals").setAttribute("checked", Firebug.decompileEvals);
+
+        this.onFunctionCall = bind(this.onFunctionCall, this);
+        this.browserTools = new Browser();
+
+        Firebug.ActivableModule.initialize.apply(this, arguments);
+    },
+
+    initializeUI: function()
+    {
+        Firebug.ActivableModule.initializeUI.apply(this, arguments);
+        this.filterButton = $("fbScriptFilterMenu");
+        this.filterMenuUpdate();
+        var tools = this.browserTools.getTools();
+        Firebug.setIsJSDActive(fbs.isJSDActive()); // jsd may be active before this XUL window was opened
+    },
+
+
 });
 
 });
