@@ -69,12 +69,12 @@ CrossfireModule.registerTool(Crossfire.Loopback.toolName, Crossfire.Loopback);
 // Prototype for front end module providing BTI via crossfire
 
 // Begin transitional code
-Cu.import("resource://firebug/modules/bti/browser.js");
+Cu.import("resource://firebug/bti/browser.js");
 // End transitional code
 
 Browser.prototype.getTools = function()
 {
-	// Some crossfire thing
+    // Some crossfire thing
     return [];
 };
 
