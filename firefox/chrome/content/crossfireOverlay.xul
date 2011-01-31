@@ -7,6 +7,10 @@
     <script type="application/javascript" src="chrome://crossfire/content/crossfire-firefox.js"/>
     <script type="application/javascript" src="chrome://firebug/content/bti_mozilla/ClientBrowserTools.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/crossfire-loopback.js"/>
+    <script type="application/javascript" src="chrome://crossfire/content/crossfire-server.js"/>
+    <script type="application/javascript" src="chrome://crossfire/content/crossfire-client.js"/>
+
+    <script type="application/javascript" src="chrome://crossfire/content/tools/tool-listener.js"/>
     <!-- Load tool files. TODO: lazily load via 'require' or similar -->
     <script type="application/javascript" src="chrome://crossfire/content/tools/console-tool.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/tools/inspector-tool.js"/>

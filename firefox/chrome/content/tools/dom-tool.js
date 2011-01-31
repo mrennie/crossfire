@@ -9,7 +9,7 @@ FBL.ns(function() {
 
     };
 
-    Crossfire.DomTool.prototype = FBL.extend(CrossfireModule.ToolListener, {
+    Crossfire.DomTool.prototype = FBL.extend(Crossfire.ToolListener, {
         toolName: "dom",
         commands: [""],
         events: ["onDomMutate"],

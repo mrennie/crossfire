@@ -9,7 +9,7 @@ FBL.ns(function() {
 
     };
 
-    Crossfire.InspectorTool.prototype = FBL.extend(CrossfireModule.ToolListener, {
+    Crossfire.InspectorTool.prototype = FBL.extend(Crossfire.ToolListener, {
         toolName: "inspector",
         commands: ["inspect"],
         events: ["onInspectNode"],

@@ -10,7 +10,7 @@ FBL.ns(function() {
 
     };
 
-    Crossfire.ConsoleTool.prototype = FBL.extend(CrossfireModule.ToolListener, {
+    Crossfire.ConsoleTool.prototype = FBL.extend(Crossfire.ToolListener, {
         toolName: "console",
         commands: ["setloglevel", "setloglimit"],
         events: ["onConsoleLog", "onConsoleDebug", "onConsoleInfo", "onConsoleWarn", "onConsoleError" ],

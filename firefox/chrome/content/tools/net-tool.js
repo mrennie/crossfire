@@ -9,7 +9,7 @@ FBL.ns(function() {
 
     };
 
-    Crossfire.NetTool.prototype = FBL.extend(CrossfireModule.ToolListener, {
+    Crossfire.NetTool.prototype = FBL.extend(Crossfire.ToolListener, {
         toolName: "net",
         commands: [],
         events: ["onNetworkRequest", "onNetworkResponse"],
