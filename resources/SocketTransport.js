@@ -195,6 +195,27 @@ CrossfireSocketTransport.prototype =
     },
 
     /**
+     * @name sendRequest
+     * @description Send a request packet. @see also Packet.js
+     * @function
+     * @public
+     * @memberof CrossfireSocketTransport
+     */
+    sendRequest: function(command, data, tool) {
+        var packet;
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            FBTrace.sysout("sendRequest");
+
+        if (!data) data = {};
+        if (!tool) tool = "";
+        packet = new RequestPacket(command, data, ["tool:"+tool]);
+
+        FBTrace.sysout("packet is " + packet,packet);
+
+        this._defer(function() {this._sendPacket(packet);});
+    },
+
+    /**
      * @name open
      * @description Open a connection to the specified host/port.
      * @function

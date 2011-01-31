@@ -2,7 +2,7 @@ FBL.ns(function() {
 
     FBL.removeClass(document.getElementById("menu_loopbackCrossfire"), "hidden");
 
-Crossfire.Loopback = FBL.extend(CrossfireModule.ToolListener, {
+Crossfire.Loopback = FBL.extend(Crossfire.ToolListener, {
     toolName: "Loopback",
     commands: [],
     events: [ ],

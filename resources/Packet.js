@@ -118,12 +118,27 @@ EventPacket.prototype = Packet;
  * @returns a new {@link RequestPacket}
  */
 function RequestPacket( packetString) {
-    var json = this.parseJSON(packetString);
-    for (var prop in json) {
-        this[prop] = json[prop];
+    var json,command,args,headers,packet;
+    if (arguments.length == 1) {
+        json = this.parseJSON(packetString);
+        for (var prop in json) {
+            this[prop] = json[prop];
+        }
+        if (json && json.seq)
+            Packet.seq = json.seq+1;
+    } else if (arguments.length > 2){
+        command = arguments[0];
+        args = arguments[1];
+        headers = arguments[2];
+        packet = {
+            "seq": Packet.seq++,
+            "type": "command",
+            "command": command,
+        };
+        json = this.toJSON(packet);
+        this.data = this.toPacketString(json, headers);
+        this.length = this.data.length;
     }
-    if (json && json.seq)
-        Packet.seq = json.seq+1;
 }
 
 RequestPacket.prototype = Packet;
@@ -145,7 +160,7 @@ function ResponsePacket( command, requestSeq, body, running, success, headers) {
     var sequence = Packet.seq++;
     var packet = {
             "seq": sequence,
-            "type":	"response",
+            "type": "response",
             "command": command,
             "request_seq": requestSeq,
             "body": body,

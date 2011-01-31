@@ -24,7 +24,8 @@
         </statusbarpanel>
         <menupopup id="crossfireStatusMenu">
             <menuitem id="menu_startCrossfireServer" label="Start Server" onclick="Crossfire.startServer()"/>
-            <menuitem id="menu_connectCrossfireClient" label="Connect as client" onclick="Crossfire.Firefox.onConnect()"/>
+            <menuitem id="menu_connectCrossfireClient" label="Connect as client" onclick="Crossfire.connect()"/>
+            <!-- menuitem id="menu_connectCrossfireClient" label="Connect as client" onclick="Crossfire.Firefox.onConnect()"/-->
             <menuitem id="menu_loopbackCrossfire" class="hidden" label="Loopback" onclick="Crossfire.Loopback.openFirebugClient()"/>
             <menuitem id="menu_disconnectCrossfire" class="hidden" label="Disconnect..." onclick="Crossfire.disconnect()"/>
         </menupopup>

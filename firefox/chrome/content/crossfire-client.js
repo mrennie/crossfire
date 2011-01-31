@@ -27,13 +27,18 @@ FBL.ns(function() {
             var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
             host = commandLine.getHost();
             port = commandLine.getPort();
+
+            this.contexts = {};
+
+            // Begin transitional code
+            Cu.import("resource://firebug/bti/browser.js");
+            // End transitional code
+
+            this.btiBrowser = new Browser();
+
             if (host && port) {
                 this.connectClient(host, port);
             }
-
-            // Begin transitional code
-            //Cu.import("resource://firebug/modules/bti/browser.js");
-            // End transitional code
         },
 
 
@@ -74,7 +79,7 @@ FBL.ns(function() {
          */
         onConnectionStatusChanged: function( status) {
             if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
-                this.listContexts();
+                this.getBrowserContexts();
             }
         },
 
@@ -84,19 +89,58 @@ FBL.ns(function() {
          * @description Listens for events from Crossfire socket,
          * and dispatch them to BTI calls.
          */
-        fireEvent: function(packet)
+        fireEvent: function(event)
         {
-            FBL.dispatch(this.fbListeners, "onExecute", [packet]);
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("fireEvent: " + event);
+
+            var contextId = event.context_id;
+
+            if (event.name == "onContextCreated") {
+                var btiContext = new BrowserContext();
+                this.contexts[contextId] = btiContext;
+                this.btiBrowser._contextCreated(btiContext);
+            }
+
+            //FBL.dispatch(this.fbListeners, "onExecute", [packet]);
         },
 
-        _sendCommand: function(command, data) {
+
+        handleResponse: function( response) {
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CrossfireClient handleResponse => " + response);
+            if (response.command == "listcontexts") {
+
+            }
+        },
+
+        _sendCommand: function( command, data) {
             //TODO:
             this.transport.sendRequest(command, data);
         },
 
-        // ----- BTI-ish things -----
-        listContexts: function() {
+        // tools
+        enableTool: function( toolName) {
+            this._sendCommand("enableTool", {"toolName":toolName});
+        },
+
+        disableTool: function( toolName) {
+            this._sendCommand("disableTool", {"toolName":toolName});
+        },
+
+        // ----- BTI/Crossfire-ish things -----
+        getBrowserContexts: function() {
             this._sendCommand("listcontexts");
+        },
+
+        //
+        CompilationUnit : {
+
+            getSourceLines: function( context) {
+                this._sendCommand("scripts", {
+                    "context_id": context.Crossfire.crossfire_id
+                    });
+            }
         }
     });
 
