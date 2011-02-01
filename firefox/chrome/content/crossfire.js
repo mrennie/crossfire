@@ -189,7 +189,7 @@ FBL.ns(function() {
                 }
             }
 
-            CrossfireModule.getServerTransport().sendResponse(command, request.seq, response, this.running, response);
+            //CrossfireModule.getServerTransport().sendResponse(command, request.seq, response, this.running, response);
 
 
         },
@@ -625,7 +625,7 @@ FBL.ns(function() {
 
     /**
      * @name Crossfire.connect
-     * @description Delegate to {@link CrossfireModule#connectClient(host, port)}
+     * @description Delegate to {@link CrossfireClient#connectClient(host, port)}
      * @function
      * @public
      * @memberOf Crossfire

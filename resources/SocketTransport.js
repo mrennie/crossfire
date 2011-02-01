@@ -742,15 +742,21 @@ CrossfireSocketTransport.prototype =
 
             try {
                 handler = null;
-                if (!this.isServer) {
-                    //FIXME: mcollins handle events/requests based on packet type, not server/client mode
-
+                if (packet.type == "event") {
                     if ("all" == listener.toolName) {
                         handler = listener["fireEvent"];
                     } else if ( headers["tool"] && listener.toolName
                             &&  headers["tool"] == listener.toolName
                             && listener.supportsEvent(packet)) {
                         handler = listener["handleEvent"];
+                    }
+                } else if (packet.type == "response") {
+                    if ("all" == listener.toolName) {
+                        handler = listener["handleResponse"];
+                    } else if ( headers["tool"] && listener.toolName
+                            &&  headers["tool"] == listener.toolName
+                            && listener.supportsCommand(packet)) {
+                        handler = listener["handleResponse"];
                     }
                 } else {
                     if ("all" == listener.toolName

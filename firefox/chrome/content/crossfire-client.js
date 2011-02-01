@@ -32,6 +32,8 @@ FBL.ns(function() {
 
             // Begin transitional code
             Cu.import("resource://firebug/bti/browser.js");
+            Cu.import("resource://firebug/bti/browsercontext.js");
+            Cu.import("resource://firebug/bti/compilationunit.js");
             // End transitional code
 
             this.btiBrowser = new Browser();
@@ -94,12 +96,18 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("fireEvent: " + event);
 
-            var contextId = event.context_id;
+            var contextId = event.context_id,
+                eventName = event.event,
+                data = event.data;
 
-            if (event.name == "onContextCreated") {
+            if (eventName == "onContextCreated") {
                 var btiContext = new BrowserContext();
                 this.contexts[contextId] = btiContext;
                 this.btiBrowser._contextCreated(btiContext);
+            } else if (eventName == "onScript") {
+                var browserContext = this.contexts[contextId];
+                var ccu = new CompilationUnit(data.href, browserContext); //CrossfireClient.CrossfireCompilationUnit(data.href, contextId);
+                browserContext._addCompilationUnit(ccu);
             }
 
             //FBL.dispatch(this.fbListeners, "onExecute", [packet]);
@@ -110,7 +118,7 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CrossfireClient handleResponse => " + response);
             if (response.command == "listcontexts") {
-
+                //TODO: create BTI BrowserContexts?
             }
         },
 
@@ -133,15 +141,16 @@ FBL.ns(function() {
             this._sendCommand("listcontexts");
         },
 
-        //
-        CompilationUnit : {
+        /*
+        CrossfireCompilationUnit : FBL.extend(BTI.CompilationUnit, {
 
             getSourceLines: function( context) {
-                this._sendCommand("scripts", {
+                CrossfireClient._sendCommand("scripts", {
                     "context_id": context.Crossfire.crossfire_id
                     });
             }
-        }
+        })
+        */
     });
 
     // register module
