@@ -43,7 +43,7 @@ Crossfire.Loopback = FBL.extend(Crossfire.ToolListener, {
                  var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
                  var host = "localhost";
                  var port = commandLine.getServerPort();
-                 CrossfireModule.connectClient(host, port);
+                 CrossfireClient.connectClient(host, port);
                  FBTrace.sysout("openFirebugClient connect called for "+host+" port "+port);
             });
         }
