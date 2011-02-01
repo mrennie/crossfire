@@ -81,6 +81,16 @@ FBL.ns(function() {
             return this.clientTransport;
         },
 
+        /*
+         * integer server port number or null if this is not a server
+         */
+        getServerPort: function()
+        {
+            var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
+            var port = commandLine.getServerPort();
+            // FIXME: allow UI to change the value
+            return port;
+        },
         /**
          * @name _ensureTransport
          * @description tries to load the transport module if it has not already been loaded

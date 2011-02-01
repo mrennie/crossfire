@@ -1540,5 +1540,7 @@ FBL.ns(function() {
         }
     });
 
-    Firebug.registerModule(CrossfireServer);
+    if (CrossfireModule.getServerPort())  // then we are a server
+        Firebug.registerModule(CrossfireServer);
+    // else we compiled the code for nothing
 });
