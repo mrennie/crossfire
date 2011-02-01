@@ -189,7 +189,7 @@ FBL.ns(function() {
                 }
             }
 
-            this.transport.sendResponse(command, request.seq, response, this.running, response);
+            CrossfireModule.getServerTransport().sendResponse(command, request.seq, response, this.running, response);
 
 
         },
