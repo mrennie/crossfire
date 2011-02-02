@@ -30,10 +30,12 @@ FBL.ns(function() {
 
             this.contexts = {};
 
+
             // Begin transitional code
-            Cu.import("resource://firebug/bti/browser.js");
-            Cu.import("resource://firebug/bti/browsercontext.js");
-            Cu.import("resource://firebug/bti/compilationunit.js");
+            var import = Components.utils.import;
+            import("resource://firebug/bti/browser.js");
+            import("resource://firebug/bti/browsercontext.js");
+            import("resource://firebug/bti/compilationunit.js");
             // End transitional code
 
             this.btiBrowser = new Browser();
