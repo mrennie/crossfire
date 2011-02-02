@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+
+<?xul-overlay href="chrome://firebug/content/browserOverlay.xul"?>
+<?xml-stylesheet href="chrome://firebug/content/firebug.css"?>
+<?xml-stylesheet href="chrome://firebug/skin/window.css"?>
+
+<?xml-stylesheet href="chrome://global/skin/global.css"?>
+<?xml-stylesheet href="chrome://browser/skin/browser.css"?>
+
+<?xml-stylesheet href="chrome://remote-client/skin/crossfire-remote-client.css"?>
+
+<!DOCTYPE window [
+<!ENTITY % browserDTD SYSTEM "chrome://browser/locale/browser.dtd" >
+%browserDTD;
+]>
+
+<window xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        id="crossfire-remote-client"
+        title="Crossfire Remote Client"
+        width="800" height="600"
+        persist="screenX,screenY,width,height,sizemode">
+
+    <script type="application/javascript" src="chrome://remote-client/content/crossfire-remote-client.js"/>
+
+    <vbox id="appcontent" flex="1">
+        <toolbox>
+            <toolbar>
+                 <toolbarbutton class="button-control"
+                    tooltiptext="Connect..."
+                    onclick="Crossfire.connect()">
+                    <image id="crossfireButton"/>
+                </toolbarbutton>
+                <toolbarbutton label="Tools:" id="crossfireToolList"
+                    locationProvider="CrossfireRemote.toolListLocator;" title="Tools:"
+                    tooltiptext="available tools"
+                 />
+                <toolbarbutton label="Contexts:" id="crossfireContextsList"
+                    locationProvider="CrossfireRemote.contextsListLocator;" title="Contexts:"
+                    labeltooltip="fbTooltip" labelcontextmenu="fbContextMenu"
+                    tooltiptext="currently selected context"
+                 />
+                 <toolbarbutton label="Open FBTrace" command="cmd_toggleTraceConsole" />
+            </toolbar>
+        </toolbox>
+
+        <!-- hacked from firebug.xul -->
+
+        <stringbundleset id="stringbundleset"/>
+        <commandset id="baseMenuCommandSet"/>
+        <keyset id="baseMenuKeyset"/>
+
+        <commandset id="mainCommandSet">
+            <command id="cmd_undo" oncommand="goDoCommand('cmd_undo')" disabled="true"/>
+            <command id="cmd_redo" oncommand="goDoCommand('cmd_redo')" disabled="true"/>
+            <command id="cmd_cut" oncommand="goDoCommand('cmd_cut')" disabled="true"/>
+            <command id="cmd_copy" oncommand="goDoCommand('cmd_copy')" disabled="true"/>
+            <command id="cmd_paste" oncommand="goDoCommand('cmd_paste')" disabled="true"/>
+            <!-- command id="cmd_delete" oncommand="goDoCommand('cmd_delete')" disabled="true"
+                valueDefault="&deleteCmd.label;"/ -->
+            <command id="cmd_selectAll" oncommand="goDoCommand('cmd_selectAll')" disabled="true"/>
+            <command id="cmd_closeWindow" oncommand="window.close()"/>
+            <command id="cmd_reload" oncommand="FirebugChrome.reload()"/>
+            <command id="cmd_reloadSkipCache" oncommand="FirebugChrome.reload(true)"/>
+            <command id="cmd_toggleOrient" oncommand="FirebugChrome.toggleOrient()"/>
+        </commandset>
+
+        <keyset id="mainKeyset">
+            <key id="key_undo" key="&undoCmd.key;" modifiers="accel"/>
+            <key id="key_redo" key="&undoCmd.key;" modifiers="accel,shift"/>
+            <key id="key_cut" key="&cutCmd.key;" modifiers="accel"/>
+            <key id="key_copy" key="&copyCmd.key;" modifiers="accel"/>
+            <key id="key_paste" key="&pasteCmd.key;" modifiers="accel"/>
+            <key id="key_delete" keycode="VK_DELETE" command="cmd_delete"/>
+            <key id="key_selectAll" key="&selectAllCmd.key;" modifiers="accel"/>
+            <key key="&reloadCmd.commandkey;" command="cmd_reload" modifiers="accel" id="key_reload"/>
+            <key key="&reloadCmd.commandkey;" command="cmd_reload" modifiers="accel,shift"/>
+            <key id="key_closeWindow" key="w" command="cmd_closeWindow" modifiers="accel"/>
+        </keyset>
+
+        <broadcasterset id="mainBroadcasterSet"/>
+
+        <popupset id="mainPopupSet"/>
+
+        <!-- Entire Firebug UI -->
+        <vbox id="fbContentBox" flex="1" collapsed="false">
+        </vbox>
+
+    </vbox>
+
+    <vbox id="browser-bottombox">
+        <statusbar id="status-bar">
+        </statusbar>
+    </vbox>
+
+    <script type="application/javascript">
+        addEventListener("load", function() {
+            // hack firebug to make it look like we want it to
+            document.getElementById("fbWindowButtons").setAttribute("style","display:none");
+            document.getElementById("fbContentBox").collapsed = false;
+        }, false);
+    </script>
+</window>

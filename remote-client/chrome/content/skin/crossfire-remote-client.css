@@ -1,0 +1,7 @@
+
+#crossfireButton
+{
+    width:32px;
+    height:32px;
+    list-style-image: url(chrome://remote-client/skin/crossfire.png);
+}
