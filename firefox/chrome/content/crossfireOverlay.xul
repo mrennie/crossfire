@@ -6,7 +6,7 @@
     <script type="application/javascript" src="chrome://crossfire/content/crossfire.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/crossfire-firefox.js"/>
     <script type="application/javascript" src="chrome://firebug/content/bti_mozilla/ClientBrowserTools.js"/>
-    <script type="application/javascript" src="chrome://crossfire/content/crossfire-loopback.js"/>
+
     <script type="application/javascript" src="chrome://crossfire/content/crossfire-server.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/crossfire-client.js"/>
 
@@ -16,6 +16,8 @@
     <script type="application/javascript" src="chrome://crossfire/content/tools/inspector-tool.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/tools/net-tool.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/tools/dom-tool.js"/>
+
+     <script type="application/javascript" src="chrome://crossfire/content/crossfire-loopback.js"/>
 
     <!-- Firefox 3.6 Status Bar Icon -->
     <statusbar id="status-bar">

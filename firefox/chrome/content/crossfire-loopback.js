@@ -1,3 +1,7 @@
+var Cc = Components.classes;
+var Ci = Components.interfaces;
+var Cu = Components.utils;
+
 FBL.ns(function() {
 
     FBL.removeClass(document.getElementById("menu_loopbackCrossfire"), "hidden");
