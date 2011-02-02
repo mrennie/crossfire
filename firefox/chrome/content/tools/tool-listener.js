@@ -31,6 +31,14 @@ FBL.ns(function() {
 
         },
 
+        supportsResponse: function( response) {
+
+        },
+
+        handleResponse: function( response) {
+
+        },
+
         onTransportCreated: function( transport) {
             if (FBTrace.DBG_CROSSFIRE_TOOLS)
                 FBTrace.sysout("onTransportCreated recieved by: " + this.toolName);

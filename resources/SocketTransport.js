@@ -247,24 +247,59 @@ CrossfireSocketTransport.prototype =
             this._notifyConnection(CROSSFIRE_STATUS.STATUS_DISCONNECTED);
             this.connected = false;
 
-            if (this._inputStream) {
-                this._inputStream.close(null);
-            }
-
-            if (this._outputStream) {
-                this._outputStream.close();
-            }
+            this._closeStreams();
 
             if (this._transport) {
-                this._transport.close(null);
+                this._transport.close("disconnected"); // pass aReason for close
+            }
+
+            try {
+                if (this.isServer) {
+                    this._serverSocket.close();
+                }
+            } catch( e2) {
+                if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                    FBTrace.sysout("exception closing server socket: " +e2);
             }
 
             this._destroyTransport();
-            this._buffer='';
             // clean up the listeners
             // http://code.google.com/p/fbug/issues/detail?id=3452
             this.listeners = [];
         });
+    },
+
+    /**
+     * @name reset
+     * @description reset the server (for example if a client connection drops).
+     * @function
+     * @public
+     * @memberOf CrossfireSocketTransport
+     */
+    reset: function() {
+        if (this.isServer) {
+             if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                 FBTrace.sysout("Crossfire server resetting");
+
+            this._closeStreams();
+
+            if (this._transport) {
+                this._transport.close("resetting");
+            }
+
+            this._defer(function() {
+                try {
+                    this._notifyConnection(CROSSFIRE_STATUS.STATUS_WAIT_SERVER);
+                } catch (e) {
+                    if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                        FBTrace.sysout("exception resetting: " + e);
+                }
+
+                //this._createTransport(this.host, this.port);
+            });
+
+
+        }
     },
 
     // ----- internal methods -----
@@ -288,7 +323,7 @@ CrossfireSocketTransport.prototype =
 
         if (this.isServer) {
 
-            var serverSocket = Cc["@mozilla.org/network/server-socket;1"]
+            this._serverSocket = Cc["@mozilla.org/network/server-socket;1"]
                                   .createInstance(Ci.nsIServerSocket);
 
             // mcollins: issue 3606
@@ -307,36 +342,14 @@ CrossfireSocketTransport.prototype =
                     FBTrace.sysout("Exception getting loopbackOnly pref. Crossfire will only accept connections from localhost.");
             }
             try {
-                serverSocket.init(port, isLoopbackOnly, -1);
-
-                var self = this;
-
-                serverSocket.asyncListen({
-                    QueryInterface: function(iid) {
-                        if(!iid.equals(Ci.nsISupports) && !iid.equals(Ci.nsIServerSocketListener))
-                            throw NS_ERROR_NO_INTERFACE;
-                        return this;
-                    },
-
-                    onSocketAccepted: function( socket, transport) {
-                        self._transport = transport;
-
-                        self._createInputStream();
-
-                        self._createOutputStream();
-
-                        self._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTING);
-                        self._waitHandshake();
-                    }
-                });
-
+                this._serverSocket.init(port, isLoopbackOnly, -1);
+                this._listenForHandshake();
+                this._notifyConnection(CROSSFIRE_STATUS.STATUS_WAIT_SERVER);
             } catch (e2) {
                 if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
                     FBTrace.sysout("exception creating crossfire server: " + e2);
                 // TODO: notifyConnection of failure
             }
-
-            this._notifyConnection(CROSSFIRE_STATUS.STATUS_WAIT_SERVER);
         } else {
             var transportService = Cc["@mozilla.org/network/socket-transport-service;1"]
                                       .getService(Ci.nsISocketTransportService);
@@ -440,6 +453,25 @@ CrossfireSocketTransport.prototype =
     },
 
     /**
+     * @name _closeStreams
+     * @description close the input and output streams created by the transport.
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     */
+    _closeStreams: function() {
+        this._buffer='';
+        if (this._inputStream) {
+            this._inputStream.close(null);
+        }
+
+        if (this._outputStream) {
+            this._outputStream.flush();
+            this._outputStream.close();
+        }
+    },
+
+    /**
      * @name _defer
      * @description Defers a call-back for the given delay time (in milliseconds)
      * @function
@@ -463,6 +495,36 @@ CrossfireSocketTransport.prototype =
                 callback.apply(self);
             }
         }, delay, timer.TYPE_ONE_SHOT);
+    },
+
+    /**
+     * @name _listenForHandshake
+     * @description waits for a handshake to be received on the server socket.
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     * @since 0.3a4
+     */
+    _listenForHandshake: function() {
+        var self = this;
+        this._serverSocket.asyncListen({
+            QueryInterface: function(iid) {
+                if(!iid.equals(Ci.nsISupports) && !iid.equals(Ci.nsIServerSocketListener))
+                    throw NS_ERROR_NO_INTERFACE;
+                return this;
+            },
+
+            onSocketAccepted: function( socket, transport) {
+                self._transport = transport;
+
+                self._createInputStream();
+
+                self._createOutputStream();
+
+                self._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTING);
+                self._waitHandshake();
+            }
+        });
     },
 
     /**
@@ -541,12 +603,13 @@ CrossfireSocketTransport.prototype =
                 }
                 this._waitHandshake(HANDSHAKE_RETRY);
             } catch (e) {
-                //this.close();
                 if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
                     FBTrace.sysout("_waitHandshake exception: " + e, e);
 
                 if (this.isServer) {
                     this._waitHandshake(HANDSHAKE_RETRY);
+                } else {
+                    this.close();
                 }
             }
         }, timeout);
@@ -624,10 +687,12 @@ CrossfireSocketTransport.prototype =
             avail = this._inputStream.available();
         } catch (e) {
             if (FBTrace.DBG_CROSSFIRE_TRANSPORT) FBTrace.sysout("_waitOnPacket " + e);
-            this.close();
             if (this.isServer) {
-                this.open(this.host, this.port);
+                this.reset();
+            } else {
+                this.close();
             }
+            return;
         }
         if (avail) {
             response = this._scriptableInputStream.read(avail);
@@ -755,7 +820,7 @@ CrossfireSocketTransport.prototype =
                         handler = listener["handleResponse"];
                     } else if ( headers["tool"] && listener.toolName
                             &&  headers["tool"] == listener.toolName
-                            && listener.supportsCommand(packet)) {
+                            && listener.supportsResponse(packet)) {
                         handler = listener["handleResponse"];
                     }
                 } else {

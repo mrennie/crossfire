@@ -129,17 +129,20 @@ FBL.ns(function() {
         disconnect: function() {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE disconnect");
-            if (this.status != CROSSFIRE_STATUS.STATUS_DISCONNECTED && this.transport) {
-                this.transport.close();
-                this.transport = null;
+            if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER
+                    || this.status == CROSSFIRE_STATUS.STATUS_WAIT_SERVER) {
+                this.serverTransport.close();
+            } else if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
+                this.clientTransport.close();
             }
             this._clearRefs();
-            this._clearBreakpoints();
 
+            /*
             this.unregisterTool("console");
             this.unregisterTool("inspector");
             this.unregisterTool("net");
             this.unregisterTool("dom");
+            */
         },
 
         /**
@@ -180,6 +183,16 @@ FBL.ns(function() {
             this.status = status;
             this.updateStatusText(status);
             this.updateStatusIcon(status);
+
+            // xxxMcollins: standalone client hack
+            if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT
+                    && this.registeredTools["RemoteClient"]) {
+                this.activateTool("RemoteClient");
+            } else if (this.status == CROSSFIRE_STATUS.STATUS_DISCONNECTED) {
+                this.clientTransport = null;
+                this.serverTransport = null;
+            }
+
         },
 
         handleRequest: function(request) {
@@ -250,7 +263,12 @@ FBL.ns(function() {
                  if (FBTrace.DBG_CROSSFIRE_TOOLS)
                      FBTrace.sysout("Crossfire activating tool: " + toolName);
                  try {
-                     this.registeredTools[toolName].onTransportCreated(this.transport);
+                     //FIXME: a way to tell tools whether they are connected to client vs. server?
+                     if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
+                         this.registeredTools[toolName].onTransportCreated(this.clientTransport);
+                     } else if ( this.status == this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
+                         this.registeredTools[toolName].onTransportCreated(this.serverTransport);
+                     }
                      return true;
                  } catch (e) {
                      FBTrace.sysout("exception deactivationg tool: " + e);
@@ -308,15 +326,7 @@ FBL.ns(function() {
             return toolInfo;
         },
 
-
-
-
-
-
-
         // ----- helpers
-
-
 
         /**
          * @name _getRef
@@ -460,29 +470,6 @@ FBL.ns(function() {
             return o;
         },
 
-        /*
-         * @name sourceFileLoaded
-         * @description callback that the given source file has been loaded, which we hook
-         * to make sure breakpoints 'set' before the file has bee loaded are set when the file actually loads
-         * @function
-         * @public
-         * @since 0.3a1
-         *
-        sourceFileLoaded: function(sourceFile) {
-            if(FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE sourceFileLoaded: "+sourceFile.href);
-            }
-            if(this.breakpoints) {
-                var line = -1;
-                for (var bp in this.breakpoints) {
-                    if (bp.target == sourceFile.href) {
-                        line = bp.line;
-                        Firebug.Debugger.setBreakpoint(sourceFile, line);
-                    }
-                }
-            }
-        },*/
-
 
         // -----Crossfire UI functions -----
 
@@ -517,7 +504,7 @@ FBL.ns(function() {
                         setClass($("menu_connectCrossfireClient"), "hidden");
                         setClass($("menu_startCrossfireServer"), "hidden");
 
-                        removeClass(FBL.$("menu_disconnectCrossfire"), "hidden");
+                        removeClass($("menu_disconnectCrossfire"), "hidden");
 
                         removeClass(icon, "disconnected");
                         removeClass(icon, "connected");
@@ -553,13 +540,13 @@ FBL.ns(function() {
                 if (status == CROSSFIRE_STATUS.STATUS_DISCONNECTED) {
                     $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: disconnected.");
                 } else if (status == CROSSFIRE_STATUS.STATUS_WAIT_SERVER) {
-                    $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: accepting connections on port " + this.serverPort);
+                    $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: accepting connections on port " + this.serverTransport.port);
                 } else if (status == CROSSFIRE_STATUS.STATUS_CONNECTING) {
                     $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connecting...");
                 } else if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
-                    $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connected to client on port " + this.serverPort);
+                    $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connected to client on port " + this.serverTransport.port);
                 } else if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
-                    $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connected to " + this.host + ":" + this.port);
+                    $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connected to " + this.clientTransport.host + ":" + this.clientTransport.port);
                 }
             }
         }/*,
