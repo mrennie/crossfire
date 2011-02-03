@@ -6,8 +6,12 @@ and pointing it at the application.ini file in this directory.
 $> cd crossfire/branches/0.3/remote-client
 crossfire/branches/0.3/remote-client$> firefox -app application.ini
 
+or with xulrunner:
+$> xulrunner crossfire/branches/0.3/remote-client/application.ini
+
 Note that this app requires Firebug and Crossfire (and optionally Chromebug)
 extensions but they are installed by linking to their locations in the firebug
-svn repository. So you will either need to have those parts of the tree checked
-out as well, or adjust the links in the extensions/ folder.
+svn repository.  Relative links don't work, so you will need to have those parts
+ of the tree checked out as well, and then adjust the links in the extensions/
+ folder.
 
