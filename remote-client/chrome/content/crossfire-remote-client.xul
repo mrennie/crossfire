@@ -30,11 +30,11 @@
                     onclick="Crossfire.connect()">
                     <image id="crossfireButton"/>
                 </toolbarbutton>
-                <toolbarbutton label="Tools:" id="crossfireToolList"
+                <toolbarbutton id="crossfireToolList"
                     locationProvider="CrossfireRemote.toolListLocator;" title="Tools:"
                     tooltiptext="available tools"
                  />
-                <toolbarbutton label="Contexts:" id="crossfireContextsList"
+                <toolbarbutton id="crossfireContextsList"
                     locationProvider="CrossfireRemote.contextsListLocator;" title="Contexts:"
                     labeltooltip="fbTooltip" labelcontextmenu="fbContextMenu"
                     tooltiptext="currently selected context"

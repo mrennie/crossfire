@@ -24,13 +24,3 @@
 menuitem.hidden {
     display:none;
 }
-
-#crossfireContextsList {
-    /*  see bindings.xml */
-    -moz-binding: url("chrome://firebug/content/bindings.xml#panelFileList");
-}
-
-#crossfireToolList {
-    /*  see bindings.xml */
-    -moz-binding: url("chrome://firebug/content/bindings.xml#panelFileList");
-}

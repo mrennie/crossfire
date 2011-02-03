@@ -5,3 +5,13 @@
     height:32px;
     list-style-image: url(chrome://remote-client/skin/crossfire.png);
 }
+
+#crossfireContextsList {
+    /*  see bindings.xml */
+    -moz-binding: url("chrome://firebug/content/bindings.xml#panelFileList");
+}
+
+#crossfireToolList {
+    /*  see bindings.xml */
+    -moz-binding: url("chrome://firebug/content/bindings.xml#panelFileList");
+}
