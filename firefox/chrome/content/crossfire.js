@@ -42,7 +42,7 @@ FBL.ns(function() {
         initialize: function() {
 
             // -- add tools --
-/*
+            //TODO: load tools conditionally upon enablement
             //Components.utils.import("resource://crossfire/tools/console-tool.js");
             var consoleTool = new Crossfire.ConsoleTool();
             if (FBTrace.DBG_CROSSFIRE_TOOLS)
@@ -66,9 +66,9 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE_TOOLS)
                 FBTrace.sysout("CROSSFIRE created DomTool: " + domTool);
             this.registerTool("dom", domTool);
-*/
-            this._clearRefs();
 
+            // initialize refs
+            this._clearRefs();
         },
 
         getServerTransport: function() {
@@ -137,12 +137,11 @@ FBL.ns(function() {
             }
             this._clearRefs();
 
-            /*
             this.unregisterTool("console");
             this.unregisterTool("inspector");
             this.unregisterTool("net");
             this.unregisterTool("dom");
-            */
+
         },
 
         /**
@@ -292,14 +291,17 @@ FBL.ns(function() {
         },
 
         /**
+         * @name getTools
+         * @description return a list of tools registered with crossfire.
+         * @function
          *
          */
         getTools: function() {
             var tools = [];
             for (var name in this.registeredTools) {
-                tools.push(name);
+                tools.push({"toolName": name });
             }
-            return tools;
+            return { "tools": tools };
         },
 
         /**

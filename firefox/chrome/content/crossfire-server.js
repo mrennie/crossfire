@@ -307,15 +307,19 @@ FBL.ns(function() {
             var command = request.command;
             var response;
             var args = (request.arguments ? request.arguments : []);
+            // first we handle commands that don't require a context
             if (command == "listcontexts") {
                 response = this.listContexts();
             } else if (command == "version") {
                 response =  { "version": CROSSFIRE_VERSION };
+            } else if (command == "gettools") {
+                response = CrossfireModule.getTools();
             }
             else if(command == "getbreakpoint") {
                 response = this.getBreakpoint(args);
             }
             else {
+                // else we require a context for the commands
                 var context = this.findContext(request.context_id);
                 if(context) {
                     if(command == "backtrace") {
