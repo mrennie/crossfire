@@ -20,6 +20,7 @@ pref("nglayout.debug.disable_xul_cache", true);
 pref("nglayout.debug.disable_xul_fastload", true);
 
 /* crossfire prefs */
+pref("extensions.firebug.DBG_CROSSFIRE_REMOTE", true);
 pref("extensions.firebug.DBG_CROSSFIRE", true);
 pref("extensions.firebug.DBG_CROSSFIRE_FRAMES", false);
 pref("extensions.firebug.DBG_CROSSFIRE_TRANSPORT", true);

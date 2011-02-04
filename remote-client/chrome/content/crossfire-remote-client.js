@@ -70,16 +70,26 @@ addEventListener("load", function() {
             },
 
             handleResponse: function( response) {
+                if (FBTrace.DBG_CROSSFIRE_REMOTE)
+                    FBTrace.sysout("CrossfireRemote Tool handleResponse");
                 var body = response.body;
                 if (response.command == "listcontexts") {
-                    FBTrace.sysout("CrossfireRemote Tool got contexts => " + response.contexts);
+                    if (FBTrace.DBG_CROSSFIRE_REMOTE)
+                        FBTrace.sysout("CrossfireRemote Tool got contexts => " + body.contexts);
                     this.contexts = body.contexts;
+                } else if (response.command == "gettools") {
+                    if (FBTrace.DBG_CROSSFIRE_REMOTE)
+                        FBTrace.sysout("CrossfireRemote Tool got tools => " + body.tools);
+                    this.tools = body.tools;
                 }
             },
 
             onConnectionStatusChanged: function( status) {
                 this.status = status;
                 FBTrace.sysout(this.toolName +" status changed "+status);
+                if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
+                    this.transport.sendRequest("gettools", {}, "RemoteClient");
+                }
             },
 
             onRegistered: function() {
@@ -105,7 +115,7 @@ addEventListener("load", function() {
             },
 
             getLocationList: function() {
-                CrossfireRemote.Tool.tools;
+                return CrossfireRemote.Tool.tools;
             },
 
             getDefaultLocation: function() {
@@ -117,12 +127,12 @@ addEventListener("load", function() {
             },
     */
             getObjectLocation: function( obj) {
-
+                return obj.toolName
             },
 
             getObjectDescription: function( obj) {
-                if (obj == null) {
-                    return "No tools.";
+                if (obj) {
+                    return {path: obj.toolName, name: obj.toolName};
                 }
             },
 
