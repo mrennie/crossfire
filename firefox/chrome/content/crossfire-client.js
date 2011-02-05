@@ -1,14 +1,16 @@
 /* See license.txt for terms of usage */
 
-var Crossfire = Crossfire || {};
+define([], function () {
 
-FBL.ns(function() {
+//var Crossfire = Crossfire || {};
+
+//FBL.ns(function() {
 
     /**
      * @name CrossfireClient
      * @description Firebug Module for Client-side Crossfire functions.
      */
-    top.CrossfireClient = FBL.extend(Firebug.Module, {
+    CrossfireClient = FBL.extend(Firebug.Module, {
 
         contexts: [],
         dispatchName: "CrossfireClient",
@@ -157,4 +159,8 @@ FBL.ns(function() {
 
     // register module
     Firebug.registerModule(CrossfireClient);
+//});
+
+return CrossfireClient;
+// enifed
 });

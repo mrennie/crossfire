@@ -31,9 +31,12 @@ CrossfireRemote.contextsListLocator = function(xul_element) {
     return list;
 };
 
+// override default Firebug architecture for module loader
+FirebugArch = "remoteClient";
+
 // wait for onload so that FBL and modules are loaded into window
 addEventListener("load", function() {
-    //FBL.ns(function() {
+
         CrossfireRemote.Tool = FBL.extend(Crossfire.ToolListener, {
             //FIXME: we need to be 'all' to hear the listcontexts response
             toolName: "all",
@@ -121,11 +124,11 @@ addEventListener("load", function() {
             getDefaultLocation: function() {
 
             },
-    /*
+
             setDefaultLocation: function( loc) {
 
             },
-    */
+
             getObjectLocation: function( obj) {
                 return obj.toolName
             },
@@ -146,7 +149,6 @@ addEventListener("load", function() {
 
         };
 
-
         var crossfireContextsList = document.getElementById("crossfireContextsList");
         CrossfireRemote.contextsList = {
 
@@ -165,11 +167,11 @@ addEventListener("load", function() {
             getDefaultLocation: function() {
                 return null;
             },
-    /*
+
             setDefaultLocation: function( loc) {
 
             },
-    */
+
             getObjectLocation: function( obj) {
                 return obj.href;
             },
@@ -191,5 +193,4 @@ addEventListener("load", function() {
             }
         };
 
-    //});
 }, false);
