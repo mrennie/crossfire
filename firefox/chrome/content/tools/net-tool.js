@@ -3,13 +3,13 @@
 /**
  * Crossfire Net Tool
  */
-FBL.ns(function() {
+define("NetTool", ["crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-listener.js"], function( CrossfireStatus, ToolListener) {
 
-    Crossfire.NetTool = function NetTool() {
+    function NetTool() {
 
     };
 
-    Crossfire.NetTool.prototype = FBL.extend(Crossfire.ToolListener, {
+    NetTool.prototype = FBL.extend(ToolListener, {
         toolName: "net",
         commands: [],
         events: ["onNetworkRequest", "onNetworkResponse"],
@@ -33,7 +33,7 @@ FBL.ns(function() {
         // --- NetMonitor ---
 
         onRequest: function(context, file) {
-            if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
+            if (this.status == CrossfireStatus.STATUS_CONNECTED_SERVER) {
                 this.transport.sendEvent("onNetworkRequest",
                     {
                         "context_id": context.Crossfire.crossfire_id,
@@ -44,7 +44,7 @@ FBL.ns(function() {
         },
 
         onResponse: function(context, file) {
-            if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
+            if (this.status == CrossfireStatus.STATUS_CONNECTED_SERVER) {
                 this.transport.sendEvent("onNetworkResponse",
                     {
                         "context_id": context.Crossfire.crossfire_id,
@@ -55,4 +55,6 @@ FBL.ns(function() {
         }
 
     });
+
+    return NetTool;
 });

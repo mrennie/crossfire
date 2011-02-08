@@ -1,15 +1,14 @@
 /* See license.txt for terms of usage */
+define("DomTool", ["crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-listener.js"], function( CrossfireStatus, ToolListener) {
 
-/**
- * Crossfire DOM Tool
- */
-FBL.ns(function() {
-
-    Crossfire.DomTool = function DomTool() {
+    /**
+     * Crossfire DOM Tool
+     */
+    DomTool = function DomTool() {
 
     };
 
-    Crossfire.DomTool.prototype = FBL.extend(Crossfire.ToolListener, {
+    DomTool.prototype = FBL.extend(ToolListener, {
         toolName: "dom",
         commands: [""],
         events: ["onDomMutate"],
@@ -55,10 +54,12 @@ FBL.ns(function() {
         },
 
         onDomMutate: function( context, mutateEvent) {
-            if (this.transport && this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
+            if (this.transport && this.status == CrossfireStatus.STATUS_CONNECTED_SERVER) {
                 this.transport.sendEvent("onDomMutate", { "context_id": context.Crossfire.crossfire_id, "data": mutateEvent}, "dom");
             }
         }
 
     });
+
+    return DomTool;
 });
