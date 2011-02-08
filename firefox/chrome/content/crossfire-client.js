@@ -1,10 +1,6 @@
 /* See license.txt for terms of usage */
 
-define([], function () {
-
-//var Crossfire = Crossfire || {};
-
-//FBL.ns(function() {
+define("CrossfireClient", ["crossfireModules/crossfire.js"], function (CrossfireModule) {
 
     /**
      * @name CrossfireClient
@@ -161,6 +157,6 @@ define([], function () {
     Firebug.registerModule(CrossfireClient);
 //});
 
-return CrossfireClient;
+return exports = Firebug.CrossfireClient = CrossfireClient;
 // enifed
 });

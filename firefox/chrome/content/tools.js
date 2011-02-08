@@ -8,6 +8,6 @@ define("ToolsInterface", ["crossfireModules/crossfire-client.js"], function(Cros
 
 var ToolsInterface = CrossfireClient;
 
-return ToolsInterface;
+return exports = ToolsInterface;
 
 });
