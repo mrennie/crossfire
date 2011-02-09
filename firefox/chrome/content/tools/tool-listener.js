@@ -1,7 +1,6 @@
 /* See license.txt for terms of usage */
 
-
-define("ToolListener", ["crossfireModules/crossfire.js"], function() {
+define(["crossfireModules/crossfire.js"], function() {
     /**
      * A Tool is an extension that registers itself to crossfire
      * for the purpose of sending and receiving commands and events

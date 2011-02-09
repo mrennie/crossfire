@@ -3,7 +3,7 @@
 /**
  * Crossfire Net Tool
  */
-define("NetTool", ["crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-listener.js"], function( CrossfireStatus, ToolListener) {
+define(["crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-listener.js"], function( CrossfireStatus, ToolListener) {
 
     function NetTool() {
 

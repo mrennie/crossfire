@@ -1,5 +1,5 @@
 /* See license.txt for terms of usage */
-define("InspectorTool", ["crossfireModules/crossfire.js","crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-listener.js"], function( CrossfireModule, CrossfireStatus, ToolListener) {
+define(["crossfireModules/crossfire.js","crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-listener.js"], function( CrossfireModule, CrossfireStatus, ToolListener) {
 
     /**
      * Crossfire Inspector Tool

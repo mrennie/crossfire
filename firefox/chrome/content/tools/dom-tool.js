@@ -1,5 +1,5 @@
 /* See license.txt for terms of usage */
-define("DomTool", ["crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-listener.js"], function( CrossfireStatus, ToolListener) {
+define(["crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-listener.js"], function( CrossfireStatus, ToolListener) {
 
     /**
      * Crossfire DOM Tool
