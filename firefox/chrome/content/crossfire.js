@@ -6,7 +6,7 @@
  * @public
  */
 
-define(["crossfireModules/crossfire-status.js"], function(CrossfireStatus) {
+define(["crossfireModules/crossfire-status"], function(CrossfireStatus) {
 
     /**
      * @name CROSSFIRE_VERSION
@@ -417,7 +417,6 @@ define(["crossfireModules/crossfire-status.js"], function(CrossfireStatus) {
     // register module
     Firebug.registerModule(CrossfireModule);
 
-    FBTrace.sysout("Created a CrossfireModule: ", + CrossfireModule);
     return exports = Firebug.CrossfireModule = CrossfireModule;
 //enifed
 });

@@ -7,9 +7,10 @@ try {
     FBTrace = {};
 }
 
+var Crossfire = Crossfire || {};
+
 (function() {
     // bootstrap
-    var Crossfire = {};
 
     // FIXME: this should be loaded from crossfire-status module, but we are not in a module here (yet.)
     Crossfire.status = {
@@ -24,7 +25,7 @@ try {
     if (commandLine.getServerPort()) {
         FirebugLoadManager.arch = "remoteServer";
     }
-    else if (commandLine.getHost() && commandLine.getPort()) {
+    else if ( (commandLine.getHost() && commandLine.getPort()) || CrossfireRemote) {
         FirebugLoadManager.arch = "remoteClient";
     }
 

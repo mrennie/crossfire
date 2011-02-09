@@ -1,3 +1,4 @@
+/* See license.txt for terms of usage */
 try {
     Components.utils.import("resource://firebug/firebug-trace-service.js");
     FBTrace = traceConsoleService.getTracer("extensions.firebug");
@@ -32,12 +33,11 @@ CrossfireRemote.contextsListLocator = function(xul_element) {
 };
 
 // override default Firebug architecture for module loader
-FirebugArch = "remoteClient";
+//FirebugLoadManager.arch = "remoteClient";
 
 // wait for onload so that FBL and modules are loaded into window
 addEventListener("load", function() {
-
-        CrossfireRemote.Tool = FBL.extend(Crossfire.ToolListener, {
+        CrossfireRemote.Tool = {
             //FIXME: we need to be 'all' to hear the listcontexts response
             toolName: "all",
             commands: [],
@@ -90,7 +90,7 @@ addEventListener("load", function() {
             onConnectionStatusChanged: function( status) {
                 this.status = status;
                 FBTrace.sysout(this.toolName +" status changed "+status);
-                if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
+                if (status == "connected_client") {
                     this.transport.sendRequest("gettools", {}, "RemoteClient");
                 }
             },
@@ -101,10 +101,21 @@ addEventListener("load", function() {
 
             onUnregistered: function() {
                 FBTrace.sysout(this.toolName +" onUnRegistered ");
-            }
-        });
+            },
 
-        CrossfireModule.registerTool("RemoteClient", CrossfireRemote.Tool);
+            onTransportCreated: function( transport) {
+                if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                    FBTrace.sysout("onTransportCreated recieved by: " + this.toolName);
+                this.transport = transport;
+                this.transport.addListener(this);
+            },
+
+            onTransportDestroyed: function() {
+
+            }
+        };
+
+        Firebug["CrossfireModule"].registerTool("RemoteClient", CrossfireRemote.Tool);
 
         var crossfireToolList = document.getElementById("crossfireToolList");
         CrossfireRemote.toolList = {
