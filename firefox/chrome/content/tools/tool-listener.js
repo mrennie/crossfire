@@ -1,12 +1,14 @@
 /* See license.txt for terms of usage */
 
-define(["crossfireModules/crossfire.js"], function() {
+var Crossfire = Crossfire || {};
+
+FBL.ns(function() {
     /**
      * A Tool is an extension that registers itself to crossfire
      * for the purpose of sending and receiving commands and events
      * via the crossfire protocol/connection.
      */
-    var ToolListener = {
+    Crossfire.ToolListener = {
 
         commands: [],
         events: [],
@@ -64,6 +66,4 @@ define(["crossfireModules/crossfire.js"], function() {
 
         }
     };
-
-    return ToolListener;
 });

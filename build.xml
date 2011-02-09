@@ -10,10 +10,6 @@
          <ant dir="${basedir}/firefox"/>
     </target>
 
-    <target name="remote-client">
-        <ant dir="${basedir}/remote-client"/>
-    </target>
-
     <target name="clean">
         <delete dir="${build.dir}"/>
         <delete dir="${dist.dir}"/>

@@ -3,13 +3,13 @@
 /**
  * Crossfire Net Tool
  */
-define(["crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-listener.js"], function( CrossfireStatus, ToolListener) {
+FBL.ns(function() {
 
-    function NetTool() {
+    Crossfire.NetTool = function NetTool() {
 
     };
 
-    NetTool.prototype = FBL.extend(ToolListener, {
+    Crossfire.NetTool.prototype = FBL.extend(Crossfire.ToolListener, {
         toolName: "net",
         commands: [],
         events: ["onNetworkRequest", "onNetworkResponse"],
@@ -33,7 +33,7 @@ define(["crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-lis
         // --- NetMonitor ---
 
         onRequest: function(context, file) {
-            if (this.status == CrossfireStatus.STATUS_CONNECTED_SERVER) {
+            if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
                 this.transport.sendEvent("onNetworkRequest",
                     {
                         "context_id": context.Crossfire.crossfire_id,
@@ -44,7 +44,7 @@ define(["crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-lis
         },
 
         onResponse: function(context, file) {
-            if (this.status == CrossfireStatus.STATUS_CONNECTED_SERVER) {
+            if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
                 this.transport.sendEvent("onNetworkResponse",
                     {
                         "context_id": context.Crossfire.crossfire_id,
@@ -55,6 +55,4 @@ define(["crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-lis
         }
 
     });
-
-    return NetTool;
 });

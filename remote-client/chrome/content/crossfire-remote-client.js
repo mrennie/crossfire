@@ -1,4 +1,3 @@
-/* See license.txt for terms of usage */
 try {
     Components.utils.import("resource://firebug/firebug-trace-service.js");
     FBTrace = traceConsoleService.getTracer("extensions.firebug");
@@ -32,12 +31,10 @@ CrossfireRemote.contextsListLocator = function(xul_element) {
     return list;
 };
 
-// override default Firebug architecture for module loader
-//FirebugLoadManager.arch = "remoteClient";
-
 // wait for onload so that FBL and modules are loaded into window
 addEventListener("load", function() {
-        CrossfireRemote.Tool = {
+    //FBL.ns(function() {
+        CrossfireRemote.Tool = FBL.extend(Crossfire.ToolListener, {
             //FIXME: we need to be 'all' to hear the listcontexts response
             toolName: "all",
             commands: [],
@@ -90,7 +87,7 @@ addEventListener("load", function() {
             onConnectionStatusChanged: function( status) {
                 this.status = status;
                 FBTrace.sysout(this.toolName +" status changed "+status);
-                if (status == "connected_client") {
+                if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
                     this.transport.sendRequest("gettools", {}, "RemoteClient");
                 }
             },
@@ -101,21 +98,10 @@ addEventListener("load", function() {
 
             onUnregistered: function() {
                 FBTrace.sysout(this.toolName +" onUnRegistered ");
-            },
-
-            onTransportCreated: function( transport) {
-                if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                    FBTrace.sysout("onTransportCreated recieved by: " + this.toolName);
-                this.transport = transport;
-                this.transport.addListener(this);
-            },
-
-            onTransportDestroyed: function() {
-
             }
-        };
+        });
 
-        Firebug["CrossfireModule"].registerTool("RemoteClient", CrossfireRemote.Tool);
+        CrossfireModule.registerTool("RemoteClient", CrossfireRemote.Tool);
 
         var crossfireToolList = document.getElementById("crossfireToolList");
         CrossfireRemote.toolList = {
@@ -135,11 +121,11 @@ addEventListener("load", function() {
             getDefaultLocation: function() {
 
             },
-
+    /*
             setDefaultLocation: function( loc) {
 
             },
-
+    */
             getObjectLocation: function( obj) {
                 return obj.toolName
             },
@@ -160,6 +146,7 @@ addEventListener("load", function() {
 
         };
 
+
         var crossfireContextsList = document.getElementById("crossfireContextsList");
         CrossfireRemote.contextsList = {
 
@@ -178,11 +165,11 @@ addEventListener("load", function() {
             getDefaultLocation: function() {
                 return null;
             },
-
+    /*
             setDefaultLocation: function( loc) {
 
             },
-
+    */
             getObjectLocation: function( obj) {
                 return obj.href;
             },
@@ -204,4 +191,5 @@ addEventListener("load", function() {
             }
         };
 
+    //});
 }, false);

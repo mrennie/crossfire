@@ -1,15 +1,7 @@
 <project name="remote-client" default="build" basedir=".">
 
-    <target name="prepare">
-
-    </target>
-
     <target name="build">
         <echo>Nothing happened.</echo>
         <echo>Eventually this might work, but it doesn't yet</echo>
-    </target>
-
-    <target name="copyExtensions">
-
     </target>
 </project>

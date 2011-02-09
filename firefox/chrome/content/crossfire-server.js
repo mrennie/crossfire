@@ -1,6 +1,7 @@
 /* See license.txt for terms of usage */
 
-define(["crossfireModules/crossfire", "crossfireModules/crossfire-status"], function (CrossfireModule, CrossfireStatus) {
+var Crossfire = Crossfire || {};
+
 /**
  * @name CONTEXT_ID_SEED
  * @description The seed to use when creating new context ids for Crossfire
@@ -10,7 +11,9 @@ define(["crossfireModules/crossfire", "crossfireModules/crossfire-status"], func
  */
 var CONTEXT_ID_SEED = Math.round(Math.random() * 10000000);
 
-    var CrossfireServer = FBL.extend(Firebug.Module,  {
+FBL.ns(function() {
+
+    top.CrossfireServer = FBL.extend(Firebug.Module,  {
         contexts: [],
         dispatchName: "CrossfireServer",
         toolName: "all", // receive all packets, regardless of 'tool' header
@@ -48,8 +51,7 @@ var CONTEXT_ID_SEED = Math.round(Math.random() * 10000000);
 
             this.serverPort = port;
             try {
-                //FIXME: should not have to call Firebug.CrossfireModule
-                this.transport = Firebug.CrossfireModule.getServerTransport();
+                this.transport = CrossfireModule.getServerTransport();
                 this._addListeners();
                 this.transport.addListener(this);
 
@@ -136,8 +138,7 @@ var CONTEXT_ID_SEED = Math.round(Math.random() * 10000000);
          * @since 0.3a2
          */
         _generateId: function() {
-            //FIXME:
-            return "xf"+Firebug.CrossfireModule.version + "::" + (++CONTEXT_ID_SEED);
+            return "xf"+CrossfireModule.version + "::" + (++CONTEXT_ID_SEED);
         },
 
 
@@ -1535,7 +1536,7 @@ var CONTEXT_ID_SEED = Math.round(Math.random() * 10000000);
          * @since 0.3a1
          */
         _sendEvent: function(event, data) {
-            if (this.transport && Firebug.CrossfireModule.status == CrossfireStatus.STATUS_CONNECTED_SERVER) {
+            if (this.transport && CrossfireModule.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
                 if (FBTrace.DBG_CROSSFIRE)
                     FBTrace.sysout("CROSSFIRE: _sendEvent => " + event + " ["+data+"]");
                 this.transport.sendEvent(event, data);
@@ -1543,7 +1544,7 @@ var CONTEXT_ID_SEED = Math.round(Math.random() * 10000000);
         }
     });
 
-    Firebug.registerModule(CrossfireServer);
-
-    return exports = Firebug.CrossfireServer = CrossfireServer;
+    if (CrossfireModule.getServerPort())  // then we are a server
+        Firebug.registerModule(CrossfireServer);
+    // else we compiled the code for nothing
 });

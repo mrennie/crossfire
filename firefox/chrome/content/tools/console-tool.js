@@ -1,15 +1,16 @@
 /* See license.txt for terms of usage */
 
-define(["crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-listener.js"], function( CrossfireStatus, ToolListener) {
+/**
+ * Crossfire Console Tool
+ */
 
-    /**
-     * Crossfire Console Tool
-     */
-    function ConsoleTool() {
+FBL.ns(function() {
+
+    Crossfire.ConsoleTool = function ConsoleTool() {
 
     };
 
-    ConsoleTool.prototype = FBL.extend(ToolListener, {
+    Crossfire.ConsoleTool.prototype = FBL.extend(Crossfire.ToolListener, {
         toolName: "console",
         commands: ["setloglevel", "setloglimit"],
         events: ["onConsoleLog", "onConsoleDebug", "onConsoleInfo", "onConsoleWarn", "onConsoleError" ],
@@ -113,12 +114,10 @@ define(["crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-lis
             if (winFB) {
                 var eventName = "onConsole" + className.substring(0,1).toUpperCase() + className.substring(1);
                 var obj = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug.userObjects;
-                if (this.transport && this.status == CrossfireStatus.STATUS_CONNECTED_SERVER) {
+                if (this.transport && this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
                     this.transport.sendEvent(eventName, {"context_id": context.Crossfire.crossfire_id, "data": CrossfireModule.serialize(obj)}, "console");
                 }
             }
         }
     });
-
-    return ConsoleTool;
 });

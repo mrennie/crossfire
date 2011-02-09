@@ -52,7 +52,13 @@ Crossfire.Loopback = FBL.extend(Crossfire.ToolListener, {
             });
         }
 
+        var FirebugCopy = FBL.extend({}, Firebug);
 
+        FirebugCopy.Debugger = Firebug.JavaScriptModule; // commands go out here
+        FBTrace.sysout("openFirebugClient overwrite FirebugCopy.Debugger ", FirebugCopy.Debugger);
+
+        // In detachBar, |this| will be a one-level deep copy of the Firebug in this window, but with a different Debugger.
+        FirebugCopy.detachBar();
     },
 
     createClientBrowserTools: function()
@@ -63,6 +69,44 @@ Crossfire.Loopback = FBL.extend(Crossfire.ToolListener, {
 
 CrossfireModule.registerTool(Crossfire.Loopback.toolName, Crossfire.Loopback);
 
+// --------------------------------------------------------------------------------------
+// Prototype for front end module providing BTI via crossfire
 
+// Begin transitional code
+Cu.import("resource://firebug/bti/browser.js");
+// End transitional code
+
+Browser.prototype.getTools = function()
+{
+    // Some crossfire thing
+    return [];
+};
+
+Firebug.JavaScriptModule = FBL.extend(Firebug.ActivableModule,
+{
+    dispatchName: "debugger",    // extends Module
+
+    initialize: function()
+    {
+        $("cmd_breakOnErrors").setAttribute("checked", Firebug.breakOnErrors);
+        $("cmd_decompileEvals").setAttribute("checked", Firebug.decompileEvals);
+
+        this.onFunctionCall = bind(this.onFunctionCall, this);
+        this.browserTools = new Browser();
+
+        Firebug.ActivableModule.initialize.apply(this, arguments);
+    },
+
+    initializeUI: function()
+    {
+        Firebug.ActivableModule.initializeUI.apply(this, arguments);
+        this.filterButton = $("fbScriptFilterMenu");
+        this.filterMenuUpdate();
+        var tools = this.browserTools.getTools();
+        Firebug.setIsJSDActive(fbs.isJSDActive()); // jsd may be active before this XUL window was opened
+    },
+
+
+});
 
 });

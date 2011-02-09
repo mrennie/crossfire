@@ -1,14 +1,15 @@
 /* See license.txt for terms of usage */
-define(["crossfireModules/crossfire.js","crossfireModules/crossfire-status.js", "crossfireModules/tools/tool-listener.js"], function( CrossfireModule, CrossfireStatus, ToolListener) {
 
-    /**
-     * Crossfire Inspector Tool
-     */
-    function InspectorTool() {
+/**
+ * Crossfire Inspector Tool
+ */
+FBL.ns(function() {
+
+    Crossfire.InspectorTool = function InspectorTool() {
 
     };
 
-    InspectorTool.prototype = FBL.extend(ToolListener, {
+    Crossfire.InspectorTool.prototype = FBL.extend(Crossfire.ToolListener, {
         toolName: "inspector",
         commands: ["inspect"],
         events: ["onInspectNode"],
@@ -99,7 +100,7 @@ define(["crossfireModules/crossfire.js","crossfireModules/crossfire-status.js", 
          * @param node the node being inspected
          */
         onInspectNode: function(context, node) {
-            if (this.status == CrossfireStatus.STATUS_CONNECTED_SERVER) {
+            if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
                 node = node.wrappedJSObject;
                 if (FBTrace.DBG_CROSSFIRE) {
                     FBTrace.sysout("CROSSFIRE onInspectNode", node);
@@ -143,6 +144,4 @@ define(["crossfireModules/crossfire.js","crossfireModules/crossfire-status.js", 
         }
 
     });
-
-    return InspectorTool;
 });

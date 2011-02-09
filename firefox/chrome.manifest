@@ -1,15 +1,8 @@
-#chrome registration
 content     crossfire   chrome/content/
 skin        crossfire modern/1.0   chrome/content/skin/
 overlay     chrome://firebug/content/firebugOverlay.xul     chrome://crossfire/content/crossfireOverlay.xul
-
-# firefox modules
 resource    crossfire   ../resources/
 
-#requirejs modules
-resource    crossfireModules    chrome/content/
-
-# command-line handler component
 component   {3AB17C22-D1A6-4FF0-9A66-3DBD42114D61}   components/CommandLineHandler.js
 contract    @almaden.ibm.com/crossfire/command-line-handler;1    {3AB17C22-D1A6-4FF0-9A66-3DBD42114D61}
 category    command-line-handler    m-crossfire-clh    @almaden.ibm.com/crossfire/command-line-handler;1

@@ -1,12 +1,14 @@
 /* See license.txt for terms of usage */
 
-define(["crossfireModules/crossfire","crossfireModules/crossfire-status",], function (CrossfireModule, CrossfireStatus) {
+var Crossfire = Crossfire || {};
+
+FBL.ns(function() {
 
     /**
      * @name CrossfireClient
      * @description Firebug Module for Client-side Crossfire functions.
      */
-    var CrossfireClient = FBL.extend(Firebug.Module, {
+    top.CrossfireClient = FBL.extend(Firebug.Module, {
 
         contexts: [],
         dispatchName: "CrossfireClient",
@@ -80,7 +82,7 @@ define(["crossfireModules/crossfire","crossfireModules/crossfire-status",], func
          * @param {String} status the status to report
          */
         onConnectionStatusChanged: function( status) {
-            if (status == CrossfireStatus.STATUS_CONNECTED_CLIENT) {
+            if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
                 this.getBrowserContexts();
             }
         },
@@ -155,7 +157,4 @@ define(["crossfireModules/crossfire","crossfireModules/crossfire-status",], func
 
     // register module
     Firebug.registerModule(CrossfireClient);
-
-    return exports = Firebug.CrossfireClient = CrossfireClient;
-// enifed
 });
