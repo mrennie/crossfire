@@ -1,7 +1,7 @@
 /* See license.txt for terms of usage */
 
 
-define("CrossfireStatus", [], function() {
+define([], function() {
     var CrossfireStatus = {
             STATUS_DISCONNECTED: "disconnected",
             STATUS_WAIT_SERVER: "wait_server",

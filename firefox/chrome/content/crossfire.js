@@ -6,7 +6,7 @@
  * @public
  */
 
-define("CrossfireModule", ["crossfireModules/crossfire-status.js"], function(CrossfireStatus) {
+define(["crossfireModules/crossfire-status.js"], function(CrossfireStatus) {
 
     /**
      * @name CROSSFIRE_VERSION

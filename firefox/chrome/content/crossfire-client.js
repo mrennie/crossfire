@@ -1,6 +1,6 @@
 /* See license.txt for terms of usage */
 
-define("CrossfireClient", ["crossfireModules/crossfire.js"], function (CrossfireModule) {
+define(["crossfireModules/crossfire"], function (CrossfireModule) {
 
     /**
      * @name CrossfireClient

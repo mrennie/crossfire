@@ -1,6 +1,6 @@
 /* See license.txt for terms of usage */
 
-define("CrossfireServer", ["crossfireModules/crossfire.js", "crossfireModules/crossfire-status.js"], function (CrossfireModule, CrossfireStatus) {
+define(["crossfireModules/crossfire", "crossfireModules/crossfire-status"], function (CrossfireModule, CrossfireStatus) {
 /**
  * @name CONTEXT_ID_SEED
  * @description The seed to use when creating new context ids for Crossfire
