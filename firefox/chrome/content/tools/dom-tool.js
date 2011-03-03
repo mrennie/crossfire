@@ -55,7 +55,7 @@ FBL.ns(function() {
         },
 
         onDomMutate: function( context, mutateEvent) {
-            if (this.transport && this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
+            if (this.transport && this.status == "connected_server") {
                 this.transport.sendEvent("onDomMutate", { "context_id": context.Crossfire.crossfire_id, "data": mutateEvent}, "dom");
             }
         }

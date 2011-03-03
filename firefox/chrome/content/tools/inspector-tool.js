@@ -15,6 +15,9 @@ FBL.ns(function() {
         events: ["onInspectNode"],
 
         onRegistered: function() {
+            if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE inspectorTool onRegistered");
+            }
             Firebug.Inspector.addListener(this);
         },
 
@@ -100,7 +103,7 @@ FBL.ns(function() {
          * @param node the node being inspected
          */
         onInspectNode: function(context, node) {
-            if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
+            if (this.status == "connected_server") {
                 node = node.wrappedJSObject;
                 if (FBTrace.DBG_CROSSFIRE) {
                     FBTrace.sysout("CROSSFIRE onInspectNode", node);

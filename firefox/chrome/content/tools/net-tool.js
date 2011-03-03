@@ -33,7 +33,7 @@ FBL.ns(function() {
         // --- NetMonitor ---
 
         onRequest: function(context, file) {
-            if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
+            if (this.status == "connected_server") {
                 this.transport.sendEvent("onNetworkRequest",
                     {
                         "context_id": context.Crossfire.crossfire_id,
@@ -44,7 +44,7 @@ FBL.ns(function() {
         },
 
         onResponse: function(context, file) {
-            if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
+            if (this.status == "connected_server") {
                 this.transport.sendEvent("onNetworkResponse",
                     {
                         "context_id": context.Crossfire.crossfire_id,

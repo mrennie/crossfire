@@ -40,7 +40,8 @@ FBL.ns(function() {
          * @extends Firebug.Module
          */
         initialize: function() {
-
+        if (FBTrace.DBG_CROSSFIRE)
+            FBTrace.sysout("CROSSFIRE initialize");
             // -- add tools --
             //TODO: load tools conditionally upon enablement
             //Components.utils.import("resource://crossfire/tools/console-tool.js");
@@ -231,6 +232,9 @@ FBL.ns(function() {
                 this.registeredTools[toolName] = toolListener;
                 if (toolListener.onRegistered) {
                     toolListener.onRegistered();
+                }
+                if (this.status == "connected_server") {
+                    this.registeredTools[toolName].onTransportCreated(this.serverTransport);
                 }
             } catch(e) {
                 if (FBTrace.DBG_CROSSFIRE_TOOLS)

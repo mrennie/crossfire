@@ -47,7 +47,7 @@ FBL.ns(function() {
         },
 
         onTransportDestroyed: function() {
-
+            delete this.transport;
         },
 
         onRegistered: function() {
@@ -59,7 +59,7 @@ FBL.ns(function() {
         },
 
         onConnectionStatusChanged: function( status) {
-
+            this.status = status;
         },
 
         getDescription: function() {
