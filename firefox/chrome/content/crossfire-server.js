@@ -305,7 +305,7 @@ FBL.ns(function() {
                 FBTrace.sysout("CROSSFIRE received request " + request.toSource());
             }
             var command = request.command;
-            var response;
+            var context, response;
             var args = (request.arguments ? request.arguments : []);
             // first we handle commands that don't require a context
             if (command == "listcontexts") {
@@ -318,9 +318,25 @@ FBL.ns(function() {
             else if(command == "getbreakpoint") {
                 response = this.getBreakpoint(args);
             }
+            else if (command == "updatecontext") {
+                context = this.findContext(request.context_id);
+                if(context) {
+                    context.window.location = args.href;
+                } else {
+                    try {
+                        if (FBTrace.DBG_CROSSFIRE) {
+                            FBTrace.sysout("calling FBL.openNewTab with: " + args.href);
+                        }
+                        FBL.openNewTab(args.href);
+                    } catch ( exc) {
+                        if (FBTrace.DBG_CROSSFIRE)
+                            FBTrace.sysout("updateContext fails: " + exc);
+                    }
+                }
+            }
             else {
                 // else we require a context for the commands
-                var context = this.findContext(request.context_id);
+                context = this.findContext(request.context_id);
                 if(context) {
                     if(command == "backtrace") {
                         response = this.getBacktrace(context, args);
@@ -1291,10 +1307,10 @@ FBL.ns(function() {
          * @see FirebugEventAdapter.onToggleBreakpoint
          */
         onToggleBreakpoint: function(context, url, lineNo, isSet, props) {
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE: onToggleBreakpoint");
-            }
             var data = {"url":url,"line":lineNo,"set":isSet,"props":props};
+            if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE: onToggleBreakpoint, data => " + data);
+            }
             this._sendEvent("onToggleBreakpoint", {"context_id": context.Crossfire.crossfire_id, "data": data});
         },
 
@@ -1544,7 +1560,5 @@ FBL.ns(function() {
         }
     });
 
-    if (CrossfireModule.getServerPort())  // then we are a server
-        Firebug.registerModule(CrossfireServer);
-    // else we compiled the code for nothing
+    Firebug.registerModule(CrossfireServer);
 });
