@@ -9,7 +9,6 @@ FBL.ns(function() {
      * @description Firebug Module for Client-side Crossfire functions.
      */
     top.CrossfireClient = FBL.extend(Firebug.Module, {
-
         contexts: [],
         dispatchName: "CrossfireClient",
         toolName: "all", // receive all packets, regardless of 'tool' header
@@ -28,7 +27,7 @@ FBL.ns(function() {
             host = commandLine.getHost();
             port = commandLine.getPort();
 
-            this.contexts = {};
+            this.contexts = [];
 
 
             // Begin transitional code
