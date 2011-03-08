@@ -148,7 +148,7 @@ FBL.ns(function() {
          * @name findContext
          * @description Returns the Context for the given id, or <code>null</code> if no context matches the given id
          * @function
-         * @memberOf CrossfireModule
+         * @memberOf CrossfireServer
          * @param the String id to look up
          * @type Context
          * @returns the Context for the given id or <code>null</code>
@@ -1342,7 +1342,7 @@ FBL.ns(function() {
          * @name onModifyBreakpoint
          * @description Handles an HTML element breakpoint being toggled
          * <br><br>
-         * Fires an <code>onModifyBreakpoint</code> event for HTML breakpoints.
+         * Fires an <code>onToggleDomBreakpoint</code> event for HTML breakpoints.
          * <br><br>
          * The event body contains the following:
          * <ul>
@@ -1362,7 +1362,7 @@ FBL.ns(function() {
                  FBTrace.sysout("CROSSFIRE: onModifyBreakpoint");
              }
              var data = {"xpath":xpath,"type":type};
-             this._sendEvent("onModifyBreakpoint", {"context_id": context.Crossfire.crossfire_id, "data": data});
+             this._sendEvent("onToggleDomBreakpoint", {"context_id": context.Crossfire.crossfire_id, "data": data});
         },
 
         // ----- Firebug Console listener -----
