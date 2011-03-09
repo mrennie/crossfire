@@ -570,7 +570,8 @@ FBL.ns(function() {
                 	var loc = bp.location;
                 	if(loc && loc.url && loc.line) {
                 		Firebug.Debugger.clearBreakpoint({"href": loc.url }, loc.line);
-                		return {};
+                		delete this.breakpoints[id];
+                		return {"breakpoint": bp};
                 	}
                 }
             }
@@ -1005,7 +1006,8 @@ FBL.ns(function() {
          */
         _findBreakpoint: function(location) {
     		list: for(var bp in this.breakpoints) {
-    			loc = bp.location;
+    			var bpobj = this.breakpoints[bp]; 
+    			loc = bpobj.location;
     			if(loc) {
     				//breakpoints are equal if their locations are equal
     				for(var l in loc) {
@@ -1014,7 +1016,7 @@ FBL.ns(function() {
     						break list;
     					}
     				}
-    				return bp;
+    				return bpobj;
     			}
     		}
         	return null;
@@ -1088,7 +1090,7 @@ FBL.ns(function() {
 	                }
                 }
             }
-            return {"breakpoint": breakpoint};
+            return {"breakpoint": bp};
         },
 
         /**
@@ -1295,7 +1297,11 @@ FBL.ns(function() {
             }
             else {
             	if(!bp) {
-            		bp = this._newBreakpoint("line",{"line":lineNo,"url":url},true,null);
+            		var type = "line";
+            		if(props && props.bp_type) {
+            			type = bp_type;
+            		}
+            		bp = this._newBreakpoint(type,{"line":lineNo,"url":url},true,null);
         			data = {"location":bp.location,"set":isSet,"props":props,"handle":bp.handle};
             	}
         	}
@@ -1332,6 +1338,7 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE: onToggleErrorBreakpoint");
             }
+            props.bp_type = "error";
             this.onToggleBreakpoint(context, url, lineNo, isSet, props);
         },
 
@@ -1355,14 +1362,22 @@ FBL.ns(function() {
          * @memberOf CrossfireServer
          * @param context the current Crossfire context
          * @param xpath the xpath the breakpoint was modified for
-         * @param type the type of the breakpoint
+         * @param type the type of the breakpoint. Breakpoint type are defined in: http://code.google.com/p/fbug/source/browse/branches/firebug1.7/content/firebug/html.js
          */
         onModifyBreakpoint: function(context, xpath, type) {
              if (FBTrace.DBG_CROSSFIRE) {
                  FBTrace.sysout("CROSSFIRE: onModifyBreakpoint");
              }
-             var data = {"xpath":xpath,"type":type};
-             this._sendEvent("onToggleDomBreakpoint", {"context_id": context.Crossfire.crossfire_id, "data": data});
+             var loc = {"xpath":xpath,"type":type};
+             var bp = this._findBreakpoint(loc);
+             if(bp) {
+            	 delete this.breakpoints[bp.handle];
+             }
+             else {
+            	 bp = this._newBreakpoint(type,loc,true,null);
+             }
+             var data = {"location":loc, "handle":bp.handle, "type":bp.type};
+             this._sendEvent("onToggleDomBreakpoint", {"data": data});
         },
 
         // ----- Firebug Console listener -----
