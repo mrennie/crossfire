@@ -1288,7 +1288,7 @@ FBL.ns(function() {
             }
             var loc = {"url":url,"line":lineNo};
             var data;
-            var bp = this._findBreakpoint();
+            var bp = this._findBreakpoint(loc);
             if(!isSet) {
             	if(bp) {
             		data = {"location":bp.location,"set":isSet,"props":props,"handle":bp.handle};
