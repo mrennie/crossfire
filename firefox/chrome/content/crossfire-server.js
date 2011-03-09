@@ -1154,23 +1154,22 @@ FBL.ns(function() {
                 context_href = context.window.location.href;
             } catch(e) {
             }
-
-
             /*
              * make sure breakpoints 'set' before the file has been loaded
              * are set when the file actually loads
              */
-            if(this.breakpoints) {
-                var line = -1;
-                for (var bp in this.breakpoints) {
-                    if (bp.target == sourceFile.href) {
-                        line = bp.line;
-                        Firebug.Debugger.setBreakpoint(sourceFile, line);
-                    }
-                }
+            var line = -1;
+            var bpobj;
+            for (var bp in this.breakpoints) {
+            	bpobj = this.breakpoints[bp];
+            	var loc = bpobj.location;
+            	if(loc) {
+	                if (loc.url === sourceFile.href) {
+	                    Firebug.Debugger.setBreakpoint(sourceFile, loc.line);
+	                }
+            	}
             }
-
-            var data = { "href": sourceFile.href, "context_href": context_href };
+            var data = { "id": sourceFile.href, "context_href": context_href };
             this._sendEvent("onScript", {"context_id": context.Crossfire.crossfire_id, "data": data});
         },
 
