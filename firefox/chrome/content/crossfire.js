@@ -27,6 +27,7 @@ FBL.ns(function() {
      */
     top.CrossfireModule = FBL.extend(Firebug.Module,  {
         contexts: [],
+        refs: [],
         dispatchName: "Crossfire",
         toolName: "all", // receive all packets, regardless of 'tool' header
         version: CROSSFIRE_VERSION,

@@ -794,9 +794,9 @@ FBL.ns(function() {
             }
             if (handle) {
                 var obj;
-                for (var i in this.refs) {
+                for (var i in CrossfireModule.refs) {
                     if (i == handle) {
-                        obj = this.refs[i];
+                        obj = CrossfireModule.refs[i];
                         var arr = CrossfireModule.serialize(obj);
                         if(source) {
                             try {
