@@ -956,40 +956,14 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         getScript: function(context, args) {
-            var sourceFile, script;
             var incSrc = args["includeSource"];
             var url = args["url"];
-            sourceFile = context.sourceFileMap[url];
-            var lines = [];
-            try {
-                lines = sourceFile.loadScriptLines(context);
-            } catch (ex) {
-                if (FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE: failed to get source lines for script: "+url+" - exception: " +ex);
-                }
+            var sourceFile = context.sourceFileMap[url];
+            if(sourceFile) {
+            	var script = this._newScript(context, sourceFile, incSrc);
+            	return { "context_id": context.Crossfire.crossfire_id, "script": script };
             }
-            var srcLen;
-            try {
-                srcLen = sourceFile.getSourceLength();
-            } catch(exc) {
-                if (FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE: failed to get source length for script : " +exc);
-                }
-                srcLen = 0;
-            }
-            script = {
-                "id": url,
-                "lineOffset": 0,
-                "columnOffset": 0,
-                "sourceStart": lines[0],
-                "sourceLength":srcLen,
-                "lineCount": lines.length,
-                "compilationType": sourceFile.compilation_unit_type,
-            };
-            if (incSrc) {
-                script["source"] = lines.join(' ');
-            }
-            return { "context_id": context.Crossfire.crossfire_id, "script": script };
+            return null;
         },
 
         /**
@@ -1118,7 +1092,7 @@ FBL.ns(function() {
          * @public
          * @memberOf CrossfireServer
          * @type Array
-         * @returns always returns <code>null</code>
+         * @returns always returns an emtpy array
          * @since 0.3a1
          */
         doSuspend: function(context) {
@@ -1126,7 +1100,53 @@ FBL.ns(function() {
             return {};
         },
 
-
+        /**
+         * @name _newScript
+         * @description Returns a new script object representing the given source file
+         * @function
+         * @private
+         * @memberOf CrossfireServer
+         * @type Array
+         * @param context the current Firebug context
+         * @param soureFile the Firebug sourceFile from the source map or from the <code>onSourceFileCreated</code> callback
+         * @param includeSrc a Boolean to determine if the source for the script should be included in the returned object
+         * @returns a new script object for the given source file
+         * @since 0.3a5
+         */
+        _newScript: function(context, sourceFile, includeSrc) {
+        	var lines = [];
+            try {
+                lines = sourceFile.loadScriptLines(context);
+            } catch (ex) {
+                if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE: failed to get source lines for script: "+url+" - exception: " +ex);
+                }
+            }
+            var srcLen;
+            try {
+                srcLen = sourceFile.getSourceLength();
+            } catch(exc) {
+                if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE: failed to get source length for script : " +exc);
+                }
+                srcLen = 0;
+            }
+            script = {
+                "id": sourceFile.href,
+                "lineOffset": 0,
+                "columnOffset": 0,
+                "sourceStart": lines[0],
+                "sourceLength":srcLen,
+                "lineCount": lines.length,
+                "compilationType": sourceFile.compilation_unit_type,
+            };
+            if (includeSrc) {
+                script["source"] = lines.join(' ');
+            }
+            return script;
+        },
+        
+        
         // ----- Firebug listener -----
         /**
          * @name onSourceFileCreated
@@ -1169,7 +1189,8 @@ FBL.ns(function() {
 	                }
             	}
             }
-            var data = { "id": sourceFile.href, "context_href": context_href };
+            var script = this._newScript(context, sourceFile, false);
+            var data = {"script":script};
             this._sendEvent("onScript", {"context_id": context.Crossfire.crossfire_id, "data": data});
         },
 
@@ -1440,18 +1461,15 @@ FBL.ns(function() {
          * @returns a copy of the given stackframe
          */
         _copyFrame: function(frame, ctx, shouldCopyStack) {
-            if (ctx) {
-                var context = ctx;
-            }
             var frameCopy = {};
             // recursively copy scope chain
             if (frame && frame.isValid) {
                 try {
-                    var sourceFile = Firebug.SourceFile.getSourceFileByScript(context, frame.script)
+                    var sourceFile = Firebug.SourceFile.getSourceFileByScript(ctx, frame.script)
                     if (sourceFile) {
                         var analyzer = sourceFile.getScriptAnalyzer(frame.script);
                         if (analyzer) {
-                            lineno = analyzer.getSourceLineFromFrame(context, frame);
+                            lineno = analyzer.getSourceLineFromFrame(ctx, frame);
                             frameCopy["line"] = lineno;
                             var frameScript = sourceFile.href.toString();
                             if (FBTrace.DBG_CROSSFIRE_FRAMES)
