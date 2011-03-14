@@ -644,7 +644,7 @@ FBL.ns(function() {
                     frame = context.Crossfire.currentFrame.stack[frameNo];
                 }
             }
-            var result = {};
+            var result;
             var contextId = context.Crossfire.crossfire_id;
             try {
                 if (frame) {
@@ -653,7 +653,7 @@ FBL.ns(function() {
                     }
                 } else {
                     Firebug.CommandLine.evaluate(expression, context,null,null,function(r){
-                        result = r;
+                        result = CrossfireModule.serialize(r);
                     },function(){
                         throw new Error("Failure to evaluate expression: " + expression);
                     });
@@ -968,8 +968,8 @@ FBL.ns(function() {
             var url = args["url"];
             var sourceFile = context.sourceFileMap[url];
             if(sourceFile) {
-            	var script = this._newScript(context, sourceFile, incSrc);
-            	return { "context_id": context.Crossfire.crossfire_id, "script": script };
+                var script = this._newScript(context, sourceFile, incSrc);
+                return { "context_id": context.Crossfire.crossfire_id, "script": script };
             }
             return null;
         },
@@ -1122,7 +1122,7 @@ FBL.ns(function() {
          * @since 0.3a5
          */
         _newScript: function(context, sourceFile, includeSrc) {
-        	var lines = [];
+            var lines = [];
             try {
                 lines = sourceFile.loadScriptLines(context);
             } catch (ex) {
@@ -1153,8 +1153,8 @@ FBL.ns(function() {
             }
             return script;
         },
-        
-        
+
+
         // ----- Firebug listener -----
         /**
          * @name onSourceFileCreated
@@ -1189,13 +1189,13 @@ FBL.ns(function() {
             var line = -1;
             var bpobj;
             for (var bp in this.breakpoints) {
-            	bpobj = this.breakpoints[bp];
-            	var loc = bpobj.location;
-            	if(loc) {
-	                if (loc.url === sourceFile.href) {
-	                    Firebug.Debugger.setBreakpoint(sourceFile, loc.line);
-	                }
-            	}
+                bpobj = this.breakpoints[bp];
+                var loc = bpobj.location;
+                if(loc) {
+                    if (loc.url === sourceFile.href) {
+                        Firebug.Debugger.setBreakpoint(sourceFile, loc.line);
+                    }
+                }
             }
             var script = this._newScript(context, sourceFile, false);
             var data = {"script":script};
