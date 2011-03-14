@@ -1396,7 +1396,7 @@ FBL.ns(function() {
              if (FBTrace.DBG_CROSSFIRE) {
                  FBTrace.sysout("CROSSFIRE: onModifyBreakpoint");
              }
-             var loc = {"xpath":xpath,"type":type};
+             var loc = {"xpath":xpath};
              var bp = this._findBreakpoint(loc);
              if(bp) {
                  delete this.breakpoints[bp.handle];
