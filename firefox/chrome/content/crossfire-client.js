@@ -29,7 +29,6 @@ FBL.ns(function() {
 
             this.contexts = [];
 
-
             // Begin transitional code
             var import = Components.utils.import;
             import("resource://firebug/bti/browser.js");
