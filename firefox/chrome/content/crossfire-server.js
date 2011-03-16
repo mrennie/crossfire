@@ -516,29 +516,42 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         changeBreakpoint: function(context, args) {
-            var condition = args["condition"];
-            var enabled = !!args["enabled"];
-            fbs = FBL.fbs;
+            var bp, loc, handle = args["handle"],
+                condition = args["condition"],
+                enabled = !!args["enabled"],
+                fbs = FBL.fbs;
+
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE changeBreakpoint: args => " + args.toSource());
             }
+
             try {
-                var bp = this.getBreakpoint(args);
+                if(handle) {
+                    bp = this._findBreakpoint(handle);
+                }
+
                 if (bp) {
-                    if (FBTrace.DBG_CROSSFIRE) {
-                        FBTrace.sysout("CROSSFIRE changeBreakpoint set condition => " + condition);
+                    loc = bp.location;
+
+                    if (condition) {
+                        if (FBTrace.DBG_CROSSFIRE_BPS) {
+                            FBTrace.sysout("CROSSFIRE changeBreakpoint set condition => " + condition);
+                        }
+
+                        fbs.setBreakpointCondition({"href":loc.url}, loc.line, condition, Firebug.Debugger);
                     }
-                    fbs.setBreakpointCondition({"href": bp.target}, bp.line, condition, Firebug.Debugger);
-                    if (FBTrace.DBG_CROSSFIRE) {
+
+                    if (FBTrace.DBG_CROSSFIRE_BPS) {
                         FBTrace.sysout("CROSSFIRE changeBreakpoint set enabled => " + enabled);
                     }
                     if (enabled) {
-                        fbs.enableBreakpoint(bp.target, bp.line);
+                        fbs.enableBreakpoint(loc.url, loc.line);
                     } else {
-                        fbs.disableBreakpoint(bp.target, bp.line);
+                        fbs.disableBreakpoint(loc.url, loc.line);
                     }
+
                     bp.enabled = enabled;
-                    return {"breakpoint": bp.handle};
+                    return {"breakpoint": bp };
                 }
             } catch (e) {
                 if (FBTrace.DBG_CROSSFIRE) {
