@@ -1,0 +1,59 @@
+0.3a5 - 2011-03-16
+  * Started keeping the changelog up-to-date.
+  * Significant changes to breakpoints: see issue 3928.
+  * 4205    evaluate request gets no response.
+  * 4200    lookup request no longer works.
+  * 3928    breakpoints protocol review.
+  * 3841    Crossfire should have command to open debuggable context.
+  * 3476    Send lines of text instead of joined string for script source.
+
+0.3a4 - 2011-02-07
+  * 3677    Crossfire: the server breaks when a client is disconnected.
+  * 3699    Crossfire server + socket becomes unusable after disconnect.
+  * 3219    Crossfire does not let go of the socket when a client disconnects.
+
+0.3a3 - 2011-01-17
+  * Added first pass at 'Tools API'.
+  * Added headers to protocol and modify handshake (3370).
+  * 3840    Crossfire does not raise onBreak for breakpoints or debugger
+    statements.
+  * 3692    'context_id' entry not needed in response bodies.
+  * 3542    Crossfire should implement changebreakpoint command.
+  * 3370    Crossfire protocol change, use headers to define modules for routing
+    of content.
+
+0.3a2 - 2010-11-29
+  * 3537     Provide access to proto, prototype and constructor information
+  * 3538     Function variables should be references
+  * Factored out FirebugCommandAdaptor: issue 3647 - Investigate removing the
+    FirebugCommandAdpater
+  * Honza's fixes for client-mode crossfire ("fireEvent" impl.)
+  * 3502     lookup response wraps value object twice
+  * 3637     Mapped references can have their handle returned as a string
+  * 3606     connection between two crossfires on differents PCs doesn't work
+
+0.2b3 - 2010-11-29
+  * Fixed issue 3637 - make sure returned handles should always be numbers
+    instead strings
+  * Tested with Firebug 1.6.0
+
+0.3a1 - 2010-11-09
+  * 3124    Crossfire 'continue' command never seems to work.
+  * 3571    onContextChanged no longer works.
+  * 3355    Crossfire protocol change (blank line between headers and content)
+
+0.2b2 - 2010-11-09
+  * Second beta for 0.2 branch and first 0.3 alpha
+
+0.2b1  2010-10-18
+  * First beta for 0.2 branch
+
+0.2a* series Apr/Oct 2010
+  * Expand protocol to cover most-needed JS debugging features.
+  * Support basic server operation. Clean up underlying transport code.
+  * Testing and support of Firebug 1.6.
+  * Many bug fixes.
+
+0.1 series Jan/Mar 2010
+  * 3 iterations on proof-of-concept/developer preview of a  Firebug extension
+    for remote debug.
