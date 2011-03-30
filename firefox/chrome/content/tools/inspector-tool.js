@@ -29,11 +29,12 @@ FBL.ns(function() {
             var response;
             if (request.command == "inspect") {
                 var context = CrossfireModule.findContext(request.context_id);
+                var contextid;
                 if (context) {
                     response = this.doInspect(context, args);
+                    contextid = context.Crossfire.crossfire_id;
                 }
-
-                this.transport.sendResponse(request.command, request.seq, response, true, true, this.toolName);
+                this.transport.sendResponse(request.command, request.seq, contextid, response, true, true, this.toolName);
             }
         },
 

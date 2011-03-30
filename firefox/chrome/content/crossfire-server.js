@@ -311,7 +311,7 @@ FBL.ns(function() {
                 FBTrace.sysout("CROSSFIRE received request " + request.toSource());
             }
             var command = request.command;
-            var context, response;
+            var context, response, contextid;
             var args = (request.arguments ? request.arguments : []);
             // first we handle commands that don't require a context
             if (command == "listcontexts") {
@@ -344,6 +344,7 @@ FBL.ns(function() {
                 // else we require a context for the commands
                 context = this.findContext(request.context_id);
                 if(context) {
+                	contextid = context.Crossfire.crossfire_id;
                     if(command == "backtrace") {
                         response = this.getBacktrace(context, args);
                     }
@@ -395,12 +396,12 @@ FBL.ns(function() {
                 if (FBTrace.DBG_CROSSFIRE) {
                     FBTrace.sysout("CROSSFIRE sending success response => " + response);
                 }
-                this.transport.sendResponse(command, request.seq, response, this.running, true);
+                this.transport.sendResponse(command, request.seq, contextid, response, this.running, true);
             } else {
                  if (FBTrace.DBG_CROSSFIRE) {
                      FBTrace.sysout("CROSSFIRE sending failure response => " + response);
                  }
-                this.transport.sendResponse(command, request.seq, {}, this.running, false);
+                this.transport.sendResponse(command, request.seq, contextid, {}, this.running, false);
             }
         },
 
@@ -444,11 +445,11 @@ FBL.ns(function() {
          * @param context the associated context {@link Object}
          * @param args the argument {@link Array} which contains:
          * <ul>
-         * <li>an {@link Integer} <code>fromFrame</code>, which denotes the stack frame to start the backtrace from</li>
-         * <li>optionally an {@link Integer} <code>toFrame</code>, which denotes the stack frame to end the backtrace at. If
+         * <li>an optional {@link Integer} <code>fromFrame</code>, which denotes the stack frame to start the backtrace from. If not specified zero is assumed</li>
+         * <li>an optional {@link Integer} <code>toFrame</code>, which denotes the stack frame to end the backtrace at. If
          * left out all stack frames will be included in the backtrace</li>
-         * <li>and optionally a {@link Boolean} <code>includeScopes</code>, which will cause the associated scopes to be included
-         * in the backtrace or not.</li>
+         * <li>an optional {@link Boolean} <code>includeScopes</code>, if the listing of applicable scopes should be included in the backtrace response. If not specified 
+         * <code>true</code> is assumed.</li>
          * </ul>
          * @since 0.3a1
          */
@@ -460,25 +461,22 @@ FBL.ns(function() {
                 if(!args) {
                     args = [];
                 }
-                var fromFrame, toFrame;
+                var from = args["fromFrame"] || 0;
+                var to = args["toFrame"];
                 var stack = context.Crossfire.currentFrame.stack;
-                var scopes = args["includeScopes"];
-                if(!scopes) {
-                    scopes = true;
-                }
+                var scopes = args["includeScopes"] || true;
                 if (stack) {
-                    fromFrame = args["fromFrame"] || 0;
-                    // toFrame set to stack.length if not set, or if set to a number higher than the stack sizes
-                    toFrame = (args["toFrame"] && args["toFrame"] <= stack.length) ? args["toFrame"] : stack.length;
+                    // to set to stack.length if not set, or if set to a number higher than the stack sizes
+                    to = (to && to <= stack.length) ? to : stack.length;
                 } else {
                     // issue 2559: if there is only one frame, stack is undefined,
                     // but we still want to return that frame.
-                    fromFrame = 0;
-                    toFrame = 1;
+                    from = 0;
+                    to = 1;
                 }
                 var frame;
                 var frames = [];
-                for (var i = fromFrame; i <= toFrame; i++) {
+                for (var i = from; i <= to; i++) {
                     frame = this.getFrame(context, {"number": i, "includeScopes": scopes});
                     if (frame) {
                         delete frame.context_id;
@@ -486,10 +484,8 @@ FBL.ns(function() {
                     }
                 }
                 return {
-                    "context_id": context.Crossfire.crossfire_id,
-                    "fromFrame": 0,
-                    "toFrame": frames.length-1,
-                    "totalFrames": frames.length,
+                    "fromFrame": from,
+                    "toFrame": to,
                     "frames": frames
                 };
             }

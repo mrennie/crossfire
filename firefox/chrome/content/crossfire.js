@@ -212,10 +212,6 @@ FBL.ns(function() {
                     response = this.deactivateTool(toolName);
                 }
             }
-
-            //CrossfireModule.getServerTransport().sendResponse(command, request.seq, response, this.running, response);
-
-
         },
 
         // ----- Crossfire Protocol Extensions (Tools API) -----
