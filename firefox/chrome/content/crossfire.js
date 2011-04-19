@@ -552,7 +552,7 @@ FBL.ns(function() {
                     $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connected to " + this.clientTransport.host + ":" + this.clientTransport.port);
                 }
             }
-        }/*,
+        },
 
         /*
          * @name setRunning
@@ -575,7 +575,20 @@ FBL.ns(function() {
             }
             this.running = isRunning;
         }
-        */
+         */
+         
+        // FBTest listener
+        onGetTestList: function(testLists)
+        {
+            if (FBTrace.DBG_CROSSFIRE)
+                FBTrace.sysout("CROSSFIRE onGetTestList");
+
+            testLists.push({
+                extension: "Crossfire",
+                testListURL: "chrome://crossfire/content/fbtest/testList.html"
+            });
+        }
+        
     });
 
     // register module
