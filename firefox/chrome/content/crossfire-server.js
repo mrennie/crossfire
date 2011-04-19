@@ -343,16 +343,22 @@ FBL.ns(function() {
             else {
                 // else we require a context for the commands
                 context = this.findContext(request.context_id);
-                if(context) {
+                if(command == "setbreakpoint") {
+                    response = this.setBreakpoint(context, args);
+                }
+                else if(command == "getbreakpoints") {
+                    response = this.getBreakpoints(context, args);
+                }
+                else if(command == "changebreakpoint") {
+                    response = this.changeBreakpoint(context, args);
+                }
+                else if(command == "clearbreakpoint") {
+                    response = this.clearBreakpoint(context, args);
+                }
+                else if(context) {
                 	contextid = context.Crossfire.crossfire_id;
                     if(command == "backtrace") {
                         response = this.getBacktrace(context, args);
-                    }
-                    else if(command == "changebreakpoint") {
-                        response = this.changeBreakpoint(context, args);
-                    }
-                    else if(command == "clearbreakpoint") {
-                        response = this.clearBreakpoint(context, args);
                     }
                     else if(command == "continue") {
                         response = this.doContinue(context);
@@ -362,9 +368,6 @@ FBL.ns(function() {
                     }
                     else if(command == "frame") {
                         response = this.getFrame(context, args);
-                    }
-                    else if(command == "getbreakpoints") {
-                        response = this.getBreakpoints(context, args);
                     }
                     else if(command == "lookup") {
                         response = this.doLookup(context, args);
@@ -380,9 +383,6 @@ FBL.ns(function() {
                     }
                     else if(command == "scripts") {
                         response = this.getScripts(context, args);
-                    }
-                    else if(command == "setbreakpoint") {
-                        response = this.setBreakpoint(context, args);
                     }
                     else if(command == "source") {
                         response = this.getSource(context, args);
@@ -501,7 +501,7 @@ FBL.ns(function() {
          * @memberOf CrossfireServer
          * @type Array
          * @returns an {@link Array} of the new breakpoint information or <code>null</code> if the change did not succeed.
-         * @param context the associated context {@link Object}
+         * @param context the optional associated context {@link Object}
          * @param args the array of arguments which contains:
          * <ul>
          * <li>an {@link Integer} <code>handle</code>, which is the id of the breakpoint to change</li>
@@ -512,40 +512,35 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         changeBreakpoint: function(context, args) {
-            var bp, loc, handle = args["handle"],
+            var bp, 
+                loc, 
+                handle = args["handle"],
                 condition = args["condition"],
-                enabled = !!args["enabled"],
-                fbs = FBL.fbs;
+                enabled = !!args["enabled"];
 
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE changeBreakpoint: args => " + args.toSource());
             }
-
             try {
                 if(handle) {
                     bp = this._findBreakpoint(handle);
                 }
-
                 if (bp) {
                     loc = bp.location;
-
                     if (condition) {
                         if (FBTrace.DBG_CROSSFIRE_BPS) {
                             FBTrace.sysout("CROSSFIRE changeBreakpoint set condition => " + condition);
                         }
-
-                        fbs.setBreakpointCondition({"href":loc.url}, loc.line, condition, Firebug.Debugger);
+                        FBL.fbs.setBreakpointCondition({"href":loc.url}, loc.line, condition, Firebug.Debugger);
                     }
-
                     if (FBTrace.DBG_CROSSFIRE_BPS) {
                         FBTrace.sysout("CROSSFIRE changeBreakpoint set enabled => " + enabled);
                     }
                     if (enabled) {
-                        fbs.enableBreakpoint(loc.url, loc.line);
+                    	FBL.fbs.enableBreakpoint(loc.url, loc.line);
                     } else {
-                        fbs.disableBreakpoint(loc.url, loc.line);
+                    	FBL.fbs.disableBreakpoint(loc.url, loc.line);
                     }
-
                     bp.enabled = enabled;
                     return {"breakpoint": bp };
                 }
@@ -565,7 +560,7 @@ FBL.ns(function() {
          * @memberOf CrossfireServer
          * @type Array
          * @returns an empty {@link Array} if the breakpoint was removed, <code>null</code> otherwise
-         * @param context the associated context {@link Object}
+         * @param context the optional associated context {@link Object}
          * @param args the array of arguments which contains:
          * <ul>
          * <li>an {@link Integer} <code>handle</code>, which is the id of the breakpoint to clear</li>
@@ -582,7 +577,7 @@ FBL.ns(function() {
                 if(bp) {
                     var loc = bp.location;
                     if(loc && loc.url && loc.line) {
-                        Firebug.Debugger.clearBreakpoint({"href": loc.url }, loc.line);
+                        Firebug.Debugger.clearBreakpoint({"href": loc.url}, loc.line);
                         this.breakpoints.splice(this.breakpoints.indexOf(bp), 1);
                         return {"breakpoint": bp};
                     }
@@ -768,7 +763,7 @@ FBL.ns(function() {
          * @memberOf CrossfireServer
          * @type Array
          * @returns an {@link Array} of all breakpoints information or <code>null</code> if there are no breakpoints set.
-         * @param context the associated context {@link Object}
+         * @param context the optional associated context {@link Object}
          * @param args the array of arguments which contains:
          * <ul>
          * <li>an optional {@link String} <code>context_id</code>, which is the id of the Crossfire context to get all of the breakpoints for</li>
@@ -777,8 +772,33 @@ FBL.ns(function() {
          */
         getBreakpoints: function(context, args) {
             var bp;
-            var self = this;
-            for (var url in context.sourceFileMap) {
+            if(context) {
+	            this._enumBreakpoints(context, this);
+            }
+            else {
+            	var self = this;
+            	Firebug.TabWatcher.iterateContexts(function doit(ctxt) {
+            		self._enumBreakpoints(ctxt, self);
+            	});
+            }
+            return {"breakpoints": this.breakpoints};
+        },
+
+        /**
+         * @name _enumBreakpoints
+         * @description enumerates all of the breakpoints from the given Firebug context
+         * @function
+         * @private
+         * @memberOf CrossfireServer
+         * @type Array
+         * @returns nothing; all enumerated breakpoints are added to the global <code>breakpoints</code> listing
+         * @param context the associated context {@link Object}
+         * @param scope the JS scope to call from
+         * @since 0.3a6
+         */
+        _enumBreakpoints: function(context, scope) {
+        	var self = scope;
+        	for (var url in context.sourceFileMap) {
                 FBL.fbs.enumerateBreakpoints(url, {"call": function(url, line, props, script) {
                     var l = props.lineNo;
                     var u = props.href;
@@ -788,13 +808,12 @@ FBL.ns(function() {
                         bp = self._newBreakpoint("line",{"line":l,"url":u},!props.disabled,null);
                     } else if (bp.enabled == props.disabled){
                         bp.enabled = !props.disabled;
-                        this.breakpoints[this.breakpoints.indexOf(bp)] = bp;
+                        self.breakpoints[self.breakpoints.indexOf(bp)] = bp;
                     }
                 }});
             }
-            return {"breakpoints": this.breakpoints};
         },
-
+        
         /**
          * @name doLookup
          * @description Lookup an object by it's handle.
@@ -1089,7 +1108,7 @@ FBL.ns(function() {
          * @memberOf CrossfireServer
          * @type Array
          * @returns the {@link Array} of breakpoint information
-         * @param context the associated context {@link Object}
+         * @param context the optional associated context {@link Object}
          * @param args the arguments array that contains:
          * <ul>
          * <li>an {@link Object} <code>location</code>, the location object containing all of the information required to set the breakpoint</li>
@@ -1109,10 +1128,20 @@ FBL.ns(function() {
                 var url = bp.location.url;
                 var line = bp.location.line;
                 if(url && line) {
-                    var sourceFile = context.sourceFileMap[url];
-                    if (sourceFile) {
-                        Firebug.Debugger.setBreakpoint(sourceFile, line);
-                    }
+                	if(context) {
+	                    var sourceFile = context.sourceFileMap[url];
+	                    if (sourceFile) {
+	                        Firebug.Debugger.setBreakpoint(sourceFile, line);
+	                    }
+                	}
+                	else {
+                		Firebug.TabWatcher.iterateContexts(function doit(context) {
+                			var sourceFile = context.sourceFileMap[url];
+    	                    if (sourceFile) {
+    	                        Firebug.Debugger.setBreakpoint(sourceFile, line);
+    	                    }
+                		});
+                	}
                     if (condition) {
                         FBL.fbs.setBreakpointCondition({"href": url}, line, condition, Firebug.Debugger);
                     }
