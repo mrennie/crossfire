@@ -1,4 +1,10 @@
-0.3a5 - 2011-03-16
+0.3a6 - 2011-04-25
+  * updated install.rdf and update.rdf to use https link.
+  * 3928    breakpoints protocol review redux.
+  * setbreakpoint with null context_id. see issue 3928.
+  * 4383    add FBTest suite for 0.3 branch
+
+0.3a5 - 2011-03-17
   * Started keeping the changelog up-to-date.
   * Significant changes to breakpoints: see issue 3928.
   * 4205    evaluate request gets no response.
