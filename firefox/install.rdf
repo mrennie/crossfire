@@ -8,9 +8,8 @@
                    em:version="@VERSION@@RELEASE@"
                    em:description="Remote debugging for Firebug."
                    em:iconURL="chrome://crossfire/skin/crossfire.png"
-                   em:updateURL="http://getfirebug.com/releases/crossfire/@VERSION@/update.rdf"
-                   em:creator="Michael G. Collins (IBM Almaden)"
-                   em:updateKey="MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDH/JeBGzh7UCU/IspzFuwCbx3eZxaAH0SBr862D8lOHi4aVeRgj2bynAsBlqdTBgNR6wQum2TSoXpFTnxNjYV1DoqbLqCDdIZ6cB+gfLiNX9YnFKWs/nYpuGd2Ebs+WQf36/Sr/FDSt86j93Piz87rj77gwrAafhDw9GM0qhgFAwIDAQAB">
+                   em:updateURL="https://getfirebug.com/releases/crossfire/@VERSION@/update.rdf"
+                   em:creator="Michael G. Collins (IBM Almaden)">
                    <em:contributor>John J. Barton (IBM Almaden)</em:contributor>
                    <em:contributor>Steven Roussey (AppCenter Inc Network54)</em:contributor>
                    <em:contributor>Michael Rennie (IBM Canada)</em:contributor>
