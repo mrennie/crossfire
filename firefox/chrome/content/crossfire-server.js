@@ -356,7 +356,7 @@ FBL.ns(function() {
                     response = this.clearBreakpoint(context, args);
                 }
                 else if(context) {
-                	contextid = context.Crossfire.crossfire_id;
+                    contextid = context.Crossfire.crossfire_id;
                     if(command == "backtrace") {
                         response = this.getBacktrace(context, args);
                     }
@@ -448,7 +448,7 @@ FBL.ns(function() {
          * <li>an optional {@link Integer} <code>fromFrame</code>, which denotes the stack frame to start the backtrace from. If not specified zero is assumed</li>
          * <li>an optional {@link Integer} <code>toFrame</code>, which denotes the stack frame to end the backtrace at. If
          * left out all stack frames will be included in the backtrace</li>
-         * <li>an optional {@link Boolean} <code>includeScopes</code>, if the listing of applicable scopes should be included in the backtrace response. If not specified 
+         * <li>an optional {@link Boolean} <code>includeScopes</code>, if the listing of applicable scopes should be included in the backtrace response. If not specified
          * <code>true</code> is assumed.</li>
          * </ul>
          * @since 0.3a1
@@ -512,8 +512,8 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         changeBreakpoint: function(context, args) {
-            var bp, 
-                loc, 
+            var bp,
+                loc,
                 handle = args["handle"],
                 condition = args["condition"],
                 enabled = !!args["enabled"];
@@ -537,9 +537,9 @@ FBL.ns(function() {
                         FBTrace.sysout("CROSSFIRE changeBreakpoint set enabled => " + enabled);
                     }
                     if (enabled) {
-                    	FBL.fbs.enableBreakpoint(loc.url, loc.line);
+                        FBL.fbs.enableBreakpoint(loc.url, loc.line);
                     } else {
-                    	FBL.fbs.disableBreakpoint(loc.url, loc.line);
+                        FBL.fbs.disableBreakpoint(loc.url, loc.line);
                     }
                     bp.enabled = enabled;
                     return {"breakpoint": bp };
@@ -773,13 +773,13 @@ FBL.ns(function() {
         getBreakpoints: function(context, args) {
             var bp;
             if(context) {
-	            this._enumBreakpoints(context, this);
+                this._enumBreakpoints(context, this);
             }
             else {
-            	var self = this;
-            	Firebug.TabWatcher.iterateContexts(function doit(ctxt) {
-            		self._enumBreakpoints(ctxt, self);
-            	});
+                var self = this;
+                Firebug.TabWatcher.iterateContexts(function doit(ctxt) {
+                    self._enumBreakpoints(ctxt, self);
+                });
             }
             return {"breakpoints": this.breakpoints};
         },
@@ -797,8 +797,8 @@ FBL.ns(function() {
          * @since 0.3a6
          */
         _enumBreakpoints: function(context, scope) {
-        	var self = scope;
-        	for (var url in context.sourceFileMap) {
+            var self = scope;
+            for (var url in context.sourceFileMap) {
                 FBL.fbs.enumerateBreakpoints(url, {"call": function(url, line, props, script) {
                     var l = props.lineNo;
                     var u = props.href;
@@ -813,7 +813,7 @@ FBL.ns(function() {
                 }});
             }
         },
-        
+
         /**
          * @name doLookup
          * @description Lookup an object by it's handle.
@@ -1124,24 +1124,28 @@ FBL.ns(function() {
             var enabled = !!args["enabled"];
             var bp = this._findBreakpoint(location);
             if (!bp) {
+                if (!location) {
+                    // can't create a new bp without a location
+                    return;
+                }
                 bp = this._newBreakpoint("line", location, enabled, condition);
                 var url = bp.location.url;
                 var line = bp.location.line;
                 if(url && line) {
-                	if(context) {
-	                    var sourceFile = context.sourceFileMap[url];
-	                    if (sourceFile) {
-	                        Firebug.Debugger.setBreakpoint(sourceFile, line);
-	                    }
-                	}
-                	else {
-                		Firebug.TabWatcher.iterateContexts(function doit(context) {
-                			var sourceFile = context.sourceFileMap[url];
-    	                    if (sourceFile) {
-    	                        Firebug.Debugger.setBreakpoint(sourceFile, line);
-    	                    }
-                		});
-                	}
+                    if(context) {
+                        var sourceFile = context.sourceFileMap[url];
+                        if (sourceFile) {
+                            Firebug.Debugger.setBreakpoint(sourceFile, line);
+                        }
+                    }
+                    else {
+                        Firebug.TabWatcher.iterateContexts(function doit(context) {
+                            var sourceFile = context.sourceFileMap[url];
+                            if (sourceFile) {
+                                Firebug.Debugger.setBreakpoint(sourceFile, line);
+                            }
+                        });
+                    }
                     if (condition) {
                         FBL.fbs.setBreakpointCondition({"href": url}, line, condition, Firebug.Debugger);
                     }
