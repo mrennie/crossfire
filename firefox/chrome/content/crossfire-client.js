@@ -30,10 +30,10 @@ FBL.ns(function() {
             this.contexts = [];
 
             // Begin transitional code
-            var import = Components.utils.import;
-            import("resource://firebug/bti/browser.js");
-            import("resource://firebug/bti/browsercontext.js");
-            import("resource://firebug/bti/compilationunit.js");
+            //var import = Components.utils.import;
+            //import("resource://firebug/bti/browser.js");
+            //import("resource://firebug/bti/browsercontext.js");
+            //import("resource://firebug/bti/compilationunit.js");
             // End transitional code
 
             this.btiBrowser = new Browser();
@@ -80,8 +80,9 @@ FBL.ns(function() {
          * @param {String} status the status to report
          */
         onConnectionStatusChanged: function( status) {
+            this.status = status;
             if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
-                this.getBrowserContexts();
+                //this.getBrowserContexts();
             }
         },
 
@@ -101,13 +102,13 @@ FBL.ns(function() {
                 data = event.data;
 
             if (eventName == "onContextCreated") {
-                var btiContext = new BrowserContext();
-                this.contexts[contextId] = btiContext;
-                this.btiBrowser._contextCreated(btiContext);
+                //var btiContext = new BrowserContext();
+                //this.contexts[contextId] = btiContext;
+                //this.btiBrowser._contextCreated(btiContext);
             } else if (eventName == "onScript") {
-                var browserContext = this.contexts[contextId];
-                var ccu = new CompilationUnit(data.href, browserContext); //CrossfireClient.CrossfireCompilationUnit(data.href, contextId);
-                browserContext._addCompilationUnit(ccu);
+                //var browserContext = this.contexts[contextId];
+                //var ccu = new CompilationUnit(data.href, browserContext); //CrossfireClient.CrossfireCompilationUnit(data.href, contextId);
+                //browserContext._addCompilationUnit(ccu);
             }
 
             //FBL.dispatch(this.fbListeners, "onExecute", [packet]);
