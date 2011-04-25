@@ -8,8 +8,9 @@ function runTest() {
     var CrossfireServer = FW.CrossfireServer;
 
     var status = CrossfireModule.status;
-    FBTest.sysout("Starting crossfire server on port 5000.  Status is : " + status);
-    CrossfireServer.startServer("localhost", 5000);
+    var port = 5678;
+    FBTest.sysout("Starting crossfire server on port " + port + ".  Status is : " + status);
+    CrossfireServer.startServer("localhost", port);
 
     setTimeout(function() {
         FBTest.ok(!(CrossfireModule.status == status), "CrossfireModule status changed");

@@ -6,28 +6,28 @@ function runTest() {
 
     var CrossfireModule = FBTest.FirebugWindow.CrossfireModule;
     var CrossfireClient = FBTest.FirebugWindow.CrossfireClient;
-    
-    var status = CrossfireModule.status;
-    FBTest.sysout("Connecting crossfire client on port 5000.  Status is : " + status);
-    CrossfireClient.connectClient("localhost", 5000);
 
-    setTimeout(function() {
-    	var newStatus = CrossfireModule.status;
-        FBTest.ok(!(newStatus == status), "CrossfireModule status changed from: " + status + " to: " +newStatus);
-        FBTest.sysout("Status is: " + newStatus);
-        
+    var status = CrossfireClient.status;
+    var port = 5678;
+    FBTest.sysout("Connecting crossfire client on port " + port + ".  Status is : " + status);
+    FBTest.FirebugWindow.setTimeout(function() {
+        CrossfireClient.connectClient("localhost", port);
+    });
+
+    setTimeout(function checkStatus() {
+        var newStatus = CrossfireClient.status;
+        FBTest.ok((newStatus == CROSSFIRE_STATUS.STATUS_CONNECTING || newStatus == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT), "CrossfireModule status changed from: " + status + " to: " +newStatus);
+        status = newStatus;
+        FBTest.sysout("Status is: " + status);
+
         if (newStatus == CROSSFIRE_STATUS.STATUS_CONNECTING) {
-        	setTimeout(function() {
-        		FBTest.sysout("Waiting for connection... ");
-        		FBTest.ok(CrossfireModule.getClientTransport().status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT);
-        		 FBTestFirebug.testDone("clientTest.finished");
-        	}, 1000);
-        	
+            FBTest.sysout("Waiting for connection... ");
+            setTimeout(checkStatus, 1000);
         } else {
-        	FBTest.ok(newStatus == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT);
-        	FBTestFirebug.testDone("clientTest.finished");
+            FBTest.ok(newStatus == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT);
+            FBTestFirebug.testDone("clientTest.finished");
         }
-       
+
     }, 2000);
 
 
