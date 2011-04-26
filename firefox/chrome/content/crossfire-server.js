@@ -320,8 +320,11 @@ FBL.ns(function() {
                 response =  { "version": CROSSFIRE_VERSION };
             } else if (command == "gettools") {
                 response = CrossfireModule.getTools();
-            }
-            else if(command == "getbreakpoint") {
+            } else if (command == "enabletools") {
+                response = CrossfireModule.enableTools(args["tools"]);
+            } else if (command == "disabletools") {
+                response = CrossfireModule.disableTools(args["tools"]);
+            } else if(command == "getbreakpoint") {
                 response = this.getBreakpoint(args);
             }
             else if (command == "updatecontext") {

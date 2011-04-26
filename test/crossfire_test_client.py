@@ -18,7 +18,8 @@ import json, readline, socket, sys, threading, time
 current_seq = 0
 
 HANDSHAKE_STRING = "CrossfireHandshake"
-TOOL_STRING = "console,net,inspector,dom,debugger"
+TOOL_STRING = "console,net,inspector,dom"
+#TOOL_STRING = "net,debugger"
 
 class CrossfireClient:
 
@@ -250,7 +251,10 @@ Commands = [
     "changebreakpoint",
     "clearbreakpoint",
     "inspect",
-    "lookup"
+    "lookup",
+    "gettools",
+    "enabletools",
+    "disabletools"
 ]
 
 COMMAND_PROMPT = 'Crossfire x> '

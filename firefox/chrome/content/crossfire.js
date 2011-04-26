@@ -257,6 +257,52 @@ FBL.ns(function() {
             }
         },
 
+        enableTools: function( tools) {
+            if (typeof tools == "string" ) {
+                try {
+                    this.activateTool(tools);
+                } catch (e1) {
+                    if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                        FBTrace.sysout("CROSSFIRE: enableTools fails: " +e1);
+                    return false;
+                }
+            } else {
+                for (var t in tools) {
+                     try {
+                        this.activateTool(tools[t]);
+                    } catch (e2) {
+                        if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                            FBTrace.sysout("CROSSFIRE: enableTools fails for " + t + " , " +e2);
+                        return false;
+                    }
+                }
+            }
+            return this.getTools();
+        },
+
+        disableTools: function( tools) {
+            if (typeof tools == "string" ) {
+                try {
+                    this.deactivateTool(tools);
+                } catch (e1) {
+                    if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                        FBTrace.sysout("CROSSFIRE: disableTools fails: " +e1);
+                    return false;
+                }
+            } else {
+                for (var t in tools) {
+                     try {
+                        this.deactivateTool(tools[t]);
+                    } catch (e2) {
+                        if (FBTrace.DBG_CROSSFIRE_TOOLS)
+                            FBTrace.sysout("CROSSFIRE: disableTool fails for " + t + " , " +e2);
+                        return false;
+                    }
+                }
+            }
+            return this.getTools();
+        },
+
         // called by transport listener after receiving tool string in handshake
         activateTool: function( toolName) {
             if (toolName in this.registeredTools) {
@@ -266,9 +312,11 @@ FBL.ns(function() {
                      //FIXME: a way to tell tools whether they are connected to client vs. server?
                      if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
                          this.registeredTools[toolName].onTransportCreated(this.clientTransport);
-                     } else if ( this.status == this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
+                     } else if ( this.status == CROSSFIRE_STATUS.STATUS_CONNECTING ||
+                             this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
                          this.registeredTools[toolName].onTransportCreated(this.serverTransport);
                      }
+                     this.registeredTools[toolName].activated = true;
                      return true;
                  } catch (e) {
                      FBTrace.sysout("exception deactivationg tool: " + e);
@@ -283,6 +331,7 @@ FBL.ns(function() {
                     FBTrace.sysout("Crossfire activating tool: " + toolName);
                 try {
                     this.registeredTools[toolName].onTransportDestroyed(this.transport);
+                    this.registeredTools[toolName].activated = false;
                     return true;
                 } catch (e) {
                     FBTrace.sysout("exception deactivationg tool: " + e);
@@ -300,7 +349,7 @@ FBL.ns(function() {
         getTools: function() {
             var tools = [];
             for (var name in this.registeredTools) {
-                tools.push({"toolName": name });
+                tools.push({"toolName": name, "enabled": this.registeredTools[name].activated });
             }
             return { "tools": tools };
         },
@@ -576,7 +625,7 @@ FBL.ns(function() {
             this.running = isRunning;
         }
          */
-         
+
         // FBTest listener
         onGetTestList: function(testLists)
         {
@@ -588,7 +637,7 @@ FBL.ns(function() {
                 testListURL: "chrome://crossfire/content/fbtest/testList.html"
             });
         }
-        
+
     });
 
     // register module
