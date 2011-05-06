@@ -18,5 +18,5 @@
   <RDF:Description RDF:about="rdf:#$Y4e0g3"
                    em:id="toolkit@mozilla.org"
                    em:minVersion="1.9.1"
-                   em:maxVersion="2.0.0.*" />
+                   em:maxVersion="2.2.*" />
 </RDF:RDF>
