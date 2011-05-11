@@ -14,6 +14,14 @@
                    <em:contributor>Steven Roussey (AppCenter Inc Network54)</em:contributor>
                    <em:contributor>Michael Rennie (IBM Canada)</em:contributor>
     <em:targetApplication RDF:resource="rdf:#$Y4e0g3"/>
+    <!-- Firefox -->
+    <em:targetApplication>
+      <Description>
+        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+        <em:minVersion>3.0</em:minVersion>
+        <em:maxVersion>6.0.*</em:maxVersion>
+      </Description>
+    </em:targetApplication>
   </RDF:Description>
   <RDF:Description RDF:about="rdf:#$Y4e0g3"
                    em:id="toolkit@mozilla.org"

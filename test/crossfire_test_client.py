@@ -12,6 +12,8 @@
 # Usage:
 # $> python crossfire_test_client.py [<host>] <port>
 #
+# On Windows platforms, try installing the pyreadline package.
+#
 
 import json, readline, socket, sys, threading, time
 
@@ -233,6 +235,7 @@ class Command:
 
 Commands = [
     "entercontext",
+    "updatecontext",
     "listcontexts",
     "version",
     "continue",
@@ -353,7 +356,7 @@ if __name__ == "__main__":
               json.dump(packet, sys.stdout, sort_keys=True, indent=2)
               print "\n" + COMMAND_PROMPT,
 
-              readline.redisplay()
+              #readline.redisplay()
 
               if 'event' in packet and packet['event'] == "closed":
                   quit()
