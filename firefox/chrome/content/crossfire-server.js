@@ -327,16 +327,16 @@ FBL.ns(function() {
             } else if(command == "getbreakpoint") {
                 response = this.getBreakpoint(args);
             }
-            else if (command == "updatecontext") {
-                context = this.findContext(request.context_id);
+            else if (command == "createcontext") {
+                context = this.findContext(args.context_id);
                 if(context) {
-                    context.window.location = args.href;
+                    context.window.location = args.url;
                 } else {
                     try {
                         if (FBTrace.DBG_CROSSFIRE) {
-                            FBTrace.sysout("calling FBL.openNewTab with: " + args.href);
+                            FBTrace.sysout("calling FBL.openNewTab with: " + args.url);
                         }
-                        FBL.openNewTab(args.href);
+                        FBL.openNewTab(args.url);
                     } catch ( exc) {
                         if (FBTrace.DBG_CROSSFIRE)
                             FBTrace.sysout("updateContext fails: " + exc);
@@ -608,7 +608,7 @@ FBL.ns(function() {
         doContinue: function(context, args) {
             var stepAction = null;
             if(args) {
-                stepAction = args["stepaction"];
+                stepAction = args["stepAction"];
             }
             if (stepAction == "in") {
                 Firebug.Debugger.stepInto(context);
