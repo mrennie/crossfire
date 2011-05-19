@@ -364,7 +364,7 @@ FBL.ns(function() {
                         response = this.getBacktrace(context, args);
                     }
                     else if(command == "continue") {
-                        response = this.doContinue(context);
+                        response = this.doContinue(context, args);
                     }
                     else if(command == "evaluate") {
                         response = this.doEvaluate(context, args);
