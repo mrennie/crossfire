@@ -600,8 +600,7 @@ FBL.ns(function() {
          * @param context the associated context {@link Object}
          * @param args the array of arguments which contains:
          * <ul>
-         * <li>optionally a {@link String} <code>stepaction</code>, which can be one of 'in', 'next', or 'out' </li>
-         * <li>optionally an {@link Integer} <code>stepcount</code>, which denotes how many steps to take - NO IMPLEMENTED YET</li>
+         * <li>optionally a {@link String} <code>stepAction</code>, which can be one of 'in', 'next', or 'out' </li>
          * </ul>
          * @since 0.3a1
          */
@@ -635,13 +634,16 @@ FBL.ns(function() {
          * @param context the associated context {@link Object}
          * @param args the array of arguments which contains:
          * <ul>
-         * <li>optionally an {@link Integer} <code>frame</code>, which is the index of the stackframe in the current stack to evaluate in</li>
+         * <li>optionally an {@link Integer} <code>frameIndex</code>, which is the index of the stackframe in the current stack to evaluate in</li>
          * <li>a {@link String} <code>expression</code>, which is what will be evaluated</li>
          * </ul>
          * @since 0.3a1
          */
         doEvaluate: function(context, args) {
-            var frameNo = args["frame"];
+            var frameNo = args["frameIndex"];
+            if(!frameNo) {
+            	frameNo = 0;
+            }
             var expression = args["expression"];
             var frame;
 
@@ -664,7 +666,7 @@ FBL.ns(function() {
                     }
                 } else {
                     Firebug.CommandLine.evaluate(expression, context,null,null,function(r){
-                        result = CrossfireModule.serialize(r);
+                        result = r;
                     },function(){
                         throw new Error("Failure to evaluate expression: " + expression);
                     });
@@ -672,7 +674,7 @@ FBL.ns(function() {
             } catch (e) {
                 result = e;
             }
-            return {"context_id": contextId, "result": result};
+            return {"result": CrossfireModule.serialize(result)};
         },
 
         /**
@@ -717,7 +719,7 @@ FBL.ns(function() {
                     if (includeScopes) {
                         var scopes = (this.getScopes(context, {"frameNumber": number })).scopes;
                     }
-                    return { "context_id": context.Crossfire.crossfire_id,
+                    return {
                         "index": frame.frameIndex,
                         "func": frame.functionName,
                         "script": frame.script,
@@ -851,9 +853,11 @@ FBL.ns(function() {
                                     arr["source"] = src;
                                 }
                             }
-                            catch(e) {}
-                            var cid = context.Crossfire.crossfire_id;
-                            arr["context_id"] = cid;
+                            catch(e) {
+                            	 if (FBTrace.DBG_CROSSFIRE) {
+                                     FBTrace.sysout("CROSSFIRE doLookup: exception => " + e);
+                                 }
+                            }
                             return arr;
                         }
                         return arr;
@@ -891,7 +895,6 @@ FBL.ns(function() {
             } while(scope);
             if (scopes.length > 0) {
               return {
-                  "context_id": context.Crossfire.crossfire_id,
                   "fromScope": 0,
                   "toScope": scopes.length-1,
                   "totalScopes": scopes.length,
@@ -944,7 +947,6 @@ FBL.ns(function() {
             }
             if (scope) {
                 return {
-                    "context_id": context.Crossfire.crossfire_id,
                     "index": scopeNo,
                     "frameIndex": frameNo,
                     "object": scope
@@ -982,7 +984,7 @@ FBL.ns(function() {
                     }
                 }
             }
-            return {"context_id": context.Crossfire.crossfire_id, "scripts": scripts};
+            return {"scripts": scripts};
         },
 
         /**
@@ -1007,7 +1009,7 @@ FBL.ns(function() {
             var sourceFile = context.sourceFileMap[url];
             if(sourceFile) {
                 var script = this._newScript(context, sourceFile, incSrc);
-                return { "context_id": context.Crossfire.crossfire_id, "script": script };
+                return {"script": script };
             }
             return null;
         },
