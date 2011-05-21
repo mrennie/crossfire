@@ -148,6 +148,21 @@ CrossfireSocketTransport.prototype =
     },
 
     /**
+     * @name removeListener
+     * @description removes a previously added listener
+     * @function
+     * @public
+     * @param listener
+     * @returns the listener that was removed.
+     */
+    removeListener: function( listener) {
+        var lIndex = this.listeners.indexOf(listener);
+        if(lIndex > 0) {
+            return this.listeners.splice(lIndex, 1);
+        }
+    },
+
+    /**
      * @name sendResponse
      * @description Builds and sends a response packet. @see also Packet.js
      * @function
@@ -211,7 +226,8 @@ CrossfireSocketTransport.prototype =
         if (!tool) tool = "";
         packet = new RequestPacket(command, data, ["tool:"+tool]);
 
-        FBTrace.sysout("packet is " + packet,packet);
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            FBTrace.sysout("packet is " + packet,packet);
 
         this._defer(function() {this._sendPacket(packet);});
     },
@@ -596,8 +612,8 @@ CrossfireSocketTransport.prototype =
                             this._sendHandshake();
                         } else {
                             this.connected = true;
-                            this._waitOnPacket();
                             this._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT);
+                            this._waitOnPacket();
                         }
                         return;
                     }
@@ -660,7 +676,7 @@ CrossfireSocketTransport.prototype =
      */
     _sendPacket: function( packet) {
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
-            FBTrace.sysout("_sendPacket " + packet);
+            FBTrace.sysout("_sendPacket " + packet, packet);
         if (this._outputStreamCallback) {
             this._outputStreamCallback.addPacket(packet);
         }
