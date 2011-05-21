@@ -462,6 +462,11 @@ FBL.ns(function() {
                         var ref = this._getRef(obj);
                         serialized["value"] = this._serializeProperties(obj, ref);
                     }
+                } else if (type == "number" && (
+                    isNaN(obj)
+                    || obj == Infinity
+                    || obj == -Infinity)) {
+                        serialized["value"] = obj.toString();
                 } else {
                     serialized["value"] = obj;
                 }
