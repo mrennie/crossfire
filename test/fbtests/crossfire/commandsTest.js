@@ -11,14 +11,13 @@ function runTest() {
     var CrossfireModule = FW.CrossfireModule;
     var CrossfireClient = FW.CrossfireClient;
 
-    var testIndex = -1;
+    var contextId, testIndex = -1;
 
     var commands = [
                     "listcontexts",
                     "version",
                     "gettools",
                     "getbreakpoint",
-                    "updatecontext",
                     "backtrace",
                     "changebreakpoint",
                     "continue",
@@ -38,18 +37,25 @@ function runTest() {
     function sendNextCommand() {
         var nextCommand = commands[++testIndex];
         if (!nextCommand) {
+            CrossfireModule.getClientTransport().removeListener(testListener);
             FBTestFirebug.testDone("commandsTest.finished no more commands");
         } else {
             FBTest.sysout("sending command: " + nextCommand);
-            FW.setTimeout(function() { CrossfireClient._sendCommand(nextCommand); }, 50);
+            FW.setTimeout(function() { CrossfireClient._sendCommand(nextCommand, {"context_id": contextId }); }, 10);
         }
     }
 
-    CrossfireModule.getClientTransport().addListener({
+    var testListener =  {
         toolName: "all",
+
         handleResponse: function(response) {
             FBTest.sysout("commandsTest.handleResponse: " + response);
             FBTest.ok(response.command == commands[testIndex], "expected response.command to be: " + commands[testIndex] + ", was " +  response.command);
+            if (response.command == "listcontexts") {
+                // just grab the first contextId
+                contextId = response.body.contexts[0].context_id;
+                FBTest.progress("got context id => " + contextId);
+            }
             sendNextCommand();
         },
 
@@ -57,7 +63,22 @@ function runTest() {
             FBTest.sysout("spurious event: " + event);
         }
 
-    });
+    };
 
-    sendNextCommand();
+    window.allOpenAllCloseURL = FBTest.getHTTPURLBase()+"fbtest/crossfire/OpenFirebugOnThisPage.html";
+
+    FBTestFirebug.openNewTab(allOpenAllCloseURL, function openFirebug(win)
+    {
+        FBTest.progress("opened tab for "+win.location);
+
+        FBTest.progress("All Open");
+        FW.Firebug.Activation.toggleAll("on");
+
+        FBTest.ok( FW.Firebug.chrome.isOpen(), "Firebug is open");
+
+        CrossfireModule.getClientTransport().addListener(testListener);
+
+        // kick it off
+        sendNextCommand();
+    });
 }

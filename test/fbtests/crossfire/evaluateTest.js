@@ -2,8 +2,6 @@
 function runTest() {
     FBTest.sysout("evaluateTest.started");
 
-    Components.utils.import("resource://crossfire/SocketTransport.js");
-
     var CrossfireModule = FW.CrossfireModule;
     var CrossfireClient = FW.CrossfireClient;
 
@@ -15,37 +13,61 @@ function runTest() {
         "-Infinity + Infinity" // NaN
     ];
 
-    var nextResult;
+    var contextId, nextResult, testIndex = -1;
 
     function evaluateNext() {
-         var nextExpression = commands[++testIndex];
+         var nextExpression = expressions[++testIndex];
          if (!nextExpression) {
-             FBTestFirebug.testDone("commandsTest.finished no more commands");
+             CrossfireModule.getClientTransport().removeListener(testListener);
+             FBTestFirebug.testDone("evaluateTest.finished no more expressions.");
          } else {
-             nextResult = eval(nextExpression);
-             FBTest.sysout("sending expression: " + nextExpression);
-             FW.setTimeout(function() { CrossfireClient._sendCommand('evaluate',  { "expression": nextExpression }; }, 50);
+             nextResult = (eval(nextExpression)).toString();
+             FBTest.progress("sending expression: " + nextExpression);
+             FW.setTimeout(function() { CrossfireClient._sendCommand('evaluate',  { "context_id": contextId, "expression": nextExpression }); }, 10);
          }
     }
 
-    CrossfireModule.getClientTransport().addListener({
-        toolName: "all",
-        handleResponse: function(response) {
-            FBTest.sysout("evaluateTest.handleResponse: " + response);
-            if (response.command == 'evaluate') {
-                FBTest.ok(response.success, 'response was successful');
-                FBTest.ok(response.value == nextResult, 'response result equals local result');
-                sendNextExpression();
+    var testListener = {
+            toolName: "all",
+            handleResponse: function(response) {
+                FBTest.sysout("evaluateTest.handleResponse: " + response);
+                if (response.command == "listcontexts") {
+                    // just grab the first contextId
+                    contextId = response.body.contexts[0].context_id;
+                    FBTest.progress("got context id => " + contextId);
+                    evaluateNext();
+                } else if (response.command == 'evaluate') {
+                    FBTest.progress("got evaluate response");
+                    FBTest.ok(response.success, 'response was successful');
+                    FBTest.ok(response.body && response.body.result, 'response has a body with a result.');
+                    FBTest.ok(response.body.result.value == nextResult, 'response result equals local result');
+                    evaluateNext();
+                }
+
+            },
+
+            fireEvent: function(evt) {
+                FBTest.sysout("spurious event: " + event);
             }
+    };
 
-        },
+    // open Firebug
+    window.allOpenAllCloseURL = FBTest.getHTTPURLBase()+"fbtest/crossfire/OpenFirebugOnThisPage.html";
 
-        fireEvent: function(evt) {
-            FBTest.sysout("spurious event: " + event);
-        }
+    FBTestFirebug.openNewTab(allOpenAllCloseURL, function openFirebug(win)
+    {
+        FBTest.progress("opened tab for "+win.location);
+
+        FBTest.progress("All Open");
+        FW.Firebug.Activation.toggleAll("on");
+
+        FBTest.ok( FW.Firebug.chrome.isOpen(), "Firebug is open");
+
+        CrossfireModule.getClientTransport().addListener(testListener);
+
+        // kick it off
+        CrossfireClient._sendCommand('listcontexts');
 
     });
 
-    // kick it off
-    sendNextExpression();
 }
