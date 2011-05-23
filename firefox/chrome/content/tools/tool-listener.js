@@ -63,7 +63,7 @@ FBL.ns(function() {
         },
 
         getDescription: function() {
-
+            return this.toolName + " is a tool with an unimplemented getDescription() method.";
         }
     };
 });

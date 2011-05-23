@@ -347,35 +347,18 @@ FBL.ns(function() {
          *
          */
         getTools: function() {
-            var tools = [];
+            var tool, tools = [];
             for (var name in this.registeredTools) {
-                tools.push({"toolName": name, "enabled": this.registeredTools[name].activated });
+                tool = this.registeredTools[name];
+                tools.push({ "name": name,
+                             "enabled": tool.activated,
+                             "commands": tool.commands,
+                             "events": tool.events,
+                             "desc": tool.getDescription()
+
+                    });
             }
             return { "tools": tools };
-        },
-
-        /**
-         *
-         */
-        getToolDescription: function(moduleName /* , moduleName, moduleName */) {
-            var desc, tool, toolInfo = [];
-            for (var arg in arguments) {
-                tool = this.registeredTools[arg];
-                if (tool) {
-                    if (typeof(tool.getDescription) == "function") {
-                        desc = tool.getDescription();
-                    } else {
-                        desc = "";
-                    }
-                    toolInfo[arg] = {
-                        "name": tool.toolName,
-                        "desc": desc,
-                        "commands": tool.commands,
-                        "events": tool.events
-                    };
-                }
-            }
-            return toolInfo;
         },
 
         // ----- helpers
