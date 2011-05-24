@@ -642,7 +642,7 @@ FBL.ns(function() {
         doEvaluate: function(context, args) {
             var frameNo = args["frameIndex"];
             if(!frameNo) {
-            	frameNo = 0;
+                frameNo = 0;
             }
             var expression = args["expression"];
             var frame;
@@ -657,7 +657,7 @@ FBL.ns(function() {
                     frame = context.Crossfire.currentFrame.stack[frameNo];
                 }
             }
-            var result;
+            var result = {};
             var contextId = context.Crossfire.crossfire_id;
             try {
                 if (frame) {
@@ -854,7 +854,7 @@ FBL.ns(function() {
                                 }
                             }
                             catch(e) {
-                            	 if (FBTrace.DBG_CROSSFIRE) {
+                                 if (FBTrace.DBG_CROSSFIRE) {
                                      FBTrace.sysout("CROSSFIRE doLookup: exception => " + e);
                                  }
                             }
