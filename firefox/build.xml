@@ -2,11 +2,15 @@
 <project name="crossfire" default="xpi" basedir=".">
 
     <property name="dist.dir" value="dist/"/>
-    <property name="build.dir" value="build/"/>
+    <property name="build.dir" location="${basedir}/build/"/>
+    <property name="test.dir" value="${basedir}/../test"/>
+    <property name="test.profile.dir" location="${test.dir}/testprofile/"/>
+    <property name="firebug.dir" location="${basedir}/../../../../../branches/firebug1.7"/>
+
     <property file="version.properties"/>
 
     <target name="xpi"
-        depends="prepare"
+        depends="test,prepare"
         description="zip files into firefox XPI">
         <mkdir dir="${dist.dir}"/>
 
@@ -32,11 +36,14 @@
                         </replacetokens>
                 </filterchain>
         </copy>
-    	<!-- clean up build artifacts after we are done -->
-    	<delete includeemptydirs="true" failonerror="false" dir="${build.dir}"/>
+        <!-- clean up build artifacts after we are done -->
+        <delete includeemptydirs="true" failonerror="false" dir="${build.dir}"/>
     </target>
 
     <target name="prepare" depends="clean">
+        <tstamp>
+          <format property="build.time" pattern="HHmmssSS"/>
+        </tstamp>
         <mkdir dir="${build.dir}"/>
         <!-- copy install.rdf and replace tokens -->
         <copy file="install.rdf"
@@ -70,8 +77,64 @@ category    command-line-handler    m-crossfire-clh    @almaden.ibm.com/crossfir
         </copy>
     </target>
 
+    <target name="test" depends="prepare">
+        <property name="test.port" value="65432"/>
+        <property name="test.profile.name" value="crossfire-test-${build.time}"/>
+
+        <echo>Creating test profile in ${test.profile.dir}</echo>
+        <mkdir dir="${test.profile.dir}"/>
+
+        <exec executable="firefox">
+            <arg value="-no-remote"/>
+            <arg value="-CreateProfile"/>
+            <arg value="${test.profile.name} ${test.profile.dir}"/>
+        </exec>
+
+        <!-- link extensions -->
+        <mkdir dir="${test.profile.dir}/extensions/"/>
+        <echo> Installing Firebug at ${firebug.dir} </echo>
+        <echo file="${test.profile.dir}/extensions/firebug@software.joehewitt.com">${firebug.dir}</echo>
+        <echo> Installing Crossfire at ${build.dir} </echo>
+        <echo file="${test.profile.dir}/extensions/crossfire@almaden.ibm.com">${build.dir}</echo>
+
+        <echo file="${test.profile.dir}/prefs.js" append="true">
+            user_pref("extensions.firebug.allPagesActivation", "on");
+            user_pref("extensions.firebug.script.enableSites", true);
+            user_pref("extensions.firebug.console.enableSites", true);
+        </echo>
+
+        <!-- launch firefox in server mode with test profile -->
+        <echo> Launching Firefox and Crossfire server on port ${test.port} </echo>
+        <exec executable="firefox" spawn="true">
+            <arg value="-no-remote"/>
+            <arg value="-P"/>
+            <arg value="${test.profile.name}"/>
+            <arg value="-crossfire-server-port"/>
+            <arg value="${test.port}"/>
+        </exec>
+
+        <waitfor maxwait="60" maxwaitunit="second">
+            <socket server="localhost" port="${test.port}"/>
+        </waitfor>
+
+        <!-- run test client script -->
+        <echo> Starting test client...</echo>
+        <exec executable="python">
+            <arg value="${test.dir}/crossfire_test_client.py"/>
+            <arg value="--host"/>
+            <arg value="localhost"/>
+            <arg value="--port"/>
+            <arg value="${test.port}"/>
+            <arg value="--command"/>
+            <arg value="evaluate"/>
+            <arg value="--args"/>
+            <arg value='{ "expression": "3+4" }'/>
+        </exec>
+    </target>
+
     <target name="clean">
         <delete includeemptydirs="true" failonerror="false" dir="${build.dir}"/>
         <delete includeemptydirs="true" failonerror="false" dir="${dist.dir}"/>
+        <delete includeemptydirs="true" failonerror="false" dir="${test.profile.dir}"/>
     </target>
 </project>

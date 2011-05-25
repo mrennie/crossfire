@@ -357,6 +357,7 @@ class CommandLine(threading.Thread):
 if __name__ == "__main__":
   client = None
   commandLine = None
+  currentContext = None
 
   def main():
     global client
@@ -386,7 +387,7 @@ if __name__ == "__main__":
     arglen = len(args)
 
     if arglen == 1:
-      host = socket.gethostname()
+      #host = socket.gethostname()
       if port == None:
         port = args[0]
       elif execCommand == None:
