@@ -331,12 +331,15 @@ FBL.ns(function() {
                 context = this.findContext(args.context_id);
                 if(context) {
                     context.window.location = args.url;
+                    response = true;
                 } else {
                     try {
                         if (FBTrace.DBG_CROSSFIRE) {
                             FBTrace.sysout("calling FBL.openNewTab with: " + args.url);
                         }
                         FBL.openNewTab(args.url);
+                        // xxxMcollins set response to true here, because we think we were sucessful?
+                        response = true;
                     } catch ( exc) {
                         if (FBTrace.DBG_CROSSFIRE)
                             FBTrace.sysout("updateContext fails: " + exc);
