@@ -471,15 +471,15 @@ if __name__ == "__main__":
                       update_current_context(ctx['context_id'])
                       break
 
-                ### if we had a commmand to execute, send it here
                 ### if we got a response to the command, quit here
-                if execCommand:
-                  if packet['command'] == execCommand and not interactive:
-                    quit()
-                  elif sendExecCommand == True:
-                    command = Command(currentContext, execCommand, execTool, arguments=execArgs)
-                    client.sendPacket(command)
-                    sendExecCommand = False
+                if execCommand != None and packet['command'] == execCommand and not interactive:
+                  quit()
+
+            ### if we have a context and we had a commmand to execute and send it here
+            if sendExecCommand == True and currentContext != None:
+              command = Command(currentContext, execCommand, execTool, arguments=execArgs)
+              client.sendPacket(command)
+              sendExecCommand = False # only send command once
 
             ### read in next command
             if interactive:
@@ -523,7 +523,8 @@ if __name__ == "__main__":
       sys.stdin.flush()
       sys.stdin.close()
       sys.stdout.close()
-      commandLine.join(1)
+      if commandLine:
+        commandLine.join(1)
 
     except Exception:
       sys.exit(1)

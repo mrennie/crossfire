@@ -80,11 +80,12 @@ category    command-line-handler    m-crossfire-clh    @almaden.ibm.com/crossfir
     <target name="test" depends="prepare">
         <property name="test.port" value="65432"/>
         <property name="test.profile.name" value="crossfire-test-${build.time}"/>
+        <property name="test.timeout" value="10000"/> <!-- ten second timeout -->
 
         <echo>Creating test profile in ${test.profile.dir}</echo>
         <mkdir dir="${test.profile.dir}"/>
 
-        <exec executable="firefox">
+        <exec executable="firefox" failonerror="true">
             <arg value="-no-remote"/>
             <arg value="-CreateProfile"/>
             <arg value="${test.profile.name} ${test.profile.dir}"/>
@@ -103,33 +104,38 @@ category    command-line-handler    m-crossfire-clh    @almaden.ibm.com/crossfir
             user_pref("extensions.firebug.console.enableSites", true);
         </echo>
 
-        <!-- launch firefox in server mode with test profile -->
-        <echo> Launching Firefox and Crossfire server on port ${test.port} </echo>
-        <exec executable="firefox" spawn="true">
-            <arg value="-no-remote"/>
-            <arg value="-P"/>
-            <arg value="${test.profile.name}"/>
-            <arg value="-crossfire-server-port"/>
-            <arg value="${test.port}"/>
-        </exec>
+        <parallel threadCount="2" >
+            <sequential>
+                <!-- launch firefox in server mode with test profile -->
+                <echo> Launching Firefox and Crossfire server on port ${test.port} </echo>
+                <exec executable="firefox" timeout="${test.timeout}">
+                    <arg value="-no-remote"/>
+                    <arg value="-P"/>
+                    <arg value="${test.profile.name}"/>
+                    <arg value="-crossfire-server-port"/>
+                    <arg value="${test.port}"/>
+                </exec>
+            </sequential>
+            <sequential>
+                <waitfor maxwait="${test.timeout}" maxwaitunit="millisecond">
+                    <socket server="localhost" port="${test.port}"/>
+                </waitfor>
 
-        <waitfor maxwait="60" maxwaitunit="second">
-            <socket server="localhost" port="${test.port}"/>
-        </waitfor>
-
-        <!-- run test client script -->
-        <echo> Starting test client...</echo>
-        <exec executable="python">
-            <arg value="${test.dir}/crossfire_test_client.py"/>
-            <arg value="--host"/>
-            <arg value="localhost"/>
-            <arg value="--port"/>
-            <arg value="${test.port}"/>
-            <arg value="--command"/>
-            <arg value="evaluate"/>
-            <arg value="--args"/>
-            <arg value='{ "expression": "3+4" }'/>
-        </exec>
+                <!-- run test client script -->
+                <echo> Starting test client...</echo>
+                <exec executable="python" timeout="${test.timeout}" failonerror="true">
+                    <arg value="${test.dir}/crossfire_test_client.py"/>
+                    <arg value="--host"/>
+                    <arg value="localhost"/>
+                    <arg value="--port"/>
+                    <arg value="${test.port}"/>
+                    <arg value="--command"/>
+                    <arg value="createcontext"/>
+                    <arg value="--args"/>
+                    <arg value='{ "url": "http://www.getfirebug.com" }'/>
+                </exec>
+            </sequential>
+          </parallel>
     </target>
 
     <target name="clean">
