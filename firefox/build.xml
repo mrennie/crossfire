@@ -80,7 +80,7 @@ category    command-line-handler    m-crossfire-clh    @almaden.ibm.com/crossfir
     <target name="test" depends="prepare">
         <property name="test.port" value="65432"/>
         <property name="test.profile.name" value="crossfire-test-${build.time}"/>
-        <property name="test.timeout" value="10000"/> <!-- ten second timeout -->
+        <property name="test.timeout" value="30000"/> <!-- ten second timeout -->
 
         <echo>Creating test profile in ${test.profile.dir}</echo>
         <mkdir dir="${test.profile.dir}"/>
@@ -123,7 +123,7 @@ category    command-line-handler    m-crossfire-clh    @almaden.ibm.com/crossfir
 
                 <!-- run test client script -->
                 <echo> Starting test client...</echo>
-                <exec executable="python" timeout="${test.timeout}" failonerror="true">
+                <exec osfamily="windows" executable="python" timeout="${test.timeout}" failonerror="true">
                     <arg value="${test.dir}/crossfire_test_client.py"/>
                     <arg value="--host"/>
                     <arg value="localhost"/>
@@ -133,6 +133,17 @@ category    command-line-handler    m-crossfire-clh    @almaden.ibm.com/crossfir
                     <arg value="createcontext"/>
                     <arg value="--args"/>
                     <arg value='{ \"url\": \"http://www.getfirebug.com\" }'/>
+                </exec>
+                <exec osfamily="unix" executable="python" timeout="${test.timeout}" failonerror="true">
+                    <arg value="${test.dir}/crossfire_test_client.py"/>
+                    <arg value="--host"/>
+                    <arg value="localhost"/>
+                    <arg value="--port"/>
+                    <arg value="${test.port}"/>
+                    <arg value="--command"/>
+                    <arg value="createcontext"/>
+                    <arg value="--args"/>
+                    <arg value='{ "url": "http://www.getfirebug.com" }'/>
                 </exec>
             </sequential>
           </parallel>
