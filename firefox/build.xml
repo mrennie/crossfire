@@ -132,7 +132,7 @@ category    command-line-handler    m-crossfire-clh    @almaden.ibm.com/crossfir
                     <arg value="--command"/>
                     <arg value="createcontext"/>
                     <arg value="--args"/>
-                    <arg value='{ "url": "http://www.getfirebug.com" }'/>
+                    <arg value='{ \"url\": \"http://www.getfirebug.com\" }'/>
                 </exec>
             </sequential>
           </parallel>
