@@ -194,6 +194,7 @@ FBL.ns(function() {
                 //do nothing
             }
             this._sendEvent("onContextCreated", { "context_id": context.Crossfire.crossfire_id, "data": {"href": href}});
+            CrossfireModule._updatePanel();
         },
 
         /**

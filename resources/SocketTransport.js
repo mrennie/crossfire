@@ -38,7 +38,6 @@ try {
 
 const PrefService = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefService);
 
-
 /**
  * @name CROSSFIRE_STATUS
  * @description The {@link Array} of valid statuses:
@@ -48,6 +47,7 @@ const PrefService = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPr
  * <li><code>connecting</code></li>
  * <li><code>connected_server</code></li>
  * <li><code>connected_client</code></li>
+ * <li><code>resetting</code></li>
  * </ul>
  * @public
  * @memberOf CrossfireSocketTransport
@@ -57,8 +57,8 @@ var CROSSFIRE_STATUS = {
         STATUS_WAIT_SERVER: "wait_server",
         STATUS_CONNECTING: "connecting",
         STATUS_CONNECTED_SERVER: "connected_server",
-        STATUS_CONNECTED_CLIENT: "connected_client"
-
+        STATUS_CONNECTED_CLIENT: "connected_client",
+		STATUS_RESETTING_CONNECTION: "resetting"
 };
 
 /**
@@ -215,7 +215,7 @@ CrossfireSocketTransport.prototype =
      * @description Send a request packet. @see also Packet.js
      * @function
      * @public
-     * @memberof CrossfireSocketTransport
+     * @memberOf CrossfireSocketTransport
      */
     sendRequest: function(command, data, tool) {
         var packet;
@@ -267,7 +267,7 @@ CrossfireSocketTransport.prototype =
             this._closeStreams();
 
             if (this._transport) {
-                this._transport.close("disconnected"); // pass aReason for close
+                this._transport.close(CROSSFIRE_STATUS.STATUS_DISCONNECTED); // pass aReason for close
             }
 
             try {
@@ -301,7 +301,7 @@ CrossfireSocketTransport.prototype =
             this._closeStreams();
 
             if (this._transport) {
-                this._transport.close("resetting");
+                this._transport.close(CROSSFIRE_STATUS.STATUS_RESETTING_CONNECTION);
             }
 
             this._defer(function() {

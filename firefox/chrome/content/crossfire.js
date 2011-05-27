@@ -17,6 +17,8 @@ var CROSSFIRE_VERSION = "0.3";
  */
 var Crossfire = Crossfire || {};
 
+Components.utils.import("resource://crossfire/SocketTransport.js");
+
 FBL.ns(function() {
 
     /**
@@ -31,6 +33,7 @@ FBL.ns(function() {
         dispatchName: "Crossfire",
         toolName: "all", // receive all packets, regardless of 'tool' header
         version: CROSSFIRE_VERSION,
+        status: CROSSFIRE_STATUS.STATUS_DISCONNECTED,
 
         /**
          * @name initialize
@@ -71,6 +74,7 @@ FBL.ns(function() {
 
             // initialize refs
             this._clearRefs();
+            this.status = CROSSFIRE_STATUS.STATUS_DISCONNECTED;
         },
 
         getServerTransport: function() {
@@ -102,14 +106,7 @@ FBL.ns(function() {
         _ensureTransport: function() {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("Crossfire _ensureTransport");
-
-            if (typeof CrossfireSocketTransport == "undefined") {
-                try {
-                    Components.utils.import("resource://crossfire/SocketTransport.js");
-                } catch (e) {
-                    FBTrace.sysout("exception loading transport module: " + e);
-                }
-            }
+                
             if (! this.serverTransport) {
                 this.serverTransport = getCrossfireServer();
                 this.serverTransport.addListener(this);
@@ -143,7 +140,7 @@ FBL.ns(function() {
             this.unregisterTool("inspector");
             this.unregisterTool("net");
             this.unregisterTool("dom");
-
+            this._updatePanel();
         },
 
         /**
@@ -185,14 +182,7 @@ FBL.ns(function() {
             this.updateStatusText(status);
             this.updateStatusIcon(status);
 
-            if (this.panel) {
-                try {
-                    this.panel.refresh(status);
-                } catch (ex) {
-                    if (FBTrace.DBG_CROSSFIRE)
-                        FBTrace.sysout("Crossfire failed to update panel status.");
-                }
-            }
+            this._updatePanel();
             
             // xxxMcollins: standalone client hack
             if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT
@@ -205,6 +195,20 @@ FBL.ns(function() {
 
         },
 
+        /**
+         * 
+         */
+        _updatePanel: function() {
+        	if (this.panel) {
+                try {
+                    this.panel.refresh(status);
+                } catch (ex) {
+                    if (FBTrace.DBG_CROSSFIRE)
+                        FBTrace.sysout("Crossfire failed to update panel status.");
+                }
+            }
+        },
+        
         handleRequest: function(request) {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE received request " + request.toSource());
@@ -332,6 +336,7 @@ FBL.ns(function() {
                      return false;
                  }
             }
+            return false;
         },
 
         deactivateTool: function( toolName) {
@@ -347,6 +352,7 @@ FBL.ns(function() {
                     return false;
                 }
             }
+            return false;
         },
 
         /**
@@ -543,7 +549,7 @@ FBL.ns(function() {
 
                         removeClass($("menu_disconnectCrossfire"), "hidden");
 
-                        removeClass(icon, "disconnected");
+                        removeClass(icon, CROSSFIRE_STATUS.STATUS_DISCONNECTED);
                         removeClass(icon, "waiting");
                         setClass(icon, "connected");
 
@@ -555,7 +561,7 @@ FBL.ns(function() {
 
                         removeClass($("menu_disconnectCrossfire"), "hidden");
 
-                        removeClass(icon, "disconnected");
+                        removeClass(icon, CROSSFIRE_STATUS.STATUS_DISCONNECTED);
                         removeClass(icon, "connected");
                         setClass(icon, "waiting");
 
@@ -566,7 +572,7 @@ FBL.ns(function() {
 
                         removeClass(icon, "connected");
                         removeClass(icon, "waiting");
-                        setClass(icon, "disconnected");
+                        setClass(icon, CROSSFIRE_STATUS.STATUS_DISCONNECTED);
                     }
                 }
             }

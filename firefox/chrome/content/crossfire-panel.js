@@ -142,11 +142,11 @@ FBL.ns(function() { with(FBL) {
         },
 
         show: function() {
-            contextsPanelTemplate.tag.replace({array: remoteTool.contexts}, this.panelNode, contextsPanelTemplate);
+            contextsPanelTemplate.tag.replace({array: CrossfireModule.contexts}, this.panelNode, contextsPanelTemplate);
         },
 
         refresh: function() {
-
+        	contextsPanelTemplate.tag.replace({array: CrossfireModule.contexts}, this.panelNode, contextsPanelTemplate);
         }
     });
     Firebug.registerPanel(ContextsPanel);
@@ -173,7 +173,7 @@ FBL.ns(function() { with(FBL) {
         },
 
         show: function() {
-            sidePanelTemplate.tag.replace({array: remoteTool.tools}, this.panelNode, sidePanelTemplate);
+            sidePanelTemplate.tag.replace({array: []}, this.panelNode, sidePanelTemplate);
         },
 
         refresh: function() {
@@ -222,7 +222,6 @@ FBL.ns(function() { with(FBL) {
             } else if (status == STATUS_CONNECTED_CLIENT) {
                  message =  "connected to " + CrossfireModule.clientTransport.host + ":" + CrossfireModule.clientTransport.port;
             }
-
             remotePanelTemplate.tag.replace({object: {"status": message}}, this.panelNode, remotePanelTemplate);
         },
 
