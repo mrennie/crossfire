@@ -10,7 +10,7 @@
     <property file="version.properties"/>
 
     <target name="xpi"
-        depends="test,prepare"
+        depends="prepare"
         description="zip files into firefox XPI">
         <mkdir dir="${dist.dir}"/>
 
