@@ -185,6 +185,15 @@ FBL.ns(function() {
             this.updateStatusText(status);
             this.updateStatusIcon(status);
 
+            if (this.panel) {
+                try {
+                    this.panel.refresh(status);
+                } catch (ex) {
+                    if (FBTrace.DBG_CROSSFIRE)
+                        FBTrace.sysout("Crossfire failed to update panel status.");
+                }
+            }
+            
             // xxxMcollins: standalone client hack
             if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT
                     && this.registeredTools["RemoteClient"]) {

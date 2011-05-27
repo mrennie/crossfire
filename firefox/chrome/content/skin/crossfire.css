@@ -24,3 +24,32 @@
 menuitem.hidden {
     display:none;
 }
+
+/* crossfire-panel domplate styles */
+
+.crossfire-panel {
+    background-color: white;
+    padding: 10px;
+}
+
+.crossfire-panel .crossfire-image {
+    float: left;
+    width: 164px;
+    background-image: url('chrome://crossfire/skin/crossfire-lg.png');
+}
+
+.crossfire-panel .crossfire-stuff {
+    margin-left: 184px;
+    font-weight: bold;
+}
+
+.crossfire-panel .crossfire-header {
+    font-size: 1.5em;
+    letter-spacing: 2px;
+    color: #ff6500;
+}
+
+.crossfire-panel .crossfire-status {
+    font-size: 1.1em;
+    color: black;
+}
