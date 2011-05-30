@@ -339,11 +339,12 @@ FBL.ns(function() {
                             FBTrace.sysout("calling FBL.openNewTab with: " + args.url);
                         }
                         FBL.openNewTab(args.url);
-                        // xxxMcollins set response to true here, because we think we were sucessful?
+                        //set response to true here, technically we are successful since none of the previous calls caused exceptions 
+                        //or otherwise failed
                         response = true;
                     } catch ( exc) {
                         if (FBTrace.DBG_CROSSFIRE)
-                            FBTrace.sysout("updateContext fails: " + exc);
+                            FBTrace.sysout("createcontext fails: " + exc);
                     }
                 }
             }
