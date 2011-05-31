@@ -726,8 +726,8 @@ FBL.ns(function() {
                     }
                     return {
                         "index": frame.frameIndex,
-                        "func": frame.functionName,
-                        "script": frame.script,
+                        "functionName": frame.functionName,
+                        "url": frame.script,
                         "locals": locals,
                         "line": frame.line,
                         "scopes": scopes };
@@ -1233,13 +1233,12 @@ FBL.ns(function() {
                 srcLen = 0;
             }
             script = {
-                "id": sourceFile.href,
+                "url": sourceFile.href,
                 "lineOffset": 0,
                 "columnOffset": 0,
-                "sourceStart": lines[0],
                 "sourceLength":srcLen,
                 "lineCount": lines.length,
-                "compilationType": sourceFile.compilation_unit_type,
+                "type": sourceFile.compilation_unit_type,
             };
             if (includeSrc) {
                 script["source"] = lines.join(' ');
