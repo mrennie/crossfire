@@ -1104,8 +1104,7 @@ FBL.ns(function() {
                 "handle": this.breakpoint_ids++,
                 "type": type,
                 "location": location,
-                "enabled": enabled,
-                "condition": condition
+                "attributes": {"enabled": enabled, "condition": condition}
             };
             this.breakpoints.push(bp);
             return bp;
@@ -1417,7 +1416,7 @@ FBL.ns(function() {
 
             if(!isSet) {
                 if(bp) {
-                    data = {"location":bp.location,"set":isSet,"props":props,"handle":bp.handle};
+                    data = {"breakpoint":bp,"set":isSet,"props":props};
                     this.breakpoints.splice(this.breakpoints.indexOf(bp), 1);
                 }
             }
@@ -1429,24 +1428,14 @@ FBL.ns(function() {
                     }
                     bp = this._newBreakpoint(type,{"line":lineNo,"url":url},enabled,null);
 
-                } else { // we already existed but something was toggled, e.g. props changed
-                    /* TODO: enabled/disabled
-                    if (bp.enabled != enabled) {
-                        bp.enabled = enabled;
-                    }
-
-                    //TODO: support updating conditions also
-
-                    // update cached breakpoint
-                    this.breakpoints[this.breakpoints.indexOf(bp)] = bp;
-                    */
+                } else {
                 }
-                data = {"location":bp.location,"set":isSet,"props":props,"handle":bp.handle, "enabled": bp.enabled};
+                data = {"breakpoint":bp,"set":isSet,"props":props};
             }
             if(!data) {
                 data = {"location":loc,"set":isSet,"props":props};
             }
-            this._sendEvent("onToggleBreakpoint", {"context_id":cid, "data": data});
+            this._sendEvent("onToggleBreakpoint", {"context_id":cid,"data": data});
         },
 
         /**
@@ -1486,7 +1475,7 @@ FBL.ns(function() {
          * @name onModifyBreakpoint
          * @description Handles an HTML element breakpoint being toggled
          * <br><br>
-         * Fires an <code>onToggleDomBreakpoint</code> event for HTML breakpoints.
+         * Fires an <code>onToggleBreakpoint</code> event for HTML breakpoints.
          * <br><br>
          * The event body contains the following:
          * <ul>
@@ -1508,16 +1497,44 @@ FBL.ns(function() {
              var data, cid = context.Crossfire.crossfire_id,
                  loc = {"xpath":xpath};
                  bp = this._findBreakpoint(loc);
-
+                 newtype = this._getHTMLBreakpointType(type);
              if(!bp) {
-                 bp = this._newBreakpoint(type,loc,true,null);
+                 bp = this._newBreakpoint(newtype,loc,true,null);
              }
-
-             data = {"location":loc, "handle":bp.handle, "type":bp.type};
-
-             this._sendEvent("onToggleDOMBreakpoint", {"context_id": cid, "data": data});
+             data = {"breakpoint":bp,"set":bp.attributes.enabled};
+             //the breakpoint is considered set if it is enabled
+             this._sendEvent("onToggleBreakpoint", {"context_id": cid, "data": data});
         },
 
+        /**
+         * @name _getHTMLBreakpointType
+         * @description translates the integer type of an HTML breakpoint to a human readable type
+         * @function
+         * @private
+         * @memberOf CrossfireServer
+         * @param type the integer type of the HTML breakpoint
+         * @since 0.3a7
+         */
+        _getHTMLBreakpointType: function(type) {
+        	if(typeof(type) == "number") {
+        		switch(type) {
+	        		case 1: {
+	        			return "html_attribute_change";
+	        		}
+	        		case 2: {
+	        			return "html_child_change";
+	        		}
+	        		case 3: {
+	        			return "html_remove";
+	        		}
+	        		case 4: {
+	        			return "html_text";
+	        		}
+        		}
+        	}
+        	return "html_unknown_type";
+        },
+        
         // ----- Firebug Console listener -----
 
         /**
