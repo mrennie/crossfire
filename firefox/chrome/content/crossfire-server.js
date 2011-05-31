@@ -330,7 +330,7 @@ FBL.ns(function() {
                 response = this.getBreakpoint(args);
             }
             else if (command == "createcontext") {
-                context = this.findContext(args.context_id);
+                context = this.findContext(args.contextId);
                 if(context) {
                     context.window.location = args.url;
                     response = true;
