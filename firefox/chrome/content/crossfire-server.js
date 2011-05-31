@@ -173,8 +173,8 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload with the <code>href</code> value set</li>
+         * <li><code>contextId</code> - the id of the current Crossfire context</li>
+         * <li><code>data</code> - the event payload with the <code>url</code> value set</li>
          * </ul>
          * @function
          * @public
@@ -187,13 +187,13 @@ FBL.ns(function() {
             }
             context.Crossfire = { "crossfire_id" : this._generateId() };
             this.contexts.push(context);
-            var href = "";
+            var url = "";
             try {
-                href = context.window.location.href;
+                url = context.window.location.href;
             } catch(e) {
                 //do nothing
             }
-            this._sendEvent("onContextCreated", { "context_id": context.Crossfire.crossfire_id, "data": {"href": href}});
+            this._sendEvent("onContextCreated", {"data": {"url": url, "contextId": context.Crossfire.crossfire_id}});
             CrossfireModule._updatePanel();
         },
 
@@ -205,8 +205,8 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload with the <code>href</code> value set</li>
+         * <li><code>contextId</code> - the id of the current Crossfire context</li>
+         * <li><code>data</code> - the event payload with the <code>url</code> value set</li>
          * </ul>
          * @function
          * @public
@@ -217,9 +217,9 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE:  loadedContext");
             }
-            var href = "";
+            var url = "";
             try {
-                href = context.window.location.href;
+                url = context.window.location.href;
             } catch(e) {
                 //do nothing
             }
@@ -227,19 +227,19 @@ FBL.ns(function() {
             // load/sync breakpoints
             this.getBreakpoints(context);
 
-            this._sendEvent("onContextLoaded", {"context_id": context.Crossfire.crossfire_id, "data": {"href": href}});
+            this._sendEvent("onContextLoaded", {"data": {"url": url, "contextId": context.Crossfire.crossfire_id}});
         },
 
         /**
          * @name showContext
          * @description Handles a context being shown - i.e. a tab has been switched to.
          * <br><br>
-         * Fires an <code>onContextChanged</code> event
+         * Fires an <code>onContextSelected</code> event
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
-         * <li><code>new_context_id</code> - the id of the Crossfire context switched to</li>
+         * <li><code>url</code> - the id of the current Crossfire context</li>
+         * <li><code>newUrl</code> - the id of the Crossfire context switched to</li>
          * <li><code>data</code> - the event payload with the <code>href</code> and <code>new_href</code> values set</li>
          * </ul>
          * @function
@@ -253,10 +253,11 @@ FBL.ns(function() {
                 FBTrace.sysout("CROSSFIRE:  showContext");
             }
             if(context && this.currentContext && this.currentContext.Crossfire) {
-                var href =  this.currentContext.window.location.href;
-                var newHref =  context.window.location.href;
-                if(href != newHref) {
-                    this._sendEvent("onContextChanged", {"context_id": this.currentContext.Crossfire.crossfire_id, "new_context_id": context.Crossfire.crossfire_id, "data": {"href": href, "new_href": newHref}});
+                var url =  this.currentContext.window.location.href;
+                var newUrl =  context.window.location.href;
+                if(url != newUrl) {
+                    this._sendEvent("onContextSelected", {"data": {"contextId": this.currentContext.Crossfire.crossfire_id, "url": url, 
+                    	"newContextId": context.Crossfire.crossfire_id, "newUrl": newUrl}});
                 }
             }
             this.currentContext = context;
@@ -270,7 +271,7 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>contextId</code> - the id of the Crossfire context that was destroyed</li>
          * </ul>
          * @function
          * @public
@@ -288,7 +289,7 @@ FBL.ns(function() {
                 for (var i = 0; i < this.contexts.length; i++) {
                     if (this.contexts[i].Crossfire.crossfire_id == contextId) {
                         delete this.contexts[i].Crossfire.currentFrame;
-                        this._sendEvent("onContextDestroyed", {"context_id": this.contexts[i].Crossfire.crossfire_id});
+                        this._sendEvent("onContextDestroyed", {"data":{"contextId": this.contexts[i].Crossfire.crossfire_id}});
                         this.contexts.splice(i, 1);
                         break;
                     }
