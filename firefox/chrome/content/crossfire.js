@@ -390,30 +390,38 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         _getRef: function(obj, context_id) {
-            if (obj && obj.type && obj.handle) {
-                FBTrace.sysout("CROSSFIRE _getRef tried to get ref for serialized obj");
-                return null;
-            }
-            var ref = { "type":typeof(obj), "handle": -1 };
-            if (context_id) {
-                ref["context_id"] = context_id;
-            }
-            for (var i = 0; i < this.refs.length; i++) {
-                if (this.refs[i] === obj) {
-                    if (FBTrace.DBG_CROSSFIRE) {
-                        FBTrace.sysout("CROSSFIRE _getRef ref exists with handle: " + i + " type = "+typeof(obj), obj);
-                    }
-                    ref["handle"] = i;
-                    return ref;
+        	try {
+	            if (obj && obj.type && obj.handle) {
+	                FBTrace.sysout("CROSSFIRE _getRef tried to get ref for serialized obj");
+	                return null;
+	            }
+	            var ref = { "type":typeof(obj), "handle": -1 };
+	            if (context_id) {
+	                ref["context_id"] = context_id;
+	            }
+	            for (var i = 0; i < this.refs.length; i++) {
+	                if (this.refs[i] === obj) {
+	                    if (FBTrace.DBG_CROSSFIRE) {
+	                        FBTrace.sysout("CROSSFIRE _getRef ref exists with handle: " + i + " type = "+typeof(obj), obj);
+	                    }
+	                    ref["handle"] = i;
+	                    return ref;
+	                }
+	            }
+	            var handle = ++this.refCount;
+	            this.refs[handle] = obj;
+	            if (FBTrace.DBG_CROSSFIRE) {
+	                FBTrace.sysout("CROSSFIRE _getRef new ref created with handle: " + handle, obj);
+	            }
+	            ref["handle"] = handle;
+	            return ref;
+        	}
+        	catch(ex) {
+        		if(FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE _getRef failed: "+ex+" [object: "+obj+"]");
                 }
-            }
-            var handle = ++this.refCount;
-            this.refs[handle] = obj;
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE _getRef new ref created with handle: " + handle, obj);
-            }
-            ref["handle"] = handle;
-            return ref;
+                return null;
+        	}
         },
 
         /**
@@ -457,9 +465,9 @@ FBL.ns(function() {
                         }
                         serialized["value"] = arr;
                     } else {
-                        var ref = this._getRef(obj);
-                        serialized["value"] = this._serializeProperties(obj, ref);
-                    }
+                    		var ref = this._getRef(obj);
+                        	serialized["value"] = this._serializeProperties(obj, ref);
+                    	}
                 } else if (type == "number" && (
                     isNaN(obj)
                     || obj == Infinity
@@ -471,7 +479,7 @@ FBL.ns(function() {
                 return serialized;
             } catch (e) {
                 if(FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE serialize failed: "+e);
+                    FBTrace.sysout("CROSSFIRE serialize failed: "+e+" [object :"+obj+"]");
                 }
                 return null;
             }
@@ -506,14 +514,17 @@ FBL.ns(function() {
                         } else if (p === obj) {
                             o[p] = ref;
                         } else {
-                            o[p] = this.serialize(prop);
+                        		o[p] = this.serialize(prop);
                         }
                     }
-                    else if(FBTrace.DBG_CROSSFIRE){
-                        FBTrace.sysout("ignoring property -> "+p+" from -> "+obj.toString()+" during serialization");
+                    else if(FBTrace.DBG_CROSSFIRE) {
+                        FBTrace.sysout("CROSSFIRE _serializeProperties: IGNORE [property: "+p+"] from [object: "+obj.toString()+"]");
                     }
                 } catch (x) {
                     o[p] =  null;
+                    if(FBTrace.DBG_CROSSFIRE) {
+                        FBTrace.sysout("CROSSFIRE _serializeProperties: ERROR on [property: "+p+"] with [exception: "+x+"]");
+                    }
                 }
             }
             if(obj.constructor && obj.constructor != obj) {
