@@ -23,7 +23,7 @@ function runTest() {
          } else {
              nextResult = (eval(nextExpression)).toString();
              FBTest.progress("sending expression: " + nextExpression);
-             FW.setTimeout(function() { CrossfireClient._sendCommand('evaluate',  { "context_id": contextId, "expression": nextExpression }); }, 10);
+             FW.setTimeout(function() { CrossfireClient._sendCommand('evaluate',  { "contextId": contextId, "expression": nextExpression }); }, 10);
          }
     }
 
@@ -33,7 +33,7 @@ function runTest() {
                 FBTest.sysout("evaluateTest.handleResponse: " + response);
                 if (response.command == "listcontexts") {
                     // just grab the first contextId
-                    contextId = response.body.contexts[0].context_id;
+                    contextId = response.body.contexts[0].contextId;
                     FBTest.progress("got context id => " + contextId);
                     evaluateNext();
                 } else if (response.command == 'evaluate') {

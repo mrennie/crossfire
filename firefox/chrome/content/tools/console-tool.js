@@ -46,7 +46,7 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>contextId</code> - the id of the current Crossfire context</li>
          * <li><code>data</code> - the event payload from Firebug</li>
          * </ul>
          * @function
@@ -65,7 +65,7 @@ FBL.ns(function() {
             }
             if(context && context.context && context.trace) {
                 var cid = context.context.Crossfire.crossfire_id;
-                this.transport.sendEvent("onConsoleError", {"context_id": cid, "data": CrossfireModule.serialize(context.trace.frames)});
+                this.transport.sendEvent("onConsoleError", {"contextId": cid, "data": CrossfireModule.serialize(context.trace.frames)});
             }
         },*/
 
@@ -85,7 +85,7 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>contextId</code> - the id of the current Crossfire context</li>
          * <li><code>data</code> - the event payload from Firebug</li>
          * </ul>
          * @function
@@ -115,7 +115,7 @@ FBL.ns(function() {
                 var eventName = "onConsole" + className.substring(0,1).toUpperCase() + className.substring(1);
                 var obj = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug.userObjects;
                 if (this.transport && this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
-                    this.transport.sendEvent(eventName, {"context_id": context.Crossfire.crossfire_id, "data": CrossfireModule.serialize(obj)}, "console");
+                    this.transport.sendEvent(eventName, {"contextId": context.Crossfire.crossfire_id, "data": CrossfireModule.serialize(obj)}, "console");
                 }
             }
         }

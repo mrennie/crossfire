@@ -301,7 +301,7 @@ FBL.ns(function() {
 
         /**
          * @name handleRequest
-         * @description Looks up the context by the request object's <code>context_id</code>
+         * @description Looks up the context by the request object's <code>contextId</code>
          * property and calls the requested command on that context's command adaptor.
          * @function
          * @public
@@ -351,7 +351,7 @@ FBL.ns(function() {
             }
             else {
                 // else we require a context for the commands
-                context = this.findContext(request.context_id);
+                context = this.findContext(request.contextId);
                 if(command == "setbreakpoint") {
                     response = this.setBreakpoint(context, args);
                 }
@@ -435,7 +435,7 @@ FBL.ns(function() {
                 if (context.window && !context.window.closed) {
                     href = context.window.location.href;
                 }
-                contexts.push( { "context_id" : context.Crossfire.crossfire_id,
+                contexts.push( { "contextId" : context.Crossfire.crossfire_id,
                                  "href"         : href ,
                                  "current"      : this.currentContext == context });
             }
@@ -488,7 +488,7 @@ FBL.ns(function() {
                 for (var i = from; i <= to; i++) {
                     frame = this.getFrame(context, {"number": i, "includeScopes": scopes});
                     if (frame) {
-                        delete frame.context_id;
+                        delete frame.contextId;
                         frames.push(frame);
                     }
                 }
@@ -777,7 +777,7 @@ FBL.ns(function() {
          * @param context the optional associated context {@link Object}
          * @param args the array of arguments which contains:
          * <ul>
-         * <li>an optional {@link String} <code>context_id</code>, which is the id of the Crossfire context to get all of the breakpoints for</li>
+         * <li>an optional {@link String} <code>contextId</code>, which is the id of the Crossfire context to get all of the breakpoints for</li>
          * </ul>
          * @since 0.3a1
          */
@@ -895,7 +895,7 @@ FBL.ns(function() {
             do {
                 scope = this.getScope(context, {"number": scopes.length, "frameNumber":  args["frameNumber"]});
                 if (scope) {
-                    delete scope.context_id;
+                    delete scope.contextId;
                     scopes.push(scope);
                 }
             } while(scope);
@@ -985,7 +985,7 @@ FBL.ns(function() {
                 if(url) {
                     script = this.getScript(context, { "url": url, "includeSource": incSrc });
                     if (script) {
-                        delete script.context_id;
+                        delete script.contextId;
                         scripts.push( script );
                     }
                 }
@@ -1122,7 +1122,7 @@ FBL.ns(function() {
          * @param args the arguments array that contains:
          * <ul>
          * <li>an {@link Object} <code>location</code>, the location object containing all of the information required to set the breakpoint</li>
-         * <li>an optional {@link String} <code>context_id</code>, the context_id to tie the breakpoint to</li>
+         * <li>an optional {@link String} <code>contextId</code>, the contextId to tie the breakpoint to</li>
          * <li>an optional {@link Boolean} <code>enabled</code>, if the breakpoint should be enabled or not</li>
          * <li>an optional {@link String} <code>condition</code>, the condition to be evaluated to determine if the breakpoint should suspend</li>
          * <ul>
@@ -1256,7 +1256,7 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>contextId</code> - the id of the current Crossfire context</li>
          * <li><code>data</code> - the event payload from Firebug</li>
          * </ul>
          * @function
@@ -1291,7 +1291,7 @@ FBL.ns(function() {
             }
             var script = this._newScript(context, sourceFile, false);
             var data = {"script":script};
-            this._sendEvent("onScript", {"context_id": context.Crossfire.crossfire_id, "data": data});
+            this._sendEvent("onScript", {"contextId": context.Crossfire.crossfire_id, "data": data});
         },
 
         // ----- Firebug Debugger listener -----
@@ -1304,7 +1304,7 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>contextId</code> - the id of the current Crossfire context</li>
          * <li><code>data</code> - the event payload from Firebug with the <code>url</code> and <code>line</code> values set</li>
          * </ul>
          * @function
@@ -1332,7 +1332,7 @@ FBL.ns(function() {
             }
             context.Crossfire.frameCount = 0;
             context.Crossfire.currentFrame = this._copyFrame(frame, context, true);
-            this._sendEvent("onBreak", {"context_id": contextId, "data": {"url" : href, "line": lineno}});
+            this._sendEvent("onBreak", {"contextId": contextId, "data": {"url" : href, "line": lineno}});
             this.running = false ;
         },
 
@@ -1362,7 +1362,7 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>contextId</code> - the id of the current Crossfire context</li>
          * </ul>
          * @function
          * @public
@@ -1375,7 +1375,7 @@ FBL.ns(function() {
 
             context.Crossfire.currentFrame = null;
             //this._clearRefs();
-            this._sendEvent("onResume", {"context_id": context.Crossfire.crossfire_id});
+            this._sendEvent("onResume", {"contextId": context.Crossfire.crossfire_id});
             this.running = true;
         },
 
@@ -1387,7 +1387,7 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>contextId</code> - the id of the current Crossfire context</li>
          * <li><code>data</code> - the event payload from Firebug which contains
          * the <code>url</code>, <code>line</code>, <code>set</code> and <code>props</code> entries</li>
          * </ul>
@@ -1435,7 +1435,7 @@ FBL.ns(function() {
             if(!data) {
                 data = {"location":loc,"set":isSet,"props":props};
             }
-            this._sendEvent("onToggleBreakpoint", {"context_id":cid,"data": data});
+            this._sendEvent("onToggleBreakpoint", {"contextId":cid,"data": data});
         },
 
         /**
@@ -1446,7 +1446,7 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>contextId</code> - the id of the current Crossfire context</li>
          * <li><code>data</code> - the event payload from Firebug which contains
          * the <code>url</code>, <code>line</code>, <code>set</code> and <code>props</code> entries</li>
          * </ul>
@@ -1479,7 +1479,7 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>contextId</code> - the id of the current Crossfire context</li>
          * <li><code>data</code> - the event payload from Firebug which contains
          * the <code>xpath</code> and <code>type</code> entries</li>
          * </ul>
@@ -1503,7 +1503,7 @@ FBL.ns(function() {
              }
              data = {"breakpoint":bp,"set":bp.attributes.enabled};
              //the breakpoint is considered set if it is enabled
-             this._sendEvent("onToggleBreakpoint", {"context_id": cid, "data": data});
+             this._sendEvent("onToggleBreakpoint", {"contextId": cid, "data": data});
         },
 
         /**
@@ -1550,7 +1550,7 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>contextId</code> - the id of the current Crossfire context</li>
          * <li><code>data</code> - the event payload from Firebug</li>
          * </ul>
          * @function
@@ -1574,7 +1574,7 @@ FBL.ns(function() {
                     FBTrace.sysout("CROSSFIRE sending onError ");
                 }
 
-                this._sendEvent("onError", {"context_id": cid, "data": CrossfireModule.serialize(object)});
+                this._sendEvent("onError", {"contextId": cid, "data": CrossfireModule.serialize(object)});
             }
         },
 

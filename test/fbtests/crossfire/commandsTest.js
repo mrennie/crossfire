@@ -41,7 +41,7 @@ function runTest() {
             FBTestFirebug.testDone("commandsTest.finished no more commands");
         } else {
             FBTest.sysout("sending command: " + nextCommand);
-            FW.setTimeout(function() { CrossfireClient._sendCommand(nextCommand, {"context_id": contextId }); }, 10);
+            FW.setTimeout(function() { CrossfireClient._sendCommand(nextCommand, {"contextId": contextId }); }, 10);
         }
     }
 
@@ -53,7 +53,7 @@ function runTest() {
             FBTest.ok(response.command == commands[testIndex], "expected response.command to be: " + commands[testIndex] + ", was " +  response.command);
             if (response.command == "listcontexts") {
                 // just grab the first contextId
-                contextId = response.body.contexts[0].context_id;
+                contextId = response.body.contexts[0].contextId;
                 FBTest.progress("got context id => " + contextId);
             }
             sendNextCommand();

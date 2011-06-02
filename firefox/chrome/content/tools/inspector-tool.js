@@ -28,7 +28,7 @@ FBL.ns(function() {
         handleRequest: function( request) {
             var response;
             if (request.command == "inspect") {
-                var context = CrossfireModule.findContext(request.context_id);
+                var context = CrossfireModule.findContext(request.contextId);
                 var contextid;
                 if (context) {
                     response = this.doInspect(context, args);
@@ -94,7 +94,7 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>context_id</code> - the id of the current Crossfire context</li>
+         * <li><code>contextId</code> - the id of the current Crossfire context</li>
          * <li><code>data</code> - the event payload from Firebug with the <code>node</code> value set</li>
          * </ul>
          * @function
@@ -111,7 +111,7 @@ FBL.ns(function() {
                 }
                 var path = this._resolveElementPath(node, true);
                 if(path) {
-                    this.transport.sendEvent("onInspectNode", { "context_id": context.Crossfire.crossfire_id, "data": {"node": path}}, "inspector");
+                    this.transport.sendEvent("onInspectNode", { "contextId": context.Crossfire.crossfire_id, "data": {"node": path}}, "inspector");
                 }
             }
         },

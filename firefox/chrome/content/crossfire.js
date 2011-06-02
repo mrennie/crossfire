@@ -386,18 +386,18 @@ FBL.ns(function() {
          * @memberOf CrossfireModule
          * @type Array
          * @returns the Array object describing the object handle, contains <code>ref.handle</code>,
-         * <code>ref.type</code> and optionally <code>ref.context_id</code>
+         * <code>ref.type</code> and optionally <code>ref.contextId</code>
          * @since 0.3a1
          */
-        _getRef: function(obj, context_id) {
+        _getRef: function(obj, contextId) {
         	try {
 	            if (obj && obj.type && obj.handle) {
 	                FBTrace.sysout("CROSSFIRE _getRef tried to get ref for serialized obj");
 	                return null;
 	            }
 	            var ref = { "type":typeof(obj), "handle": -1 };
-	            if (context_id) {
-	                ref["context_id"] = context_id;
+	            if (contextId) {
+	                ref["contextId"] = contextId;
 	            }
 	            for (var i = 0; i < this.refs.length; i++) {
 	                if (this.refs[i] === obj) {

@@ -97,7 +97,7 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("fireEvent: " + event);
 
-            var contextId = event.context_id,
+            var contextId = event.contextId,
                 eventName = event.event,
                 data = event.data;
 
@@ -147,7 +147,7 @@ FBL.ns(function() {
 
             getSourceLines: function( context) {
                 CrossfireClient._sendCommand("scripts", {
-                    "context_id": context.Crossfire.crossfire_id
+                    "contextId": context.Crossfire.crossfire_id
                     });
             }
         })

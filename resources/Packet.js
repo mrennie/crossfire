@@ -137,9 +137,9 @@ function RequestPacket( packetString) {
         };
 
         if (args) {
-            if (args["context_id"]) {
-                packet["context_id"] = args["context_id"];
-                delete args["context_id"];
+            if (args["contextId"]) {
+                packet["contextId"] = args["contextId"];
+                delete args["contextId"];
             }
 
             for (var arg in args) {
@@ -182,7 +182,7 @@ function ResponsePacket( command, requestSeq, contextid, body, running, success,
             "success": success
     };
     if(contextid) {
-        packet["context_id"] = contextid;
+        packet["contextId"] = contextid;
     }
     var json = this.toJSON(packet);
     this.data = this.toPacketString(json, headers);

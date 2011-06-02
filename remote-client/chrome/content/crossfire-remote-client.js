@@ -58,7 +58,7 @@ addEventListener("load", function() {
                     this.contexts.push(event.data);
                 } else if (eventName == "onContextDestroyed") {
                     for (var i = 0; i < this.contexts.length; i++) {
-                        if (this.contexts[i].context_id == event.context_id) {
+                        if (this.contexts[i].contextId == event.contextId) {
                             this.contexts.splice(i, 1);
                         }
                     }
