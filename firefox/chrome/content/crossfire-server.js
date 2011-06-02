@@ -691,13 +691,13 @@ FBL.ns(function() {
          * @param context the associated context {@link Object}
          * @param args the array of arguments which contains:
          * <ul>
-         * <li>an {@link Integer} <code>number</code>, which is the index of the frame in the current stack</li>
+         * <li>an {@link Integer} <code>index</code>, which is the index of the frame in the current stack</li>
          * <li>a {@link Boolean} <code>includeScopes</code>, which denotes if the associated scopes should be returned as well</li>
          * </ul>
          * @since 0.3a1
          */
         getFrame: function(context, args) {
-            var number = args["number"];
+            var number = args["index"];
             var includeScopes = args["includeScopes"];
             if(!includeScopes) {
                 includeScopes = true;
