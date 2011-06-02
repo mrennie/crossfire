@@ -388,13 +388,10 @@ FBL.ns(function() {
                         response = this.getScope(context, args);
                     }
                     else if(command == "script") {
-                        response = this.getScript(context, args);
+                        response = {"script":this.getScript(context, args)};
                     }
                     else if(command == "scripts") {
                         response = this.getScripts(context, args);
-                    }
-                    else if(command == "source") {
-                        response = this.getSource(context, args);
                     }
                     else if(command == "suspend") {
                         response = this.doSuspend(context);
@@ -1014,8 +1011,7 @@ FBL.ns(function() {
             var url = args["url"];
             var sourceFile = context.sourceFileMap[url];
             if(sourceFile) {
-                var script = this._newScript(context, sourceFile, incSrc);
-                return {"script": script };
+                return this._newScript(context, sourceFile, incSrc);
             }
             return null;
         },
@@ -1166,24 +1162,6 @@ FBL.ns(function() {
                 }
             }
             return {"breakpoint": bp};
-        },
-
-        /**
-         * @name getSource
-         * @description Returns the source code for every script in the requested context
-         * @function
-         * @public
-         * @memberOf CrossfireServer
-         * @type Array
-         * @returns an {@link Array} containing the source for all of the currently known scripts from the Firebug source map
-         * @param context the associated context {@link Object}
-         * @param args the arguments array. If the {@link Boolean} <code>includeSource</code> argument is not present it is added and set to <code>true</code>
-         * @since 0.3a1
-         */
-        getSource: function(context, args) {
-            args = args || {};
-            args["includeSource"] = true;
-            return this.getScripts(context, args);
         },
 
         /**
