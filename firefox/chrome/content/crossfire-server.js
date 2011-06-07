@@ -425,18 +425,18 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE listing " + this.contexts.length + " contexts...");
             var contexts = [];
-            var context, href;
+            var context, url;
             for (var i = 0; i < this.contexts.length; i++) {
                 context = this.contexts[i];
-                href = "";
+                url = "";
                 if (context.window && !context.window.closed) {
-                    href = context.window.location.href;
+                    url = context.window.location.href;
                 }
                 contexts.push( { "contextId" : context.Crossfire.crossfire_id,
-                                 "href"         : href ,
+                                 "url"         : url ,
                                  "current"      : this.currentContext == context });
             }
-            return { "contexts": contexts };
+            return {"contexts":contexts};
         },
 
 
