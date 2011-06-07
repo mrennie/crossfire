@@ -473,7 +473,7 @@ FBL.ns(function() {
                 var scopes = args["includeScopes"] || true;
                 if (stack) {
                     // to set to stack.length if not set, or if set to a number higher than the stack sizes
-                    to = (to && to <= stack.length) ? to : stack.length;
+                    to = (to && to <= stack.length) ? to : stack.length-1;
                 } else {
                     // issue 2559: if there is only one frame, stack is undefined,
                     // but we still want to return that frame.
@@ -483,7 +483,7 @@ FBL.ns(function() {
                 var frame;
                 var frames = [];
                 for (var i = from; i <= to; i++) {
-                    frame = this.getFrame(context, {"number": i, "includeScopes": scopes});
+                    frame = this.getFrame(context, {"index": i, "includeScopes": scopes});
                     if (frame) {
                         delete frame.contextId;
                         frames.push(frame);
@@ -697,42 +697,44 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         getFrame: function(context, args) {
-            var number = args["index"];
+            var index = args["index"];
+            if(!index || index < 0) {
+            	index = 0;
+            }
             var includeScopes = args["includeScopes"];
             if(!includeScopes) {
                 includeScopes = true;
             }
             var frame = context.Crossfire.currentFrame;
-            if (frame) {
-                if (!number) {
-                    number = 0;
-                } else if (frame.stack) {
-                    frame = frame.stack[number-1];
+            if(!frame) {
+            	return null;
+            }
+            if (frame.stack) {
+                frame = frame.stack[index];
+            }
+            try {
+                var locals = {};
+                for (var l in frame.scope) {
+                    if (l != "parent") { // ignore parent
+                        locals[l] = frame.scope[l];
+                    }
                 }
-                try {
-                    var locals = {};
-                    for (var l in frame.scope) {
-                        if (l != "parent") { // ignore parent
-                            locals[l] = frame.scope[l];
-                        }
-                    }
-                    if (frame.thisValue) {
-                        locals["this"] = frame.thisValue;
-                    }
-                    if (includeScopes) {
-                        var scopes = (this.getScopes(context, {"frameNumber": number })).scopes;
-                    }
-                    return {
-                        "index": frame.frameIndex,
-                        "functionName": frame.functionName,
-                        "url": frame.script,
-                        "locals": locals,
-                        "line": frame.line,
-                        "scopes": scopes };
-                } catch (exc) {
-                    if (FBTrace.DBG_CROSSFIRE) {
-                        FBTrace.sysout("CROSSFIRE exception returning frame ", exc);
-                    }
+                if (frame.thisValue) {
+                    locals["this"] = frame.thisValue;
+                }
+                if (includeScopes) {
+                    var scopes = (this.getScopes(context, {"frameNumber": index })).scopes;
+                }
+                return {
+                    "index": frame.frameIndex,
+                    "functionName": frame.functionName,
+                    "url": frame.script,
+                    "locals": locals,
+                    "line": frame.line,
+                    "scopes": scopes };
+            } catch (exc) {
+                if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE exception returning frame ", exc);
                 }
             }
             return null;
@@ -1303,15 +1305,18 @@ FBL.ns(function() {
                     lineno = analyzer.getSourceLineFromFrame(context, frame);
                 }
             }
-            var href = sourceFile.href.toString();
+            var url = sourceFile.href.toString();
             var contextId = context.Crossfire.crossfire_id;
             if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE:  onStartDebugging href => " + href);
+                FBTrace.sysout("CROSSFIRE:  onStartDebugging href => " + url);
             }
             context.Crossfire.frameCount = 0;
             context.Crossfire.currentFrame = this._copyFrame(frame, context, true);
-            this._sendEvent("onBreak", {"contextId": contextId, "data": {"url" : href, "line": lineno}});
-            this.running = false ;
+            var bcause = context.breakingCause;
+            var cause =  bcause ? {"title":bcause.title, "message":bcause.message} : {};
+            var location = {"url" : url, "line": lineno};
+            this._sendEvent("onBreak", {"contextId": contextId, "data": {"location":location, "cause":cause}});
+            this.running = false;
         },
 
         /**
