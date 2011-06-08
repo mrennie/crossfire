@@ -1386,8 +1386,8 @@ FBL.ns(function() {
             if(!isSet) {
                 if(bp) {
                     data = {"breakpoint":bp,"set":isSet};
-                    this._mergeBreakpointProperties(bp, props);
                     this.breakpoints.splice(this.breakpoints.indexOf(bp), 1);
+                    this._mergeBreakpointProperties(bp, props); //merge after so the object compare will be ok
                 }
             }
             else {
@@ -1395,6 +1395,7 @@ FBL.ns(function() {
                     var type = "line";
                     if(props && props.bp_type) {
                         type = bp_type;
+                        delete props.bp_type; //we don't want this info apearing in the attributes body when we merge properties
                     }
                     bp = this._newBreakpoint(type, loc, isSet, (props ? props.condition : null));
                 } else {
