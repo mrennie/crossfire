@@ -238,7 +238,7 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>data</code> - the event payload with the <code>url</code>, <code>newUrl</code>, <code>contextId</code> and <code>newContextId</code> values set</li>
+         * <li><code>data</code> - the event payload with the <code>url</code>, <code>oldUrl</code>, <code>contextId</code> and <code>oldContextId</code> values set</li>
          * </ul>
          * @function
          * @public
@@ -254,8 +254,8 @@ FBL.ns(function() {
                 var url =  this.currentContext.window.location.href;
                 var newUrl =  context.window.location.href;
                 if(url != newUrl) {
-                    this._sendEvent("onContextSelected", {"data": {"contextId": this.currentContext.Crossfire.crossfire_id, "url": url, 
-                    	"newContextId": context.Crossfire.crossfire_id, "newUrl": newUrl}});
+                    this._sendEvent("onContextSelected", {"data": {"oldContextId": this.currentContext.Crossfire.crossfire_id, "oldUrl": url, 
+                    	"contextId": context.Crossfire.crossfire_id, "url": newUrl}});
                 }
             }
             this.currentContext = context;
@@ -1377,39 +1377,54 @@ FBL.ns(function() {
          * @see FirebugEventAdapter.onToggleBreakpoint
          */
         onToggleBreakpoint: function(context, url, lineNo, isSet, props) {
-            var bp, data, type,
-                loc = {"url":url,"line":lineNo},
-                cid = context.Crossfire.crossfire_id,
-                enabled = true; //FIXME: MCollins we should be able to get enablement status here, but we don't.
             if (FBTrace.DBG_CROSSFIRE_BPS) {
                 FBTrace.sysout("CROSSFIRE: onToggleBreakpoint: url => " + url + " lineNo => " + lineNo + " isSet => " + isSet);
             }
-
-            bp = this._findBreakpoint(loc);
-
+            var loc = {"url":url,"line":lineNo};
+            var bp = this._findBreakpoint(loc);
+            var data = {};
             if(!isSet) {
                 if(bp) {
-                    data = {"breakpoint":bp,"set":isSet,"props":props};
+                    data = {"breakpoint":bp,"set":isSet};
+                    this._mergeBreakpointProperties(bp, props);
                     this.breakpoints.splice(this.breakpoints.indexOf(bp), 1);
                 }
             }
             else {
                 if(!bp) {
-                    type = "line";
+                    var type = "line";
                     if(props && props.bp_type) {
                         type = bp_type;
                     }
-                    bp = this._newBreakpoint(type,{"line":lineNo,"url":url},enabled,null);
+                    bp = this._newBreakpoint(type, loc, isSet, (props ? props.condition : null));
                 } else {
                 }
-                data = {"breakpoint":bp,"set":isSet,"props":props};
+                this._mergeBreakpointProperties(bp, props);
+                data = {"breakpoint":bp,"set":isSet};
             }
-            if(!data) {
-                data = {"location":loc,"set":isSet,"props":props};
-            }
-            this._sendEvent("onToggleBreakpoint", {"contextId":cid,"data": data});
+            this._sendEvent("onToggleBreakpoint", {"contextId":context.Crossfire.crossfire_id,"data": data});
         },
 
+        /**
+         * @name _mergeBreakpointProperties
+         * @description merges the set of breakpoint properties from <code>props</code> into <code>breakpoint.attributes</code>
+         * @function
+         * @private
+         * @memberOf CrossfireServer
+         * @param breakpoint the breakpoint to have properties merged into
+         * @param props the object to merge properties from
+         * @since 0.3a7
+         */
+        _mergeBreakpointProperties: function(breakpoint, props) {
+        	if(breakpoint && props) {
+        		for(var prop in props) {
+        			if(props.hasOwnProperty(prop)) {
+        				breakpoint.attributes[prop] = props[prop];
+        			}
+        		}
+        	}
+        },
+        
         /**
          * @name onToggleErrorBreakpoint
          * @description Handles toggling an error breakpoint on or off in Firebug.
