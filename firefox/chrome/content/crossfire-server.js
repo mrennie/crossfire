@@ -225,7 +225,7 @@ FBL.ns(function() {
             }
 
             // load/sync breakpoints
-            this.getBreakpoints(context);
+            this.getAllBreakpoints(context);
 
             this._sendEvent("onContextLoaded", {"data": {"url": url, "contextId": context.Crossfire.crossfire_id}});
         },
@@ -238,9 +238,7 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>url</code> - the id of the current Crossfire context</li>
-         * <li><code>newUrl</code> - the id of the Crossfire context switched to</li>
-         * <li><code>data</code> - the event payload with the <code>href</code> and <code>new_href</code> values set</li>
+         * <li><code>data</code> - the event payload with the <code>url</code>, <code>newUrl</code>, <code>contextId</code> and <code>newContextId</code> values set</li>
          * </ul>
          * @function
          * @public
@@ -250,7 +248,7 @@ FBL.ns(function() {
          */
         showContext: function(browser, context) {
             if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE:  showContext");
+                FBTrace.sysout("CROSSFIRE: showContext");
             }
             if(context && this.currentContext && this.currentContext.Crossfire) {
                 var url =  this.currentContext.window.location.href;
@@ -356,7 +354,7 @@ FBL.ns(function() {
                     response = this.setBreakpoint(context, args);
                 }
                 else if(command == "getbreakpoints") {
-                    response = this.getBreakpoints(context, args);
+                    response = this.getAllBreakpoints(context, args);
                 }
                 else if(command == "changebreakpoint") {
                     response = this.changeBreakpoint(context, args);
@@ -765,7 +763,7 @@ FBL.ns(function() {
         },
 
         /**
-         * @name getBreakpoints
+         * @name getAllBreakpoints
          * @description Returns all the breakpoints. This method requests all breakpoints from Firebug directly
          * for all known source files.
          * @function
@@ -780,7 +778,7 @@ FBL.ns(function() {
          * </ul>
          * @since 0.3a1
          */
-        getBreakpoints: function(context, args) {
+        getAllBreakpoints: function(context, args) {
             var bp;
             if(context) {
                 this._enumBreakpoints(context, this);
@@ -1031,28 +1029,20 @@ FBL.ns(function() {
          * @since 0.3a5
          */
         _findBreakpoint: function(locationOrHandle) {
-            var bp, bpobj, l, handle, location, val;
-
-            // we want to lookup breakpoints only by handle from a 'clearbreakpoint' request
+            var handle, location;
             try {
                 handle = parseInt(locationOrHandle);
             } catch (parseExc) {
-
+            	//do nothing, try to find the breakpoint by location
             }
-
             if (!handle && typeof(locationOrHandle) == "object") {
                 location = locationOrHandle;
             }
-
-            if (FBTrace.DBG_CROSSFIRE_BP)
-                FBTrace.sysout("_findBreakpoint for location => " +location.toSource());
-
             list: for(var bp = 0; bp < this.breakpoints.length; bp++) {
-                if (FBTrace.DBG_CROSSFIRE_BP)
+                if (FBTrace.DBG_CROSSFIRE_BP) {
                     FBTrace.sysout("trying bp => " + bp.handle);
-
-                bpobj = this.breakpoints[bp];
-
+                }
+                var bpobj = this.breakpoints[bp];
                 if (handle) { // look up by handle
                     if (bpobj.handle == handle)
                         return bpobj;
@@ -1061,22 +1051,23 @@ FBL.ns(function() {
                     loc = bpobj.location;
                     if(loc) {
                         //breakpoints are equal if their locations are equal
-                        for(l in loc) {
-                            val = location[l];
+                        for(var l in loc) {
+                            var val = location[l];
                             if(!val || (val && val != loc[l])) {
                                 continue list;
                             }
                         }
                     }
-
-                    if (FBTrace.DBG_CROSSFIRE_BPS)
+                    if (FBTrace.DBG_CROSSFIRE_BPS) {
                         FBTrace.sysout("found breakpoint with location => " + bpobj.location.toSource());
+                    }
                     return bpobj;
                 }
             }
 
-            if (FBTrace.DBG_CROSSFIRE_BPS)
+            if (FBTrace.DBG_CROSSFIRE_BPS) {
                 FBTrace.sysout("failed to find breakpoint");
+            }
             return null;
         },
 
@@ -1390,7 +1381,6 @@ FBL.ns(function() {
                 loc = {"url":url,"line":lineNo},
                 cid = context.Crossfire.crossfire_id,
                 enabled = true; //FIXME: MCollins we should be able to get enablement status here, but we don't.
-
             if (FBTrace.DBG_CROSSFIRE_BPS) {
                 FBTrace.sysout("CROSSFIRE: onToggleBreakpoint: url => " + url + " lineNo => " + lineNo + " isSet => " + isSet);
             }
@@ -1410,7 +1400,6 @@ FBL.ns(function() {
                         type = bp_type;
                     }
                     bp = this._newBreakpoint(type,{"line":lineNo,"url":url},enabled,null);
-
                 } else {
                 }
                 data = {"breakpoint":bp,"set":isSet,"props":props};
