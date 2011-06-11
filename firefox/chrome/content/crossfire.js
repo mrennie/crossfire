@@ -15,7 +15,7 @@ var CROSSFIRE_VERSION = "0.3";
  * @description Firebug extension to add support for remote debug protocol.
  * @public
  */
-var Crossfire = Crossfire || {};
+top.Crossfire =  {};
 
 Components.utils.import("resource://crossfire/SocketTransport.js");
 
@@ -27,7 +27,7 @@ FBL.ns(function() {
      * between Firebug and the remote debug connection.  It is responsible for
      * opening a connection to the remote debug host.
      */
-    top.CrossfireModule = FBL.extend(Firebug.Module,  {
+    top.Crossfire = FBL.extend(Firebug.Module,  {
         contexts: [],
         refs: [],
         dispatchName: "Crossfire",
@@ -106,7 +106,7 @@ FBL.ns(function() {
         _ensureTransport: function() {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("Crossfire _ensureTransport");
-                
+
             if (! this.serverTransport) {
                 this.serverTransport = getCrossfireServer();
                 this.serverTransport.addListener(this);
@@ -183,7 +183,7 @@ FBL.ns(function() {
             this.updateStatusIcon(status);
 
             this._updatePanel();
-            
+
             // xxxMcollins: standalone client hack
             if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT
                     && this.registeredTools["RemoteClient"]) {
@@ -196,10 +196,10 @@ FBL.ns(function() {
         },
 
         /**
-         * 
+         *
          */
         _updatePanel: function() {
-        	if (this.panel) {
+            if (this.panel) {
                 try {
                     this.panel.refresh(status);
                 } catch (ex) {
@@ -208,7 +208,7 @@ FBL.ns(function() {
                 }
             }
         },
-        
+
         handleRequest: function(request) {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE received request " + request.toSource());
@@ -390,38 +390,38 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         _getRef: function(obj, contextId) {
-        	try {
-	            if (obj && obj.type && obj.handle) {
-	                FBTrace.sysout("CROSSFIRE _getRef tried to get ref for serialized obj");
-	                return null;
-	            }
-	            var ref = { "type":typeof(obj), "handle": -1 };
-	            if (contextId) {
-	                ref["contextId"] = contextId;
-	            }
-	            for (var i = 0; i < this.refs.length; i++) {
-	                if (this.refs[i] === obj) {
-	                    if (FBTrace.DBG_CROSSFIRE) {
-	                        FBTrace.sysout("CROSSFIRE _getRef ref exists with handle: " + i + " type = "+typeof(obj), obj);
-	                    }
-	                    ref["handle"] = i;
-	                    return ref;
-	                }
-	            }
-	            var handle = ++this.refCount;
-	            this.refs[handle] = obj;
-	            if (FBTrace.DBG_CROSSFIRE) {
-	                FBTrace.sysout("CROSSFIRE _getRef new ref created with handle: " + handle, obj);
-	            }
-	            ref["handle"] = handle;
-	            return ref;
-        	}
-        	catch(ex) {
-        		if(FBTrace.DBG_CROSSFIRE) {
+            try {
+                if (obj && obj.type && obj.handle) {
+                    FBTrace.sysout("CROSSFIRE _getRef tried to get ref for serialized obj");
+                    return null;
+                }
+                var ref = { "type":typeof(obj), "handle": -1 };
+                if (contextId) {
+                    ref["contextId"] = contextId;
+                }
+                for (var i = 0; i < this.refs.length; i++) {
+                    if (this.refs[i] === obj) {
+                        if (FBTrace.DBG_CROSSFIRE) {
+                            FBTrace.sysout("CROSSFIRE _getRef ref exists with handle: " + i + " type = "+typeof(obj), obj);
+                        }
+                        ref["handle"] = i;
+                        return ref;
+                    }
+                }
+                var handle = ++this.refCount;
+                this.refs[handle] = obj;
+                if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE _getRef new ref created with handle: " + handle, obj);
+                }
+                ref["handle"] = handle;
+                return ref;
+            }
+            catch(ex) {
+                if(FBTrace.DBG_CROSSFIRE) {
                     FBTrace.sysout("CROSSFIRE _getRef failed: "+ex+" [object: "+obj+"]");
                 }
                 return null;
-        	}
+            }
         },
 
         /**
@@ -446,6 +446,9 @@ FBL.ns(function() {
          * @param obj the JavaScript {@link Object} to serialize
          */
         serialize: function(obj) {
+            if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
+                FBTrace.sysout("CROSSFIRE serialize => " + obj, obj);
+            }
             try {
                 var type = typeof(obj);
                 var serialized = {
@@ -465,9 +468,9 @@ FBL.ns(function() {
                         }
                         serialized["value"] = arr;
                     } else {
-                    		var ref = this._getRef(obj);
-                        	serialized["value"] = this._serializeProperties(obj, ref);
-                    	}
+                        var ref = this._getRef(obj);
+                        serialized["value"] = this._serializeProperties(obj, ref);
+                    }
                 } else if (type == "number" && (
                     isNaN(obj)
                     || obj == Infinity
@@ -476,10 +479,12 @@ FBL.ns(function() {
                 } else {
                     serialized["value"] = obj;
                 }
+                if (FBTrace.DBG_CROSSFIRE_SERIALIZE)
+                    FBTrace.sysout("CROSSFIRE serialize returning: " + serialized, serialized);
                 return serialized;
             } catch (e) {
-                if(FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE serialize failed: "+e+" [object :"+obj+"]");
+                if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
+                    FBTrace.sysout("CROSSFIRE serialize failed for: " + obj + ", "+e, obj);
                 }
                 return null;
             }
@@ -498,34 +503,76 @@ FBL.ns(function() {
          * @since 0.3a2
          */
         _serializeProperties: function(obj, ref) {
-            var o = {};
-            for (var p in obj) {
+            var p, prop, properties, o = {};
+            if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
+                FBTrace.sysout("CROSSFIRE _serializeProperties: obj " + obj
+                        + ", typeof(obj) " + typeof(obj),
+                        obj);
+            }
+
+            if (obj instanceof HTMLIFrameElement)
+            {
                 try {
-                    if (obj.hasOwnProperty(p) /*&& !(p in ignoreVars)*/) {
-                        var prop = obj[p];
-                        if (typeof(prop) == "object" || typeof(prop) == "function") {
-                            if (prop == null) {
-                                o[p] = "null";
-                            } else if (prop && prop.type && prop.handle) {
-                                o[p] = prop;
-                            } else  {
-                                o[p] = this._getRef(prop);
-                            }
-                        } else if (p === obj) {
-                            o[p] = ref;
-                        } else {
-                        		o[p] = this.serialize(prop);
+                    obj = XPCNativeWrapper.unwrap(obj);
+                } catch (ex) {
+                    if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
+                      FBTrace.sysout("_serializeProperties can't unwrap iframe: " + ex,ex);
+                    }
+                }
+            }
+
+            if (obj instanceof Object && Object.keys)
+            {
+                properties = Object.keys(obj)
+            }
+            else {
+                properties = [];
+                for (p in obj) {
+                    try {
+                        if (Object.prototype.hasOwnProperty.call(o,p)) {
+                            properties.push(p);
+                        }
+                    } catch (exc) {
+                        if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
+                            FBTrace.sysout("_serializeProperties exception: " + exc, exc);
                         }
                     }
-                    else if(FBTrace.DBG_CROSSFIRE) {
-                        FBTrace.sysout("CROSSFIRE _serializeProperties: IGNORE [property: "+p+"] from [object: "+obj.toString()+"]");
+                }
+            }
+
+            if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
+                FBTrace.sysout("_serializeProperties iterating properties", properties);
+            }
+            for (var i = 0; i < properties.length; i++) {
+                p = properties[i];
+                prop = obj[p];
+                try {
+                    if (typeof(prop) == "object" || typeof(prop) == "function")
+                    {
+                        if (prop == null) {
+                            o[p] = "null";
+                        } else if (prop && prop.type && prop.handle) {
+                            o[p] = prop;
+                        } else  {
+                            o[p] = this._getRef(prop);
+                        }
+                    }
+                    else if (p === obj) {
+                        o[p] = ref;
+                    }
+                    else
+                    {
+                        o[p] = this.serialize(prop);
                     }
                 } catch (x) {
-                    o[p] =  null;
+                    o[p] = null;
                     if(FBTrace.DBG_CROSSFIRE) {
                         FBTrace.sysout("CROSSFIRE _serializeProperties: ERROR on [property: "+p+"] with [exception: "+x+"]");
                     }
                 }
+            }
+            if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
+                FBTrace.sysout("_serializeProperties finished iterating properties");
             }
             if(obj.constructor && obj.constructor != obj) {
                 o["constructor"] = this._getRef(obj.constructor);
@@ -655,7 +702,7 @@ FBL.ns(function() {
     });
 
     // register module
-    Firebug.registerModule(CrossfireModule);
+    Firebug.registerModule(top.Crossfire);
 
     // ----- Crossfire XUL Event Listeners -----
 
@@ -667,7 +714,7 @@ FBL.ns(function() {
      * @memberOf Crossfire
      * @param el
      */
-    Crossfire.onStatusClick = function( el) {
+    top.Crossfire.onStatusClick = function( el) {
         FBL.$("crossfireStatusMenu").openPopup(el, "before_end", 0,0,false,false);
     };
 
@@ -679,7 +726,7 @@ FBL.ns(function() {
      * @memberOf Crossfire
      * @param menu the menu showing
      */
-    Crossfire.onStatusMenuShowing = function( menu) {
+    top.Crossfire.onStatusMenuShowing = function( menu) {
         //CrossfireModule.onStatusMenuShowing(menu);
     };
 
@@ -691,11 +738,11 @@ FBL.ns(function() {
      * @public
      * @memberOf Crossfire
      */
-    Crossfire.startServer = function() {
-        var params = CrossfireModule._getDialogParams(true);
+    top.Crossfire.startServer = function() {
+        var params = top.Crossfire._getDialogParams(true);
         window.openDialog("chrome://crossfire/content/connect-dialog.xul", "crossfire-connect","chrome,modal,dialog", params);
         if (params.host && params.port) {
-            CrossfireServer.startServer(params.host, parseInt(params.port));
+            Crossfire.CrossfireServer.startServer(params.host, parseInt(params.port));
         }
     };
 
@@ -706,23 +753,12 @@ FBL.ns(function() {
      * @public
      * @memberOf Crossfire
      */
-    Crossfire.connect = function() {
-        var params = CrossfireModule._getDialogParams(false);
+    top.Crossfire.connect = function() {
+        var params = Crossfire._getDialogParams(false);
         window.openDialog("chrome://crossfire/content/connect-dialog.xul", "crossfire-connect","chrome,modal,dialog", params);
         if (params.host && params.port) {
-            CrossfireClient.connectClient(params.host, parseInt(params.port));
+            Crossfire.CrossfireClient.connectClient(params.host, parseInt(params.port));
         }
-    };
-
-    /**
-     * @name Crossfire.disconnect
-     * @description delegate to {@link CrossfireModule#disconnect()}
-     * @function
-     * @public
-     * @memberOf Crossfire
-     */
-    Crossfire.disconnect = function() {
-        CrossfireModule.disconnect();
     };
 
     /**
