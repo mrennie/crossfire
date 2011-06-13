@@ -480,15 +480,14 @@ FBL.ns(function() {
                     // issue 2559: if there is only one frame, stack is undefined,
                     // but we still want to return that frame.
                     from = 0;
-                    to = 1;
+                    to = 0;
                 }
-                var frame;
                 var frames = [];
                 if (FBTrace.DBG_CROSSFIRE) {
                     FBTrace.sysout("backtrace => from: " + from + " to: " + to);
                 }
                 for (var i = from; i <= to; i++) {
-                    frame = this.getFrame(context, {"index": i, "includeScopes": scopes});
+                    var frame = this.getFrame(context, {"index": i, "includeScopes": scopes});
                     if (frame) {
                         delete frame.contextId;
                         frames.push(frame);
