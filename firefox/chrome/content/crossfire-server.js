@@ -728,7 +728,7 @@ FBL.ns(function() {
                     locals["this"] = frame.thisValue;
                 }
                 if (includeScopes) {
-                    var scopes = (this.getScopes(context, {"frameNumber": index })).scopes;
+                    var scopes = (this.getScopes(context, {"frameIndex": index })).scopes;
                 }
                 return {
                     "index": frame.frameIndex,
@@ -736,7 +736,8 @@ FBL.ns(function() {
                     "url": frame.script,
                     "locals": locals,
                     "line": frame.line,
-                    "scopes": scopes };
+                    "scopes": scopes
+                };
             } catch (exc) {
                 if (FBTrace.DBG_CROSSFIRE) {
                     FBTrace.sysout("CROSSFIRE exception returning frame ", exc);
@@ -888,8 +889,8 @@ FBL.ns(function() {
          * @param context the associated context {@link Object}
          * @param args the request arguments that contains:
          * <ul>
-         * <li>an {@link Integer} <code>number</code>, which is the number of scopes to return</li>
-         * <li>an {@link Integer} <code>frameNumber</code>, which is the number of the stack frame to collect scopes from</li>
+         * <li>an {@link Integer} <code>index</code>, which is the number of scopes to return</li>
+         * <li>an {@link Integer} <code>frameIndex</code>, which is the number of the stack frame to collect scopes from</li>
          * </ul>
          * @since 0.3a1
          */
@@ -897,7 +898,7 @@ FBL.ns(function() {
             var scopes = [];
             var scope;
             do {
-                scope = this.getScope(context, {"number": scopes.length, "frameNumber":  args["frameNumber"]});
+            	scope = this.getScope(context, {"index": scopes.length, "frameIndex":  args["frameIndex"]});
                 if (scope) {
                     delete scope.contextId;
                     scopes.push(scope);
@@ -925,41 +926,41 @@ FBL.ns(function() {
          * @param context the associated context {@link Object}
          * @param args the arguments array that contains:
          * <ul>
-         * <li>an {@link Integer} <code>number</code>, which is the number of enclosing scopes to include</li>
-         * <li>an {@link Integer} <code>frameNumber</code>, which is the index of the frame to collect the scopes from</li>
+         * <li>an {@link Integer} <code>index</code>, which is the index of enclosing scopes to include</li>
+         * <li>an {@link Integer} <code>frameIndex</code>, which is the index of the frame to collect the scopes from</li>
          * </ul>
          * @since 0.3a1
          */
         getScope: function(context, args) {
             var scope;
-            var scopeNo = args["number"];
-            var frameNo = args["frameNumber"];
-            if (context.Crossfire.currentFrame) {
-                if (scopeNo == 0) {
-                    // only return a reference to the global scope
-                    scope = Crossfire._getRef(context.window.wrappedJSObject);
-                } else {
-                    var frame = context.Crossfire.currentFrame;
-                    if (!frameNo) {
-                        frameNo = 0;
-                    } else {
-                        frame = frame.stack[frameNo-1];
-                    }
-                    scope = frame.scope;
-                    for (var i = 0; i < scopeNo; i++) {
-                        scope = scope.parent;
-                        if (!scope) break;
-                    }
-                }
-            } else if (scopeNo == 0) {
-              scope = context.window.wrappedJSObject;
-              frameNo = -1;
+            var scopeNo = args["index"];
+            var frameNo = args["frameIndex"];
+            var frame = context.Crossfire.currentFrame;
+            if (scopeNo == 0) {
+                // only return a reference to the global scope
+                scope = Crossfire._getRef(context.window.wrappedJSObject);
             }
+            else if (frame) {
+                if(frame.stack) {
+                	if (!frameNo || frameNo < 0) {
+                        frameNo = 0;
+                    }
+                	else if(frameNo > frame.stack.length) {
+                		frameNo = frame.stack.length-1;
+                	}
+                	frame = frame.stack[frameNo];
+                }
+                scope = frame.scope;
+                for (var i = 0; i < scopeNo; i++) {
+                    scope = scope.parent;
+                    if (!scope) break;
+                }
+            } 
             if (scope) {
                 return {
                     "index": scopeNo,
                     "frameIndex": frameNo,
-                    "object": scope
+                    "scope": scope
                 };
             }
             return null;
