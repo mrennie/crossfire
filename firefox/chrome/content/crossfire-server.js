@@ -820,7 +820,7 @@ FBL.ns(function() {
                     var loc = {"line":l, "url":u};
                     bp = self._findBreakpoint(loc);
                     if(!bp) {
-                        bp = self._newBreakpoint("line",{"line":l,"url":u},!props.disabled,null);
+                        bp = self._newBreakpoint("line",{"line":l,"url":u},{"enabled":!props.disabled,"condition":null});
                     } else if (bp.enabled == props.disabled){
                         bp.enabled = !props.disabled;
                         self.breakpoints[self.breakpoints.indexOf(bp)] = bp;
@@ -1046,15 +1046,18 @@ FBL.ns(function() {
                 location = locationOrHandle;
             }
             list: for(var bp = 0; bp < this.breakpoints.length; bp++) {
-                if (FBTrace.DBG_CROSSFIRE_BP) {
-                    FBTrace.sysout("trying bp => " + bp.handle);
-                }
                 var bpobj = this.breakpoints[bp];
                 if (handle) { // look up by handle
+                	if (FBTrace.DBG_CROSSFIRE_BPS) {
+                        FBTrace.sysout("CROSSFIRE: findBreakpoint with handle => " + handle);
+                    }
                     if (bpobj.handle == handle)
                         return bpobj;
                 }
                 else if (location) { // then we want to look up by location
+                	if (FBTrace.DBG_CROSSFIRE_BPS) {
+                        FBTrace.sysout("CROSSFIRE: findBreakpoint with location => " + location.toSource());
+                    }
                     loc = bpobj.location;
                     if(loc) {
                         //breakpoints are equal if their locations are equal
@@ -1066,14 +1069,14 @@ FBL.ns(function() {
                         }
                     }
                     if (FBTrace.DBG_CROSSFIRE_BPS) {
-                        FBTrace.sysout("found breakpoint with location => " + bpobj.location.toSource());
+                        FBTrace.sysout("CROSSFIRE: findBreakpoint found breakpoint with location => " + bpobj.location.toSource());
                     }
                     return bpobj;
                 }
             }
 
             if (FBTrace.DBG_CROSSFIRE_BPS) {
-                FBTrace.sysout("failed to find breakpoint");
+                FBTrace.sysout("CROSSFIRE: findBreakpoint failed to find breakpoint");
             }
             return null;
         },
@@ -1089,18 +1092,17 @@ FBL.ns(function() {
          * @param type a required (@String} for the name of the type of the breakpoint
          * @param location a required {@link Object} containing the location information to compare to find a
          * matching breakpoint
-         * @param enabled an optional {@Boolean} for if the breakpoint is enabled or not. If not specified <code>true</code> is assumed.
-         * @param condition an optional {@String} to be evaluated to determine if the breakpoint should suspend. If not specified <code>null</code> is assumed
+         * @param attributes an optional {@link Object} of attributes to set on the breakpoint
          * @since 0.3a5
          */
-        _newBreakpoint: function(type, location, enabled, condition) {
-            if (FBTrace.DBG_CROSSFIRE)
-                FBTrace.sysout("CROSSFIRE: _newBreakpoint: type => " + type + " location => " + location + " enabled => " + enabled);
+        _newBreakpoint: function(type, location, attributes) {
+            if (FBTrace.DBG_CROSSFIRE_BPS)
+                FBTrace.sysout("CROSSFIRE: _newBreakpoint: type => " + type + " location => " + location + " attributes => " + attributes);
             var bp = {
                 "handle": this.breakpoint_ids++,
                 "type": type,
                 "location": location,
-                "attributes": {"enabled": enabled, "condition": condition}
+                "attributes": (attributes ? attributes : {"enabled":true, "condition":null})
             };
             this.breakpoints.push(bp);
             return bp;
@@ -1108,33 +1110,33 @@ FBL.ns(function() {
 
         /**
          * @name setBreakpoint
-         * @description Set a breakpoint and return its {@link Integer} id.
+         * @description Set a breakpoint and return its object
          * @function
          * @public
          * @memberOf CrossfireServer
          * @type Array
-         * @returns the {@link Array} of breakpoint information
+         * @returns the breakpoint object
          * @param context the optional associated context {@link Object}
          * @param args the arguments array that contains:
          * <ul>
          * <li>an {@link Object} <code>location</code>, the location object containing all of the information required to set the breakpoint</li>
-         * <li>an optional {@link String} <code>contextId</code>, the contextId to tie the breakpoint to</li>
-         * <li>an optional {@link Boolean} <code>enabled</code>, if the breakpoint should be enabled or not</li>
-         * <li>an optional {@link String} <code>condition</code>, the condition to be evaluated to determine if the breakpoint should suspend</li>
+         * <li>an optional {@link Object} <code>attributes</code>, the object of attributes to set in the new breakpoint</li>
          * <ul>
          * @since 0.3a1
          */
         setBreakpoint: function(context, args) {
             var location = args["location"];
-            var condition = args["condition"];
-            var enabled = !!args["enabled"];
+            var attributes = args["attributes"];
+            if (FBTrace.DBG_CROSSFIRE_BPS) {
+            	FBTrace.sysout("CROSSFIRE: setBreakpoint location => "+location.toSource()+" attributes => "+attributes.toSource());
+            }
             var bp = this._findBreakpoint(location);
             if (!bp) {
                 if (!location) {
                     // can't create a new bp without a location
                     return;
                 }
-                bp = this._newBreakpoint("line", location, enabled, condition);
+                bp = this._newBreakpoint("line", location, attributes);
                 var url = bp.location.url;
                 var line = bp.location.line;
                 if(url && line) {
@@ -1152,14 +1154,17 @@ FBL.ns(function() {
                             }
                         });
                     }
-                    if (condition) {
-                        FBL.fbs.setBreakpointCondition({"href": url}, line, condition, Firebug.Debugger);
+                    if (attributes.condition) {
+                        FBL.fbs.setBreakpointCondition({"href": url}, line, attributes.condition, Firebug.Debugger);
                     }
                     // by default, setting a new breakpoint is enabled, so only check if we want to disable it.
-                    if (!enabled) {
+                    if (!attributes.enabled) {
                         FBL.fbs.disableBreakpoint(url, line);
                     }
                 }
+            }
+            if (FBTrace.DBG_CROSSFIRE_BPS) {
+            	FBTrace.sysout("CROSSFIRE: setBreakpoint complete bp => "+bp.toSource());
             }
             return {"breakpoint": bp};
         },
@@ -1403,7 +1408,8 @@ FBL.ns(function() {
                         type = bp_type;
                         delete props.bp_type; //we don't want this info apearing in the attributes body when we merge properties
                     }
-                    bp = this._newBreakpoint(type, loc, isSet, (props ? props.condition : null));
+                    var attributes = {"enabled":isSet, "condition":(props ? props.condition : null)};
+                    bp = this._newBreakpoint(type, loc, attributes);
                 } else {
                 }
                 this._mergeBreakpointProperties(bp, props);
@@ -1493,7 +1499,7 @@ FBL.ns(function() {
                  bp = this._findBreakpoint(loc);
                  newtype = this._getHTMLBreakpointType(type);
              if(!bp) {
-                 bp = this._newBreakpoint(newtype,loc,true,null);
+                 bp = this._newBreakpoint(newtype,loc,{"enabled":true,"condition":null});
              }
              data = {"breakpoint":bp,"set":bp.attributes.enabled};
              //the breakpoint is considered set if it is enabled
