@@ -354,7 +354,7 @@ FBL.ns(function() {
                     response = this.setBreakpoint(context, args);
                 }
                 else if(command == "getbreakpoints") {
-                    response = this.getAllBreakpoints(context, args);
+                    response = this.getAllBreakpoints(context);
                 }
                 else if(command == "changebreakpoint") {
                     response = this.changeBreakpoint(context, args);
@@ -779,13 +779,9 @@ FBL.ns(function() {
          * @type Array
          * @returns an {@link Array} of all breakpoints information or <code>null</code> if there are no breakpoints set.
          * @param context the optional associated context {@link Object}
-         * @param args the array of arguments which contains:
-         * <ul>
-         * <li>an optional {@link String} <code>contextId</code>, which is the id of the Crossfire context to get all of the breakpoints for</li>
-         * </ul>
          * @since 0.3a1
          */
-        getAllBreakpoints: function(context, args) {
+        getAllBreakpoints: function(context) {
             var bp;
             if(context) {
                 this._enumBreakpoints(context, this);
