@@ -515,9 +515,7 @@ FBL.ns(function() {
          * @param args the array of arguments which contains:
          * <ul>
          * <li>an {@link Integer} <code>handle</code>, which is the id of the breakpoint to change</li>
-         * <li>an optional {@link Boolean} <code>enabled</code>, if the changed breakpoint should be enabled or not</li>
-         * <li>an optional {@link String} <code>condition</code>, the new condition for the breakpoint. Passing in <code>null</code> will remove
-         * a currently set condition</li>
+         * <li>an {@link Object} <code>attributes</code>, which is the new collection of breakpoint attributes to set</li>
          * </ul>
          * @since 0.3a1
          */
@@ -525,38 +523,52 @@ FBL.ns(function() {
             var bp,
                 loc,
                 handle = args["handle"],
-                condition = args["condition"],
-                enabled = !!args["enabled"];
+                attributes = args["attributes"];
 
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE changeBreakpoint: args => " + args.toSource());
+            if (FBTrace.DBG_CROSSFIRE_BPS) {
+                FBTrace.sysout("CROSSFIRE: changeBreakpoint handle => " + handle +" attributes => "+attributes.toSource());
             }
             try {
                 if(handle) {
                     bp = this._findBreakpoint(handle);
                 }
                 if (bp) {
+                	var conditionChanged = false;
+                	if(attributes.condition) {
+                		conditionChanged = bp.attributes.condition != attributes.condition;
+                	}
+                	if (FBTrace.DBG_CROSSFIRE_BPS) {
+                        FBTrace.sysout("CROSSFIRE: changeBreakpoint condition changed => " + conditionChanged);
+                    }
+                	var enabledChanged = false;
+                	if(typeof(attributes.enabled) == "boolean") {
+                		bp.attributes.enabled != attributes.enabled
+                	}
+                	if (FBTrace.DBG_CROSSFIRE_BPS) {
+                        FBTrace.sysout("CROSSFIRE: changeBreakpoint enabled changed => " + enabledChanged);
+                    }
+                	for(var p in attributes) {
+                		bp.attributes[p] = attributes[p];
+                	}
                     loc = bp.location;
-                    if (condition) {
-                        if (FBTrace.DBG_CROSSFIRE_BPS) {
-                            FBTrace.sysout("CROSSFIRE changeBreakpoint set condition => " + condition);
-                        }
-                        FBL.fbs.setBreakpointCondition({"href":loc.url}, loc.line, condition, Firebug.Debugger);
+                    if (conditionChanged) {
+                        FBL.fbs.setBreakpointCondition({"href":loc.url}, loc.line, attributes.condition, Firebug.Debugger);
+                    }
+                    if (enabledChanged) {
+                    	if(attributes.enabled == true) {
+                    		FBL.fbs.enableBreakpoint(loc.url, loc.line);
+                    	} else {
+                    		FBL.fbs.disableBreakpoint(loc.url, loc.line);
+                    	}
                     }
                     if (FBTrace.DBG_CROSSFIRE_BPS) {
-                        FBTrace.sysout("CROSSFIRE changeBreakpoint set enabled => " + enabled);
+                        FBTrace.sysout("CROSSFIRE: changeBreakpoint completed => " + bp.toSource());
                     }
-                    if (enabled) {
-                        FBL.fbs.enableBreakpoint(loc.url, loc.line);
-                    } else {
-                        FBL.fbs.disableBreakpoint(loc.url, loc.line);
-                    }
-                    bp.enabled = enabled;
-                    return {"breakpoint": bp };
+                    return bp;
                 }
             } catch (e) {
-                if (FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE changeBreakpoint exception: " + e);
+                if (FBTrace.DBG_CROSSFIRE_BPS) {
+                    FBTrace.sysout("CROSSFIRE: changeBreakpoint exception => " + e);
                 }
             }
             return null;
