@@ -359,8 +359,8 @@ FBL.ns(function() {
                 else if(command == "changebreakpoint") {
                     response = this.changeBreakpoint(context, args);
                 }
-                else if(command == "clearbreakpoint") {
-                    response = this.clearBreakpoint(context, args);
+                else if(command == "deletebreakpoint") {
+                    response = this.deleteBreakpoint(context, args);
                 }
                 else if(context) {
                     contextid = context.Crossfire.crossfire_id;
@@ -575,24 +575,21 @@ FBL.ns(function() {
         },
 
         /**
-         * @name clearBreakpoint
+         * @name deleteBreakpoint
          * @description Remove the breakpoint object with the specified id.
          * @function
          * @public
          * @memberOf CrossfireServer
-         * @type Array
-         * @returns an empty {@link Array} if the breakpoint was removed, <code>null</code> otherwise
+         * @type Object
+         * @returns the breakpoint object that was deleted or <code>null</code>
          * @param context the optional associated context {@link Object}
          * @param args the array of arguments which contains:
          * <ul>
          * <li>an {@link Integer} <code>handle</code>, which is the id of the breakpoint to clear</li>
          * </ul>
-         * <br><br>
-         * Either the breakpoint handle or the URL / line number can be given to clear a breakpoint - if both are given the breakpoint
-         * handle is consulted first.
          * @since 0.3a1
          */
-        clearBreakpoint: function(context, args) {
+        deleteBreakpoint: function(context, args) {
             var handle = args["handle"];
             if(handle) {
                 var bp = this._findBreakpoint(handle);
@@ -601,7 +598,7 @@ FBL.ns(function() {
                     if(loc && loc.url && loc.line) {
                         Firebug.Debugger.clearBreakpoint({"href": loc.url}, loc.line);
                         this.breakpoints.splice(this.breakpoints.indexOf(bp), 1);
-                        return {"breakpoint": bp};
+                        return bp;
                     }
                 }
             }
