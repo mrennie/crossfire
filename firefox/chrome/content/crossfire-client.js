@@ -1,14 +1,14 @@
 /* See license.txt for terms of usage */
 
-var Crossfire = Crossfire || {};
-
 FBL.ns(function() {
+
+    var Crossfire = top.Crossfire;
 
     /**
      * @name CrossfireClient
      * @description Firebug Module for Client-side Crossfire functions.
      */
-    top.CrossfireClient = FBL.extend(Firebug.Module, {
+    Crossfire.CrossfireClient = FBL.extend(Firebug.Module, {
         contexts: [],
         dispatchName: "CrossfireClient",
         toolName: "all", // receive all packets, regardless of 'tool' header
@@ -18,7 +18,7 @@ FBL.ns(function() {
          * @description Initializes Crossfire
          * @function
          * @private
-         * @memberOf CrossfireModule
+         * @memberOf CrossfireClient
          * @extends Firebug.Module
          */
         initialize: function() {
@@ -49,7 +49,7 @@ FBL.ns(function() {
          * @description Attempts to connect to remote host/port
          * @function
          * @public
-         * @memberOf CrossfireModule
+         * @memberOf CrossfireClient
          * @param {String} host the remote host name.
          * @param {Number} port the remote port number.
          */
@@ -62,7 +62,7 @@ FBL.ns(function() {
             this.port = port;
             try {
 
-                this.transport = CrossfireModule.getClientTransport();
+                this.transport = Crossfire.getClientTransport();
                 this.transport.addListener(this);
                 this.transport.open(host, port);
             }
@@ -76,7 +76,7 @@ FBL.ns(function() {
          * @description Called when the status of the transport's connection changes.
          * @function
          * @public
-         * @memberOf CrossfireModule
+         * @memberOf CrossfireClient
          * @param {String} status the status to report
          */
         onConnectionStatusChanged: function( status) {
@@ -155,5 +155,5 @@ FBL.ns(function() {
     });
 
     // register module
-    Firebug.registerModule(CrossfireClient);
+    Firebug.registerModule(Crossfire.CrossfireClient);
 });
