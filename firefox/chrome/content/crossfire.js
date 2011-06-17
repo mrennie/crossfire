@@ -454,7 +454,7 @@ FBL.ns(function() {
                 var serialized = {
                         "type": type,
                         "value": ""
-                }
+                };
                 if (type == "object" || type == "function") {
                     if (obj == null) {
                          serialized["value"] = "null";
@@ -503,33 +503,41 @@ FBL.ns(function() {
          * @since 0.3a2
          */
         _serializeProperties: function(obj, ref) {
-            var p, prop, properties, o = {};
+            var p, pName, prop, properties,
+                o = {};
+
             if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
                 FBTrace.sysout("CROSSFIRE _serializeProperties: obj " + obj
-                        + ", typeof(obj) " + typeof(obj),
-                        obj);
+                        + ", typeof(obj) " + typeof(obj), obj);
             }
 
-            if (obj instanceof HTMLIFrameElement)
-            {
+            if ((typeof(obj)).indexOf("XrayWrapper" != -1)) {
+                if (FBTrace.DBG_CROSSFIRE_SERIALIZE)
+                    FBTrace.sysout("CROSSFIRE _serializeProperties unwrapping " + obj, obj);
                 try {
-                    obj = XPCNativeWrapper.unwrap(obj);
+                    //obj = FBL.unwrapIValue(obj);
+                     obj = XPCNativeWrapper.unwrap(obj);
+                     properties = [];
+                     for (p in obj) properties.push(p);
                 } catch (ex) {
                     if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
-                      FBTrace.sysout("_serializeProperties can't unwrap iframe: " + ex,ex);
+                      FBTrace.sysout("_serializeProperties can't unwrap: " + ex,ex);
                     }
                 }
             }
-
-            if (obj instanceof Object && Object.keys)
+            else if (obj instanceof Object && Object.keys)
             {
-                properties = Object.keys(obj)
+                if (FBTrace.DBG_CROSSFIRE_SERIALIZE)
+                    FBTrace.sysout("_serializeProperties getting Object.keys()");
+                properties = Object.keys(obj);
             }
             else {
                 properties = [];
                 for (p in obj) {
                     try {
-                        if (Object.prototype.hasOwnProperty.call(o,p)) {
+                        if (Object.prototype.hasOwnProperty.call(obj,p)) {
+                            if (FBTrace.DBG_CROSSFIRE_SERIALIZE)
+                                FBTrace.sysout("_serializeProperties adding property " + p, p);
                             properties.push(p);
                         }
                     } catch (exc) {
@@ -541,31 +549,33 @@ FBL.ns(function() {
             }
 
             if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
-                FBTrace.sysout("_serializeProperties iterating properties", properties);
+                FBTrace.sysout("_serializeProperties iterating " + properties.length + " properties", properties);
             }
             for (var i = 0; i < properties.length; i++) {
-                p = properties[i];
-                prop = obj[p];
+                pName = properties[i];
+                prop = obj[pName];
+                if (FBTrace.DBG_CROSSFIRE_SERIALIZE)
+                    FBTrace.sysout("_serializeProperties property #" + i + " : " +pName, {"name": pName, "object": prop });
                 try {
                     if (typeof(prop) == "object" || typeof(prop) == "function")
                     {
                         if (prop == null) {
-                            o[p] = "null";
+                            o[pName] = "null";
                         } else if (prop && prop.type && prop.handle) {
-                            o[p] = prop;
+                            o[pName] = prop;
                         } else  {
-                            o[p] = this._getRef(prop);
+                            o[pName] = this._getRef(prop);
                         }
                     }
-                    else if (p === obj) {
-                        o[p] = ref;
+                    else if (pName === obj) {
+                        o[pName] = ref;
                     }
                     else
                     {
-                        o[p] = this.serialize(prop);
+                        o[pName] = this.serialize(prop);
                     }
                 } catch (x) {
-                    o[p] = null;
+                    o[pName] = null;
                     if(FBTrace.DBG_CROSSFIRE) {
                         FBTrace.sysout("CROSSFIRE _serializeProperties: ERROR on [property: "+p+"] with [exception: "+x+"]");
                     }
