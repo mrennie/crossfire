@@ -265,7 +265,7 @@ class Command:
     self.seq = current_seq
     self.command = command_name
     self.tool = tool_name
-    self.packet = { "type": "request", "seq": self.seq, "context_id" : context_id, "command": command_name }
+    self.packet = { "type": "request", "seq": self.seq, "contextId" : context_id, "command": command_name }
     if arguments:
       self.packet.update(arguments)
 
@@ -461,14 +461,14 @@ if __name__ == "__main__":
                 if packet['event'] == "closed":
                   quit()
                 elif (packet['event'] == "onContextCreated") or (packet['event'] == "onContextLoaded"):
-                  update_current_context(packet['context_id'])
-                elif packet['event'] == "onContextChanged":
-                  update_current_context(packet['new_context_id'])
+                  update_current_context(packet['data']['contextId'])
+                elif packet['event'] == "onContextSelected":
+                  update_current_context(packet['data']['contextId'])
               elif 'command' in packet:
                 if packet['command'] == "listcontexts":
                   for ctx in packet['body']['contexts']:
                     if ctx['current'] == True:
-                      update_current_context(ctx['context_id'])
+                      update_current_context(ctx['contextId'])
                       break
 
                 ### if we got a response to the command, quit here
@@ -476,7 +476,7 @@ if __name__ == "__main__":
                   quit()
 
             ### if we have a context and we had a commmand to execute and send it here
-            if sendExecCommand == True and currentContext != None:
+            if execCommand != None and sendExecCommand == True and currentContext != None:
               command = Command(currentContext, execCommand, execTool, arguments=execArgs)
               client.sendPacket(command)
               sendExecCommand = False # only send command once
