@@ -76,8 +76,14 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE _addListeners");
 
+            if (Firebug.connection) {
+                // Firebug 1.8 Browser BTI listener
+                Firebug.connection.addListener(this);
+            } else {
+                // pre 1.8 listener
+                Firebug.Debugger.addListener(this);
+            }
             Firebug.Console.addListener(this);
-            Firebug.Debugger.addListener(this);
             Firebug.HTMLModule.addListener(this);
         },
 
@@ -533,33 +539,33 @@ FBL.ns(function() {
                     bp = this._findBreakpoint(handle);
                 }
                 if (bp) {
-                	var conditionChanged = false;
-                	if(attributes.condition) {
-                		conditionChanged = bp.attributes.condition != attributes.condition;
-                	}
-                	if (FBTrace.DBG_CROSSFIRE_BPS) {
+                    var conditionChanged = false;
+                    if(attributes.condition) {
+                        conditionChanged = bp.attributes.condition != attributes.condition;
+                    }
+                    if (FBTrace.DBG_CROSSFIRE_BPS) {
                         FBTrace.sysout("CROSSFIRE: changeBreakpoint condition changed => " + conditionChanged);
                     }
-                	var enabledChanged = false;
-                	if(typeof(attributes.enabled) == "boolean") {
-                		bp.attributes.enabled != attributes.enabled
-                	}
-                	if (FBTrace.DBG_CROSSFIRE_BPS) {
+                    var enabledChanged = false;
+                    if(typeof(attributes.enabled) == "boolean") {
+                        bp.attributes.enabled != attributes.enabled
+                    }
+                    if (FBTrace.DBG_CROSSFIRE_BPS) {
                         FBTrace.sysout("CROSSFIRE: changeBreakpoint enabled changed => " + enabledChanged);
                     }
-                	for(var p in attributes) {
-                		bp.attributes[p] = attributes[p];
-                	}
+                    for(var p in attributes) {
+                        bp.attributes[p] = attributes[p];
+                    }
                     loc = bp.location;
                     if (conditionChanged) {
                         FBL.fbs.setBreakpointCondition({"href":loc.url}, loc.line, attributes.condition, Firebug.Debugger);
                     }
                     if (enabledChanged) {
-                    	if(attributes.enabled == true) {
-                    		FBL.fbs.enableBreakpoint(loc.url, loc.line);
-                    	} else {
-                    		FBL.fbs.disableBreakpoint(loc.url, loc.line);
-                    	}
+                        if(attributes.enabled == true) {
+                            FBL.fbs.enableBreakpoint(loc.url, loc.line);
+                        } else {
+                            FBL.fbs.disableBreakpoint(loc.url, loc.line);
+                        }
                     }
                     if (FBTrace.DBG_CROSSFIRE_BPS) {
                         FBTrace.sysout("CROSSFIRE: changeBreakpoint completed => " + bp.toSource());
@@ -902,7 +908,7 @@ FBL.ns(function() {
             var scopes = [];
             var scope;
             do {
-            	scope = this.getScope(context, {"index": scopes.length, "frameIndex":  args["frameIndex"]});
+                scope = this.getScope(context, {"index": scopes.length, "frameIndex":  args["frameIndex"]});
                 if (scope) {
                     delete scope.contextId;
                     scopes.push(scope);
@@ -946,20 +952,20 @@ FBL.ns(function() {
             }
             else if (frame) {
                 if(frame.stack) {
-                	if (!frameNo || frameNo < 0) {
+                    if (!frameNo || frameNo < 0) {
                         frameNo = 0;
                     }
-                	else if(frameNo > frame.stack.length) {
-                		frameNo = frame.stack.length-1;
-                	}
-                	frame = frame.stack[frameNo];
+                    else if(frameNo > frame.stack.length) {
+                        frameNo = frame.stack.length-1;
+                    }
+                    frame = frame.stack[frameNo];
                 }
                 scope = frame.scope;
                 for (var i = 0; i < scopeNo; i++) {
                     scope = scope.parent;
                     if (!scope) break;
                 }
-            } 
+            }
             if (scope) {
                 return {
                     "index": scopeNo,
@@ -1053,14 +1059,14 @@ FBL.ns(function() {
             list: for(var bp = 0; bp < this.breakpoints.length; bp++) {
                 var bpobj = this.breakpoints[bp];
                 if (handle) { // look up by handle
-                	if (FBTrace.DBG_CROSSFIRE_BPS) {
+                    if (FBTrace.DBG_CROSSFIRE_BPS) {
                         FBTrace.sysout("CROSSFIRE: findBreakpoint with handle => " + handle);
                     }
                     if (bpobj.handle == handle)
                         return bpobj;
                 }
                 else if (location) { // then we want to look up by location
-                	if (FBTrace.DBG_CROSSFIRE_BPS) {
+                    if (FBTrace.DBG_CROSSFIRE_BPS) {
                         FBTrace.sysout("CROSSFIRE: findBreakpoint with location => " + location.toSource());
                     }
                     loc = bpobj.location;
@@ -1133,7 +1139,7 @@ FBL.ns(function() {
             var location = args["location"];
             var attributes = args["attributes"];
             if (FBTrace.DBG_CROSSFIRE_BPS) {
-            	FBTrace.sysout("CROSSFIRE: setBreakpoint location => "+location.toSource()+" attributes => "+attributes.toSource());
+                FBTrace.sysout("CROSSFIRE: setBreakpoint location => "+location.toSource()+" attributes => "+attributes.toSource());
             }
             var bp = this._findBreakpoint(location);
             if (!bp) {
@@ -1169,7 +1175,7 @@ FBL.ns(function() {
                 }
             }
             if (FBTrace.DBG_CROSSFIRE_BPS) {
-            	FBTrace.sysout("CROSSFIRE: setBreakpoint complete bp => "+bp.toSource());
+                FBTrace.sysout("CROSSFIRE: setBreakpoint complete bp => "+bp.toSource());
             }
             return {"breakpoint": bp};
         },
