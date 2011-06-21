@@ -2,8 +2,8 @@
 function runTest() {
     FBTest.sysout("evaluateTest.started");
 
-    var CrossfireModule = FW.CrossfireModule;
-    var CrossfireClient = FW.CrossfireClient;
+    var CrossfireModule = FW.top.Crossfire;
+    var CrossfireClient = CrossfireModule.CrossfireClient;
 
     var expressions = [
         "Math.PI * 2", // two-pie

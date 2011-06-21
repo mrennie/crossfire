@@ -2,8 +2,8 @@
 function runTest() {
     FBTest.sysout("helloCrossfireTest.started");
 
-    FBTest.ok(FBTest.FirebugWindow.Crossfire, "Crossfire object exists in FBTest.FirebugWindow");
-    FBTest.ok(FW.Crossfire, "Crossfire object exists in FW Firebug Window");
+    FBTest.ok(FBTest.FirebugWindow.top.Crossfire, "Crossfire object exists in FBTest.FirebugWindow");
+    FBTest.ok(FW.top.Crossfire, "Crossfire object exists in FW Firebug Window");
 
     window.allOpenAllCloseURL = FBTest.getHTTPURLBase()+"fbtest/crossfire/OpenFirebugOnThisPage.html";
 

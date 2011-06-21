@@ -8,8 +8,8 @@ function runTest() {
 
     Components.utils.import("resource://crossfire/SocketTransport.js");
 
-    var CrossfireModule = FW.CrossfireModule;
-    var CrossfireClient = FW.CrossfireClient;
+    var CrossfireModule = FW.top.Crossfire;
+    var CrossfireClient = CrossfireModule.CrossfireClient;
 
     var contextId, testIndex = -1;
 

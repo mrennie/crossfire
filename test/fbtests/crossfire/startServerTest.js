@@ -4,8 +4,8 @@ function runTest() {
 
     Components.utils.import("resource://crossfire/SocketTransport.js");
 
-    var CrossfireModule = FW.CrossfireModule;
-    var CrossfireServer = FW.CrossfireServer;
+    var CrossfireModule = FW.top.Crossfire;
+    var CrossfireServer = CrossfireModule.CrossfireServer;
 
     var status = CrossfireModule.status;
     var port = 5678;
