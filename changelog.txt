@@ -1,3 +1,19 @@
+0.3a7 - 2011-06-21
+  * update install.rdf version numbers to support FF 4 and 5
+  * 3640 Crossfire: request 'source' is not useful
+  * 4199 Cannot serialize 'this' object in FF4
+  * 4203 Spurious extra stack frame information returned from backtrace request
+  * 4273 CrossFire NaN, Infinity, and -Infinity values
+  * 4300 updatecontext never returns success of true
+  * 4304 Crossfire events protocol review
+  * 4383 Crossfire FBTests
+  * 4407 stepping and evaluating protocol review
+  * 4445 Args not passed to doContinue command
+  * 4486 Remove additional nesting in 'scripts' response
+  * 4519 Name collision for getBreakpoints function
+  * 4108 accessing a context's content protocol review
+  * Backported 'Remote Panel' panel UI for Crossfire - still needs work.
+
 0.3a6 - 2011-04-25
   * updated install.rdf and update.rdf to use https link.
   * 3928    breakpoints protocol review redux.
@@ -7,7 +23,7 @@
 0.3a5 - 2011-03-17
   * Started keeping the changelog up-to-date.
   * Significant changes to breakpoints: see issue 3928.
-  * 4205    evaluate request gets no response.
+  * 4205    evaluate request gets no response.t
   * 4200    lookup request no longer works.
   * 3928    breakpoints protocol review.
   * 3841    Crossfire should have command to open debuggable context.
