@@ -2,68 +2,73 @@
 
 FBL.ns(function() { with(FBL) {
 
-	function CrossfirePanel() {
-		CrossfireModule.panel = this;
-	}
-	
-	var STATUS_DISCONNECTED = "disconnected";
-	var STATUS_WAIT_SERVER = "wait_server";
-	var STATUS_CONNECTING = "connecting";
-	var STATUS_CONNECTED_SERVER = "connected_server";
-	var STATUS_CONNECTED_CLIENT = "connected_client";
-	
-	Firebug.registerStylesheet("chrome://crossfire/skin/crossfire.css");
-	
-    var remotePanelTemplate = domplate(Firebug.Rep, {
-            tag: DIV({"class": "crossfire-panel"},
-                    DIV({"class": "crossfire-image"},
-                        IMG({"src": "chrome://crossfire/skin/crossfire-lg.png"})
+    var CrossfireStatus = {
+            STATUS_DISCONNECTED: "disconnected",
+            STATUS_WAIT_SERVER: "wait_server",
+            STATUS_CONNECTING: "connecting",
+            STATUS_CONNECTED_SERVER: "connected_server",
+            STATUS_CONNECTED_CLIENT: "connected_client"
+
+    };
+
+    Firebug.registerStylesheet("chrome://crossfire/skin/crossfire.css");
+
+    var remotePanelTemplate,
+        sidePanelTemplate,
+        contextsPanelTemplate;
+
+    //with(Domplate) {
+        remotePanelTemplate = domplate(Firebug.Rep, {
+                tag: DIV({"class": "crossfire-panel"},
+                        DIV({"class": "crossfire-image"},
+                            IMG({"src": "chrome://crossfire/skin/crossfire-lg.png"})
+                        ),
+                        DIV({"class": "crossfire-stuff"},
+                                SPAN({"class": "crossfire-header"}, "Crossfire"),
+                                BR(),
+                                SPAN({"class": "crossfire-status"}, "Current Status: $object.status"),
+                                BR(),
+                                BR(),
+                                BUTTON({
+                                    type: "button",
+                                    onclick: "$onButtonClick"
+                                }, "Toggle Connection")
+                        )
                     ),
-                    DIV({"class": "crossfire-stuff"},
-                            SPAN({"class": "crossfire-header"}, "Crossfire"),
-                            BR(),
-                            SPAN({"class": "crossfire-status"}, "Current Status: $object.status"),
-                            BR(),
-                            BR(),
-                            BUTTON({
-                                type: "button",
-                                onclick: "$onButtonClick"
-                            }, "Toggle Connection")
+
+               onButtonClick: function(evt) {
+                   FBTrace.sysout("CrossfirePanel toggle connect top.Crossfire is " + top.Crossfire, top.Crossfire);
+                   top.Crossfire.disconnect();
+                   //FBL.$("crossfireStatusMenu").openPopup(el, "before_end", 0,0,false,false);
+               }
+        });
+
+        sidePanelTemplate = domplate(Firebug.Rep, {
+            tag: DIV({ "class": "crossfire-packet" },
+                    FOR("item", "$array",
+                            DIV("$item")
+                        )
                     )
-                ),
+        });
 
-           onButtonClick: function(evt) {
-               FBTrace.sysout("CrossfirePanel toggle connect CrossfireModule is " + CrossfireModule, CrossfireModule);
-               CrossfireModule.disconnect();
-               //FBL.$("crossfireStatusMenu").openPopup(el, "before_end", 0,0,false,false);
-           }
-    });
+        contextsPanelTemplate = domplate(Firebug.Rep, {
+            tag: DIV({"class":"crossfire-contexts"},
+                    FOR("item", "$array",
+                        A({"class": "context-item", onclick: "$onSelectContext"}, "$item.href")
+                        )
+                    ),
+            onSelectContext: function( evt) {
 
-    var sidePanelTemplate = domplate(Firebug.Rep, {
-        tag: DIV({ "class": "crossfire-packet" },
-                FOR("item", "$array",
-                        DIV("$item")
-                    )
-                )
-    });
-
-    var contextsPanelTemplate = domplate(Firebug.Rep, {
-        tag: DIV({"class":"crossfire-contexts"},
-                FOR("item", "$array",
-                    A({"class": "context-item", onclick: "$onSelectContext"}, "$item.href")
-                    )
-                ),
-        onSelectContext: function( evt) {
-
-        }
-    });
+            }
+        });
+    //}
 
     /**
      *
      * @returns {CommandsPanel}
      */
     function CommandsPanel() {}
-    CommandsPanel.prototype = extend(Firebug.Panel, {
+    CommandsPanel.prototype = FBL.extend(Firebug.Panel, {
         name: "CrossfireCommandsPanel",
         title: "Commmands",
         parentPanel: "CrossfirePanel",
@@ -94,7 +99,7 @@ FBL.ns(function() { with(FBL) {
      * @returns {EventsPanel}
      */
     function EventsPanel() {}
-    EventsPanel.prototype = extend(Firebug.Panel, {
+    EventsPanel.prototype = FBL.extend(Firebug.Panel, {
         name: "CrossfireEventsPanel",
         title: "Events",
         parentPanel: "CrossfirePanel",
@@ -119,13 +124,13 @@ FBL.ns(function() { with(FBL) {
         }
     });
     Firebug.registerPanel(EventsPanel);
-    
+
     /**
      *
      * @returns {ContextsPanel}
      */
     function ContextsPanel() {}
-    ContextsPanel.prototype = extend(Firebug.Panel, {
+    ContextsPanel.prototype = FBL.extend(Firebug.Panel, {
         name: "CrossfireContextsPanel",
         title: "Contexts",
         parentPanel: "CrossfirePanel",
@@ -142,11 +147,11 @@ FBL.ns(function() { with(FBL) {
         },
 
         show: function() {
-            contextsPanelTemplate.tag.replace({array: CrossfireModule.contexts}, this.panelNode, contextsPanelTemplate);
+            //FIXME: contextsPanelTemplate.tag.replace({array: remoteTool.contexts}, this.panelNode, contextsPanelTemplate);
         },
 
         refresh: function() {
-        	contextsPanelTemplate.tag.replace({array: CrossfireModule.contexts}, this.panelNode, contextsPanelTemplate);
+
         }
     });
     Firebug.registerPanel(ContextsPanel);
@@ -156,7 +161,7 @@ FBL.ns(function() { with(FBL) {
      * @returns {ToolsPanel}
      */
     function ToolsPanel() {}
-    ToolsPanel.prototype = extend(Firebug.Panel, {
+    ToolsPanel.prototype = FBL.extend(Firebug.Panel, {
         name: "CrossfireToolsPanel",
         title: "Tools",
         parentPanel: "CrossfirePanel",
@@ -173,7 +178,7 @@ FBL.ns(function() { with(FBL) {
         },
 
         show: function() {
-            sidePanelTemplate.tag.replace({array: []}, this.panelNode, sidePanelTemplate);
+            //FIXME: sidePanelTemplate.tag.replace({array: remoteTool.tools}, this.panelNode, sidePanelTemplate);
         },
 
         refresh: function() {
@@ -185,8 +190,10 @@ FBL.ns(function() { with(FBL) {
     /**
      *
      */
-    function CrossfirePanel() {}
-    CrossfirePanel.prototype = extend(Firebug.Panel, {
+    function CrossfirePanel() {
+        top.Crossfire.panel = this;
+    }
+    CrossfirePanel.prototype = FBL.extend(Firebug.Panel, {
         name: "CrossfirePanel",
         title: "Remote",
 
@@ -208,20 +215,21 @@ FBL.ns(function() { with(FBL) {
         refresh: function( status) {
             var message = " unknown.";
 
-            if (CrossfireModule && !status)
-                status = CrossfireModule.status;
+            if (top.Crossfire && !status)
+                status = top.Crossfire.status;
 
-            if (status == STATUS_DISCONNECTED) {
+            if (status == CrossfireStatus.STATUS_DISCONNECTED) {
                 message = "disconnected.";
-            } else if (status == STATUS_WAIT_SERVER) {
-                 message = "accepting connections on port " + CrossfireModule.serverTransport.port;
-            } else if (status == STATUS_CONNECTING) {
+            } else if (status == CrossfireStatus.STATUS_WAIT_SERVER) {
+                 message = "accepting connections on port " + top.Crossfire.serverTransport.port;
+            } else if (status == CrossfireStatus.STATUS_CONNECTING) {
                  message = "connecting...";
-            } else if (status == STATUS_CONNECTED_SERVER) {
-                 message = "connected to client on port " + CrossfireModule.serverTransport.port;
-            } else if (status == STATUS_CONNECTED_CLIENT) {
-                 message =  "connected to " + CrossfireModule.clientTransport.host + ":" + CrossfireModule.clientTransport.port;
+            } else if (status == CrossfireStatus.STATUS_CONNECTED_SERVER) {
+                 message = "connected to client on port " + top.Crossfire.serverTransport.port;
+            } else if (status == CrossfireStatus.STATUS_CONNECTED_CLIENT) {
+                 message =  "connected to " + top.Crossfire.clientTransport.host + ":" + top.Crossfire.clientTransport.port;
             }
+
             remotePanelTemplate.tag.replace({object: {"status": message}}, this.panelNode, remotePanelTemplate);
         },
 
