@@ -29,15 +29,6 @@ FBL.ns(function() {
 
             this.contexts = [];
 
-            // Begin transitional code
-            //var import = Components.utils.import;
-            //import("resource://firebug/bti/browser.js");
-            //import("resource://firebug/bti/browsercontext.js");
-            //import("resource://firebug/bti/compilationunit.js");
-            // End transitional code
-
-            this.btiBrowser = new Browser();
-
             if (host && port) {
                 this.connectClient(host, port);
             }
@@ -101,16 +92,6 @@ FBL.ns(function() {
                 eventName = event.event,
                 data = event.data;
 
-            if (eventName == "onContextCreated") {
-                //var btiContext = new BrowserContext();
-                //this.contexts[contextId] = btiContext;
-                //this.btiBrowser._contextCreated(btiContext);
-            } else if (eventName == "onScript") {
-                //var browserContext = this.contexts[contextId];
-                //var ccu = new CompilationUnit(data.href, browserContext); //CrossfireClient.CrossfireCompilationUnit(data.href, contextId);
-                //browserContext._addCompilationUnit(ccu);
-            }
-
             //FBL.dispatch(this.fbListeners, "onExecute", [packet]);
         },
 
@@ -118,9 +99,6 @@ FBL.ns(function() {
         handleResponse: function( response) {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CrossfireClient handleResponse => " + response);
-            if (response.command == "listcontexts") {
-                //TODO: create BTI BrowserContexts?
-            }
         },
 
         _sendCommand: function( command, data) {
@@ -137,21 +115,10 @@ FBL.ns(function() {
             this._sendCommand("disableTool", {"toolName":toolName});
         },
 
-        // ----- BTI/Crossfire-ish things -----
         getBrowserContexts: function() {
             this._sendCommand("listcontexts");
         },
 
-        /*
-        CrossfireCompilationUnit : FBL.extend(BTI.CompilationUnit, {
-
-            getSourceLines: function( context) {
-                CrossfireClient._sendCommand("scripts", {
-                    "contextId": context.Crossfire.crossfire_id
-                    });
-            }
-        })
-        */
     });
 
     // register module
