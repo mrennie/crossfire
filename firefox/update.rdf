@@ -11,9 +11,8 @@
                 <RDF:Description>
                   <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
                   <em:minVersion>3.0.*</em:minVersion>
-                  <em:maxVersion>4.0.*</em:maxVersion>
+                  <em:maxVersion>6.0.*</em:maxVersion>
                   <em:updateLink>https://getfirebug.com/releases/crossfire/@VERSION@/crossfire-@VERSION@@RELEASE@.xpi</em:updateLink>
-                  <em:updateHash>sha1:@UPDATEHASH@</em:updateHash>
                 </RDF:Description>
               </em:targetApplication>
             </RDF:Description>
