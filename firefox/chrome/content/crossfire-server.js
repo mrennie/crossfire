@@ -570,7 +570,7 @@ FBL.ns(function() {
                     if (FBTrace.DBG_CROSSFIRE_BPS) {
                         FBTrace.sysout("CROSSFIRE: changeBreakpoint completed => " + bp.toSource());
                     }
-                    return bp;
+                    return {};
                 }
             } catch (e) {
                 if (FBTrace.DBG_CROSSFIRE_BPS) {
@@ -604,7 +604,7 @@ FBL.ns(function() {
                     if(loc && loc.url && loc.line) {
                         Firebug.Debugger.clearBreakpoint({"href": loc.url}, loc.line);
                         this.breakpoints.splice(this.breakpoints.indexOf(bp), 1);
-                        return bp;
+                        return {};
                     }
                 }
             }
