@@ -781,7 +781,11 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE getBreakpoint with handle: " + handle);
             }
-            return this._findBreakpoint(handle);
+            var bp = this._findBreakpoint(handle);
+            if(bp) {
+            	return {"breakpoint":bp};
+            }
+            return null;
         },
 
         /**
