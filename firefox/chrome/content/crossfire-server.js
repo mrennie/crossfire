@@ -495,14 +495,14 @@ FBL.ns(function() {
                 for (var i = from; i <= to; i++) {
                     var frame = this.getFrame(context, {"index": i, "includeScopes": scopes});
                     if (frame) {
-                        delete frame.contextId;
-                        frames.push(frame);
+                        frames.push(frame["frame"]);
                     }
                 }
                 return {
                     "fromFrame": from,
                     "toFrame": to,
-                    "frames": frames
+                    "frames": frames,
+                    "totalFrames": (stack ? stack.length : 1)
                 };
             }
             return null;
@@ -745,12 +745,14 @@ FBL.ns(function() {
                     var scopes = (this.getScopes(context, {"frameIndex": index })).scopes;
                 }
                 return {
-                    "index": frame.frameIndex,
-                    "functionName": frame.functionName,
-                    "url": frame.script,
-                    "locals": locals,
-                    "line": frame.line,
-                    "scopes": scopes
+                    "frame": {
+	                    "index": frame.frameIndex,
+	                    "functionName": frame.functionName,
+	                    "url": frame.script,
+	                    "locals": locals,
+	                    "line": frame.line,
+	                    "scopes": scopes
+	                }
                 };
             } catch (exc) {
                 if (FBTrace.DBG_CROSSFIRE) {
