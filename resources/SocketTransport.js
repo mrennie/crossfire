@@ -172,17 +172,14 @@ CrossfireSocketTransport.prototype =
      * @param requestSeq Sequence number of the request that initiated the response.
      * @param the Crossfire id for the given context. Can be <code>null</code>
      * @param body JSON body of the response
-     * @param running boolean indicates if execution is continuing.
-     * @param success boolean indicates whether the command was successful.
+     * @param status The status object.
      */
-    sendResponse: function(command, requestSeq, contextid, body, running, success, tool) {
-        if (running == null || running == undefined) running = true; // assume we are running unless explicitly told otherwise
-        success = !!(success); // convert to boolean
+    sendResponse: function(command, requestSeq, contextid, body, status, tool) {
         var packet;
         if (tool) {
-            packet = new ResponsePacket(command, requestSeq, contextid, body, running, success, ["tool:"+tool]);
+            packet = new ResponsePacket(command, requestSeq, contextid, body, status, ["tool:"+tool]);
         } else {
-            packet = new ResponsePacket(command, requestSeq, contextid, body, running, success);
+            packet = new ResponsePacket(command, requestSeq, contextid, body, status);
         }
         this._defer(function() { this._sendPacket(packet); });
     },

@@ -165,12 +165,11 @@ RequestPacket.prototype = Packet;
  * @param requestSeq The sequence number of the request that initiated this response.
  * @param contextid the Crossfire id for the context from the request. Can be <code>null</code>
  * @param body The JSON body of the response.
- * @param running boolean indicating whether the context is still running after the command.
- * @param success boolean indicating whether the command was successful.
+ * @param status The status object.
  * @type ResponsePacket
  * @returns a new {@link ResponsePacket}
  */
-function ResponsePacket( command, requestSeq, contextid, body, running, success, headers) {
+function ResponsePacket( command, requestSeq, contextid, body, status, headers) {
     var sequence = Packet.seq++;
     var packet = {
             "type": "response",
@@ -178,8 +177,7 @@ function ResponsePacket( command, requestSeq, contextid, body, running, success,
             "seq": sequence,
             "request_seq": requestSeq,
             "body": body,
-            "running": running,
-            "success": success
+            "status": status
     };
     if(contextid) {
         packet["contextId"] = contextid;

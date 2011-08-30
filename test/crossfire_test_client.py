@@ -271,7 +271,6 @@ class Command:
 
 
 Commands = [
-    "entercontext",
     "createcontext",
     "listcontexts",
     "version",
@@ -280,16 +279,12 @@ Commands = [
     "evaluate",
     "backtrace",
     "frame",
-    "scope",
     "scopes",
-    "script",
     "scripts",
-    "source",
-    "getbreakpoint",
     "getbreakpoints",
-    "setbreakpoint",
-    "changebreakpoint",
-    "clearbreakpoint",
+    "setbreakpoints",
+    "changebreakpoints",
+    "deletebreakpoints",
     "inspect",
     "lookup",
     "gettools",

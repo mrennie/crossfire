@@ -17,20 +17,18 @@ function runTest() {
                     "listcontexts",
                     "version",
                     "gettools",
-                    "getbreakpoint",
                     "backtrace",
-                    "changebreakpoint",
+                    "changebreakpoints",
+                    "deletebreakpoints",
                     "continue",
                     "evaluate",
                     "frame",
                     "getbreakpoints",
                     "lookup",
                     "scopes",
-                    "scope",
                     "script",
                     "scripts",
-                    "setbreakpoint",
-                    "source",
+                    "setbreakpoints",
                     "suspend"
                ];
 

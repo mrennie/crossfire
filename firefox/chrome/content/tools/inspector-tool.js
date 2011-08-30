@@ -34,7 +34,7 @@ FBL.ns(function() {
                     response = this.doInspect(context, args);
                     contextid = context.Crossfire.crossfire_id;
                 }
-                this.transport.sendResponse(request.command, request.seq, contextid, response, true, true, this.toolName);
+                this.transport.sendResponse(request.command, request.seq, contextid, response, {"running":true, "code": 0}, this.toolName);
             }
         },
 
