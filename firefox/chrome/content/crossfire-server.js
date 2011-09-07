@@ -1321,35 +1321,70 @@ FBL.ns(function() {
          * @param context the context of this event
          * @param sourceFile the source file object
          */
-        onSourceFileCreated: function( context, sourceFile) {
+        onSourceFileCreated: function(context, sourceFile) {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE:  onSourceFileCreated => " + sourceFile.href);
             }
-            var context_href = "";
-            try {
-                context_href = context.window.location.href;
-            } catch(e) {
+            this._handleSource(context, sourceFile, false);
+        },
+
+        /**
+         * @name onCompilationUnit
+         * @description handles the callback for when a new source file is created or compiled in Firebug
+         *  <br><br>
+         * Fires an <code>onScript</code> event.
+         * <br><br>
+         * The event body contains the following:
+         * <ul>
+         * <li><code>contextId</code> - the id of the current Crossfire context</li>
+         * <li><code>data</code> - the event payload from Firebug</li>
+         * </ul>
+         * @function
+         * @private
+         * @memberOf CrossfireServer
+         * @param context the current Firebug context
+         * @param url the compilation unit url
+         * @param kind a {@link String} value describing the kind of compilation unit it is. Compilation unit kinds are described in
+         * /firebug1.9/content/firebug/bti/inProcess/compilationunit.js
+         * @since 0.3a8
+         */
+        onCompilationUnit: function(context, url, kind) {
+        	if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE:  onCompilationUnit => " + url);
             }
-            /*
-             * make sure breakpoints 'set' before the file has been loaded
-             * are set when the file actually loads
-             */
-            var line = -1;
-            var bpobj;
-            for (var bp in this.breakpoints) {
-                bpobj = this.breakpoints[bp];
-                var loc = bpobj.location;
-                if(loc) {
-                    if (loc.url === sourceFile.href) {
-                        Firebug.Debugger.setBreakpoint(sourceFile, loc.line);
+        	var sourceFile = context.sourceFileMap[url];
+        	if(sourceFile) {
+        		this._handleSource(context, sourceFile, false);
+        	}
+        },
+        
+        /**
+         * @name _handleSource
+         * @description handles the callback for when a new source file is created or compiled in Firebug
+         * @function
+         * @private
+         * @memberOf CrossfireServer
+         * @param context the current Firebug context
+         * @param sourceFile the compilation unit object
+         * @param incsrc a {@link Boolean} flag indicating if the source for the script should be computed
+         * @since 0.3a8
+         */
+        _handleSource: function(context, sourceFile, incsrc) {
+        	for (var bp in this.breakpoints) {
+                if(bp.location) {
+                    if (bp.location.url === sourceFile.href) {
+                        Firebug.Debugger.setBreakpoint(sourceFile, bp.location.line);
                     }
                 }
             }
-            var script = this._newScript(context, sourceFile, false);
+        	var script = this._newScript(context, sourceFile, incsrc);
             var data = {"script":script};
+            if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE:  _handleSource sending onScript=> " + sourceFile.href);
+            }
             this._sendEvent("onScript", {"contextId": context.Crossfire.crossfire_id, "data": data});
         },
-
+        
         // ----- Firebug Debugger listener -----
 
         /**
