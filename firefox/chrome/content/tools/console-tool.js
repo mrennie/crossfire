@@ -33,13 +33,12 @@ FBL.ns(function() {
 
         // ----- Firebug Console listener -----
 
-        /* xxxMCollins Commenting this listener out for now in favor of the 'onError' listener in crossfire.js.
+        /**
          * @name log
          * @description
          * This function is a callback for <code>Firebug.ConsoleBase</code> located
-         * in <code>/firebug1.7/content/firebug/console.js</code>.
+         * in <code>../content/firebug/console.js</code>.
          * <br><br>
-         * Generates event packets based on the className (error).
          * The object or message logged is contained in the packet's <code>data</code> property.
          * <br><br>
          * Fires the <code>onConsoleError</code> event.
@@ -47,7 +46,7 @@ FBL.ns(function() {
          * The event body contains the following:
          * <ul>
          * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug</li>
+         * <li><code>body</code> - the event payload from Firebug</li>
          * </ul>
          * @function
          * @public
@@ -58,7 +57,7 @@ FBL.ns(function() {
          * @param rep
          * @param noThrottle
          * @param sourceLink
-         *
+         */
         log: function(context, object, className, rep, noThrottle, sourceLink) {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE log");
@@ -67,8 +66,8 @@ FBL.ns(function() {
                 var cid = context.context.Crossfire.crossfire_id;
                 this.transport.sendEvent("onConsoleError", {"contextId": cid, "data": CrossfireModule.serialize(context.trace.frames)});
             }
-        },*/
-
+        },
+        
         /**
          * @name logFormatted
          * @description Generates event packets based on the className (log,debug,info,warn,error).
@@ -86,7 +85,7 @@ FBL.ns(function() {
          * The event body contains the following:
          * <ul>
          * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug</li>
+         * <li><code>body</code> - the event payload from Firebug</li>
          * </ul>
          * @function
          * @public
@@ -115,7 +114,7 @@ FBL.ns(function() {
                 var eventName = "onConsole" + className.substring(0,1).toUpperCase() + className.substring(1);
                 var obj = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug.userObjects;
                 if (this.transport && this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
-                    this.transport.sendEvent(eventName, {"contextId": context.Crossfire.crossfire_id, "data": CrossfireModule.serialize(obj)}, "console");
+                    this.transport.sendEvent(eventName, {"contextId": context.Crossfire.crossfire_id, "body": CrossfireModule.serialize(obj)}, "console");
                 }
             }
         }

@@ -149,7 +149,6 @@ FBL.ns(function() {
             return "xf"+Crossfire.version + "::" + (++CONTEXT_ID_SEED);
         },
 
-
         /**
          * @name findContext
          * @description Returns the Context for the given id, or <code>null</code> if no context matches the given id
@@ -180,14 +179,14 @@ FBL.ns(function() {
          * The event body contains the following:
          * <ul>
          * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload with the <code>url</code> value set</li>
+         * <li><code>body</code> - the event payload with the <code>url</code> value set</li>
          * </ul>
          * @function
          * @public
          * @memberOf CrossfireServer
          * @param context the new context
          */
-        initContext: function( context) {
+        initContext: function(context) {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE:  initContext");
             }
@@ -199,7 +198,7 @@ FBL.ns(function() {
             } catch(e) {
                 //do nothing
             }
-            this._sendEvent("onContextCreated", {"data": {"url": url, "contextId": context.Crossfire.crossfire_id}});
+            this._sendEvent("onContextCreated", {"body": {"url": url, "contextId": context.Crossfire.crossfire_id}});
             Crossfire._updatePanel();
         },
 
@@ -212,7 +211,7 @@ FBL.ns(function() {
          * The event body contains the following:
          * <ul>
          * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload with the <code>url</code> value set</li>
+         * <li><code>body</code> - the event payload with the <code>url</code> value set</li>
          * </ul>
          * @function
          * @public
@@ -233,7 +232,7 @@ FBL.ns(function() {
             // load/sync breakpoints
             this.getAllBreakpoints(context);
 
-            this._sendEvent("onContextLoaded", {"data": {"url": url, "contextId": context.Crossfire.crossfire_id}});
+            this._sendEvent("onContextLoaded", {"body": {"url": url, "contextId": context.Crossfire.crossfire_id}});
         },
 
         /**
@@ -244,7 +243,7 @@ FBL.ns(function() {
          * <br><br>
          * The event body contains the following:
          * <ul>
-         * <li><code>data</code> - the event payload with the <code>url</code>, <code>oldUrl</code>, <code>contextId</code> and <code>oldContextId</code> values set</li>
+         * <li><code>body</code> - the event payload with the <code>url</code>, <code>oldUrl</code>, <code>contextId</code> and <code>oldContextId</code> values set</li>
          * </ul>
          * @function
          * @public
@@ -260,7 +259,7 @@ FBL.ns(function() {
                 var url =  this.currentContext.window.location.href;
                 var newUrl =  context.window.location.href;
                 if(url != newUrl) {
-                    this._sendEvent("onContextSelected", {"data": {"oldContextId": this.currentContext.Crossfire.crossfire_id, "oldUrl": url,
+                    this._sendEvent("onContextSelected", {"body": {"oldContextId": this.currentContext.Crossfire.crossfire_id, "oldUrl": url,
                         "contextId": context.Crossfire.crossfire_id, "url": newUrl}});
                 }
             }
@@ -293,7 +292,7 @@ FBL.ns(function() {
                 for (var i = 0; i < this.contexts.length; i++) {
                     if (this.contexts[i].Crossfire.crossfire_id == contextId) {
                         delete this.contexts[i].Crossfire.currentFrame;
-                        this._sendEvent("onContextDestroyed", {"data":{"contextId": this.contexts[i].Crossfire.crossfire_id}});
+                        this._sendEvent("onContextDestroyed", {"body":{"contextId": this.contexts[i].Crossfire.crossfire_id}});
                         this.contexts.splice(i, 1);
                         break;
                     }
@@ -320,18 +319,18 @@ FBL.ns(function() {
             var context, response, contextid;
             var args = (request.arguments ? request.arguments : []);
             // first we handle commands that don't require a context
-            if (command == "listcontexts") {
+            if (command == "listContexts") {
                 response = this.listContexts();
             } else if (command == "version") {
                 response = { "version": CROSSFIRE_VERSION };
-            } else if (command == "gettools") {
+            } else if (command == "getTools") {
                 response = Crossfire.getTools();
-            } else if (command == "enabletools") {
+            } else if (command == "enableTools") {
                 response = Crossfire.enableTools(args["tools"]);
-            } else if (command == "disabletools") {
+            } else if (command == "disableTools") {
                 response = Crossfire.disableTools(args["tools"]);
             }
-            else if (command == "createcontext") {
+            else if (command == "createContext") {
                 context = this.findContext(args.contextId);
                 if(context) {
                     context.window.location = args.url;
@@ -354,16 +353,16 @@ FBL.ns(function() {
             else {
                 // else we require a context for the commands
                 context = this.findContext(request.contextId);
-                if(command == "setbreakpoints") {
+                if(command == "setBreakpoints") {
                     response = this.setBreakpoints(context, args);
                 }
-                else if(command == "getbreakpoints") {
+                else if(command == "getBreakpoints") {
                     response = this.getSpecificBreakpoints(context, args);
                 }
-                else if(command == "changebreakpoints") {
+                else if(command == "changeBreakpoints") {
                     response = this.changeBreakpoints(context, args);
                 }
-                else if(command == "deletebreakpoints") {
+                else if(command == "deleteBreakpoints") {
                     response = this.deleteBreakpoints(context, args);
                 }
                 else if(context) {
@@ -1382,7 +1381,7 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE:  _handleSource sending onScript=> " + sourceFile.href);
             }
-            this._sendEvent("onScript", {"contextId": context.Crossfire.crossfire_id, "data": data});
+            this._sendEvent("onScript", {"contextId": context.Crossfire.crossfire_id, "body": data});
         },
         
         // ----- Firebug Debugger listener -----
@@ -1396,7 +1395,7 @@ FBL.ns(function() {
          * The event body contains the following:
          * <ul>
          * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug with the <code>url</code> and <code>line</code> values set</li>
+         * <li><code>body</code> - the event payload from Firebug with the <code>url</code> and <code>line</code> values set</li>
          * </ul>
          * @function
          * @public
@@ -1425,7 +1424,7 @@ FBL.ns(function() {
             var bcause = context.breakingCause;
             var cause =  bcause ? {"title":bcause.title, "message":bcause.message} : {};
             var location = {"url" : url, "line": lineno};
-            this._sendEvent("onBreak", {"contextId": contextId, "data": {"location":location, "cause":cause}});
+            this._sendEvent("onBreak", {"contextId": contextId, "body": {"location":location, "cause":cause}});
             this.running = false;
         },
 
@@ -1481,7 +1480,7 @@ FBL.ns(function() {
          * The event body contains the following:
          * <ul>
          * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug which contains
+         * <li><code>body</code> - the event payload from Firebug which contains
          * the <code>url</code>, <code>line</code>, <code>set</code> and <code>props</code> entries</li>
          * </ul>
          * @function
@@ -1523,7 +1522,7 @@ FBL.ns(function() {
                 this._mergeBreakpointProperties(bp, props);
                 data = {"breakpoint":bp,"set":isSet};
             }
-            this._sendEvent("onToggleBreakpoint", {"contextId":context.Crossfire.crossfire_id,"data": data});
+            this._sendEvent("onToggleBreakpoint", {"contextId":context.Crossfire.crossfire_id,"body": data});
         },
 
         /**
@@ -1588,7 +1587,7 @@ FBL.ns(function() {
          * The event body contains the following:
          * <ul>
          * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug which contains
+         * <li><code>body</code> - the event payload from Firebug which contains
          * the <code>xpath</code> and <code>type</code> entries</li>
          * </ul>
          * @function
@@ -1611,7 +1610,7 @@ FBL.ns(function() {
              }
              data = {"breakpoint":bp,"set":bp.attributes.enabled};
              //the breakpoint is considered set if it is enabled
-             this._sendEvent("onToggleBreakpoint", {"contextId": cid, "data": data});
+             this._sendEvent("onToggleBreakpoint", {"contextId": cid, "body": data});
         },
 
         /**
@@ -1643,15 +1642,10 @@ FBL.ns(function() {
             return "html_unknown_type";
         },
 
-        // ----- Firebug Console listener -----
-
         /**
-         * @name log
-         * @description
-         * This function is a callback for <code>Firebug.ConsoleBase</code> located
-         * in <code>content/firebug/console.js</code>.
+         * @name onError
+         * @description call-back from Firebug when an error is encountered
          * <br><br>
-         * Generates event packets based on the className (error).
          * The object or message logged is contained in the packet's <code>data</code> property.
          * <br><br>
          * Fires the <code>onError</code> event.
@@ -1659,35 +1653,25 @@ FBL.ns(function() {
          * The event body contains the following:
          * <ul>
          * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug</li>
+         * <li><code>body</code> - the event payload from Firebug</li>
          * </ul>
          * @function
          * @public
          * @memberOf CrossfireServer
-         * @param object the object causing the error
-         * @param context the current context
-         * @param className the name of the kind of console event.
-         * @param rep
-         * @param noThrottle
-         * @param sourceLink
+         * @param context the FB context
+         * @param frame the current stackframe context
+         * @param error the current error
+         * @since 0.3a8
          */
-        log: function(context, object, className, rep, noThrottle, sourceLink) {
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE log");
+        onError: function(context, frame, error) {
+        	if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE onError => "+error);
             }
             if(context && context.Crossfire) {
                 var cid = context.Crossfire.crossfire_id;
-
-                if (FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE sending onError ");
-                }
-
-                this._sendEvent("onError", {"contextId": cid, "data": Crossfire.serialize(object)});
+                this._sendEvent("onError", {"contextId": cid, "body": {"frame":Crossfire.serialize(frame), "error": error}});
             }
         },
-
-        // ----- helpers -----
-
 
         /**
          * @name _copyFrame

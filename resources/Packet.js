@@ -175,7 +175,7 @@ function ResponsePacket( command, requestSeq, contextid, body, status, headers) 
             "type": "response",
             "command": command,
             "seq": sequence,
-            "request_seq": requestSeq,
+            "requestSeq": requestSeq,
             "body": body,
             "status": status
     };

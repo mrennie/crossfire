@@ -95,7 +95,7 @@ FBL.ns(function() {
          * The event body contains the following:
          * <ul>
          * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug with the <code>node</code> value set</li>
+         * <li><code>body</code> - the event payload from Firebug with the <code>node</code> value set</li>
          * </ul>
          * @function
          * @public
@@ -111,7 +111,7 @@ FBL.ns(function() {
                 }
                 var path = this._resolveElementPath(node, true);
                 if(path) {
-                    this.transport.sendEvent("onInspectNode", { "contextId": context.Crossfire.crossfire_id, "data": {"node": path}}, "inspector");
+                    this.transport.sendEvent("onInspectNode", { "contextId": context.Crossfire.crossfire_id, "body": {"node": path}}, "inspector");
                 }
             }
         },

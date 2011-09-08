@@ -37,7 +37,7 @@ FBL.ns(function() {
                 this.transport.sendEvent("onNetworkRequest",
                     {
                         "contextId": context.Crossfire.crossfire_id,
-                        "data": { "href": file.href, "startTime": file.startTime, "endTime": file.endTime }
+                        "body": { "href": file.href, "startTime": file.startTime, "endTime": file.endTime }
                     },
                     "net");
             }
@@ -48,7 +48,7 @@ FBL.ns(function() {
                 this.transport.sendEvent("onNetworkResponse",
                     {
                         "contextId": context.Crossfire.crossfire_id,
-                        "data": { "href": file.href, "startTime": file.startTime, "endTime": file.endTime }
+                        "body": { "href": file.href, "startTime": file.startTime, "endTime": file.endTime }
                     },
                     "net");
             }
