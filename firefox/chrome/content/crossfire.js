@@ -97,6 +97,7 @@ FBL.ns(function() {
             // FIXME: allow UI to change the value
             return port;
         },
+        
         /**
          * @name _ensureTransport
          * @description tries to load the transport module if it has not already been loaded
@@ -439,16 +440,13 @@ FBL.ns(function() {
 
         /**
          * @name serialize
-         * @description prepare a javascript object to be serialized into JSON.
+         * @description prepare a JavaScript object to be serialized into JSON.
          * @function
          * @private
          * @memberOf CrossfireModule
          * @param obj the JavaScript {@link Object} to serialize
          */
         serialize: function(obj) {
-            if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
-                FBTrace.sysout("CROSSFIRE serialize => " + obj, obj);
-            }
             try {
                 var type = typeof(obj);
                 var serialized = {
@@ -477,10 +475,9 @@ FBL.ns(function() {
                     || obj == -Infinity)) {
                         serialized["value"] = obj.toString();
                 } else {
+                	FBTrace.sysout("CROSSFIRE serialize unknown type: " + type, obj);
                     serialized["value"] = obj;
                 }
-                if (FBTrace.DBG_CROSSFIRE_SERIALIZE)
-                    FBTrace.sysout("CROSSFIRE serialize returning: " + serialized, serialized);
                 return serialized;
             } catch (e) {
                 if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
@@ -527,8 +524,9 @@ FBL.ns(function() {
             }
             else if (obj instanceof Object && Object.keys)
             {
-                if (FBTrace.DBG_CROSSFIRE_SERIALIZE)
+                if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
                     FBTrace.sysout("_serializeProperties getting Object.keys()");
+                }
                 properties = Object.keys(obj);
             }
             else {
@@ -536,8 +534,6 @@ FBL.ns(function() {
                 for (p in obj) {
                     try {
                         if (Object.prototype.hasOwnProperty.call(obj,p)) {
-                            if (FBTrace.DBG_CROSSFIRE_SERIALIZE)
-                                FBTrace.sysout("_serializeProperties adding property " + p, p);
                             properties.push(p);
                         }
                     } catch (exc) {
@@ -547,20 +543,14 @@ FBL.ns(function() {
                     }
                 }
             }
-
-            if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
-                FBTrace.sysout("_serializeProperties iterating " + properties.length + " properties", properties);
-            }
             for (var i = 0; i < properties.length; i++) {
                 pName = properties[i];
                 prop = obj[pName];
-                if (FBTrace.DBG_CROSSFIRE_SERIALIZE)
-                    FBTrace.sysout("_serializeProperties property #" + i + " : " +pName, {"name": pName, "object": prop });
                 try {
                     if (typeof(prop) == "object" || typeof(prop) == "function")
                     {
                         if (prop == null) {
-                            o[pName] = "null";
+                            o[pName] = this.serialize(prop);//"null";
                         } else if (prop && prop.type && prop.handle) {
                             o[pName] = prop;
                         } else  {

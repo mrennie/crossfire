@@ -59,7 +59,9 @@ FBL.ns(function() {
 
                 this.transport.open(host, port);
             } catch(e) {
-                if (FBTrace.DBG_CROSSFIRE) FBTrace.sysout("CROSSFIRE failed to start server "+e);
+                if (FBTrace.DBG_CROSSFIRE) {
+                	FBTrace.sysout("CROSSFIRE failed to start server "+e.toString());
+                }
                 this._removeListeners();
             }
         },
@@ -455,34 +457,24 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         getBacktrace: function(context, args) {
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE backtrace");
-            }
-            if (context && context.Crossfire.currentFrame) {
+            if (context && context.Crossfire.currentStack) {
                 if(!args) {
                     args = [];
                 }
                 var from = args["fromFrame"] || 0;
                 var to = args["toFrame"];
-                var stack = context.Crossfire.currentFrame.stack;
+                var stack = context.Crossfire.currentStack;
                 var scopes = args["includeScopes"] || true;
                 if (stack) {
-                    if (FBTrace.DBG_CROSSFIRE)
-                        FBTrace.sysout("CROSSFIRE backtrace stack length => " + stack.length, stack);
                     // to set to stack.length if not set, or if set to a number higher than the stack sizes
                     to = (to && to <= stack.length) ? to : stack.length-1;
                 } else {
-                    if (FBTrace.DBG_CROSSFIRE)
-                        FBTrace.sysout("CROSSFIRE backtrace had no stack");
                     // issue 2559: if there is only one frame, stack is undefined,
                     // but we still want to return that frame.
                     from = 0;
                     to = 0;
                 }
                 var frames = [];
-                if (FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("backtrace => from: " + from + " to: " + to);
-                }
                 for (var i = from; i <= to; i++) {
                     var frame = this.getFrame(context, {"index": i, "includeScopes": scopes});
                     if (frame) {
@@ -683,12 +675,8 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CrossfireServer doEvaluate expression: " + expression + " frame: " + frame);
             }
-            if (context.Crossfire.currentFrame) {
-                if (frameNo == 0) {
-                    frame = context.Crossfire.currentFrame;
-                } else if (frameNo > 0) {
-                    frame = context.Crossfire.currentFrame.stack[frameNo];
-                }
+            if (context.Crossfire.currentStack && frameNo > 0) {
+            	frame = context.Crossfire.currentStack[frameNo];
             }
             var result = {};
             var contextId = context.Crossfire.crossfire_id;
@@ -727,6 +715,9 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         getFrame: function(context, args) {
+        	if(FBTrace.DBG_CROSSFIRE) {
+        		FBTrace.sysout("CROSSFIRE getframe with args => "+args);
+        	}
             var index = args["index"];
             if(!index || index < 0) {
                 index = 0;
@@ -735,29 +726,26 @@ FBL.ns(function() {
             if(!includeScopes) {
                 includeScopes = true;
             }
-            var frame = context.Crossfire.currentFrame;
-            if(!frame) {
+            
+            var stack = context.Crossfire.currentStack;
+            if(!stack) {
                 return null;
             }
-            if (frame.stack) {
-                frame = frame.stack[index];
-            }
+            var frame = stack[index];
             try {
                 var locals = {};
-                for (var l in frame.scope) {
-                    if (l != "parent") { // ignore parent
-                        locals[l] = frame.scope[l];
-                    }
-                }
+                if(frame.scopes) {
+            		locals = Crossfire.serialize(frame.scopes[0]);
+            	}
                 if (frame.thisValue) {
-                    locals["this"] = frame.thisValue;
+                    locals["this"] = Crossfire.serialize(frame.thisValue);
                 }
                 if (includeScopes) {
                     var scopes = (this.getScopes(context, {"frameIndex": index })).scopes;
                 }
                 return {
                     "frame": {
-	                    "index": frame.frameIndex,
+	                    "index": frame.index,
 	                    "functionName": frame.functionName,
 	                    "url": frame.script,
 	                    "locals": locals,
@@ -766,7 +754,7 @@ FBL.ns(function() {
 	                }
                 };
             } catch (exc) {
-                if (FBTrace.DBG_CROSSFIRE) {
+                if (FBTrace.DBG_CROSSFIRE_GETFRAME) {
                     FBTrace.sysout("CROSSFIRE exception returning frame ", exc);
                 }
             }
@@ -979,32 +967,26 @@ FBL.ns(function() {
             var scope;
             var scopeNo = args["index"];
             var frameNo = args["frameIndex"];
-            var frame = context.Crossfire.currentFrame;
+            var stack = context.Crossfire.currentStack;
             if (scopeNo == 0) {
                 // only return a reference to the global scope
                 scope = Crossfire._getRef(context.window.wrappedJSObject);
             }
-            else if (frame) {
-                if(frame.stack) {
-                    if (!frameNo || frameNo < 0) {
-                        frameNo = 0;
-                    }
-                    else if(frameNo > frame.stack.length) {
-                        frameNo = frame.stack.length-1;
-                    }
-                    frame = frame.stack[frameNo];
+            else if(stack) {
+                if (!frameNo || frameNo < 0) {
+                    frameNo = 0;
                 }
-                scope = frame.scope;
-                for (var i = 0; i < scopeNo; i++) {
-                    scope = scope.parent;
-                    if (!scope) break;
+                else if(frameNo > stack.length) {
+                    frameNo = stack.length-1;
                 }
+                var scopes = stack[frameNo].scopes;
+                scope = scopes[scopeNo-1];
             }
             if (scope) {
                 return {
                     "index": scopeNo,
                     "frameIndex": frameNo,
-                    "scope": scope
+                    "scope": Crossfire.serialize(scope)
                 };
             }
             return null;
@@ -1293,7 +1275,7 @@ FBL.ns(function() {
                 "columnOffset": 0,
                 "sourceLength":srcLen,
                 "lineCount": lines.length,
-                "type": sourceFile.compilation_unit_type,
+                "type": sourceFile.compilation_unit_type
             };
             if (includeSrc) {
                 script["source"] = lines.join(' ');
@@ -1403,24 +1385,21 @@ FBL.ns(function() {
          * @param context the current Crossfire context
          */
         onStartDebugging: function(context) {
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE:  onStartDebugging");
-            }
-            var frame = context.stoppedFrame;
-            var lineno = 1;
-            var sourceFile = Firebug.SourceFile.getSourceFileByScript(context, frame.script)
-            if (sourceFile) {
-                var analyzer = sourceFile.getScriptAnalyzer(frame.script);
-                if (analyzer) {
-                    lineno = analyzer.getSourceLineFromFrame(context, frame);
-                }
-            }
-            var url = sourceFile.href.toString();
+            var frame = FBL.getStackFrame(context.stoppedFrame, context);
+            var lineno = frame.getLineNumber();
+            var url = frame.getURL();
             var contextId = context.Crossfire.crossfire_id;
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE:  onStartDebugging href => " + url);
+            var stack = [];
+            var parent = frame;
+            var copy;
+            var index = 0;
+            while(parent) {
+            	copy = this._copyFrame(parent, context);
+            	copy.index = index++;
+            	stack.push(copy);
+            	parent = parent.getCallingFrame();
             }
-            context.Crossfire.currentFrame = this._copyFrame(frame, context, true);
+            context.Crossfire.currentStack = stack;
             var bcause = context.breakingCause;
             var cause =  bcause ? {"title":bcause.title, "message":bcause.message} : {};
             var location = {"url" : url, "line": lineno};
@@ -1465,7 +1444,7 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE)
                 FBTrace.sysout("CROSSFIRE: onResume");
 
-            context.Crossfire.currentFrame = null;
+            context.Crossfire.currentStack = null;
             //this._clearRefs();
             this._sendEvent("onResume", {"contextId": context.Crossfire.crossfire_id});
             this.running = true;
@@ -1576,8 +1555,6 @@ FBL.ns(function() {
             this.onToggleBreakpoint(context, url, lineNo, isSet, props);
         },
 
-        // ----- Firebug HTMLModule listener -----
-
         /**
          * @name onModifyBreakpoint
          * @description Handles an HTML element breakpoint being toggled
@@ -1683,130 +1660,30 @@ FBL.ns(function() {
          * @memberOf CrossfireServer
          * @param frame the stackframe to copy
          * @param ctx the current Crossfire context
-         * @param shouldCopyStack is the stack of the frame should also be copied
          * @type Array
          * @returns a copy of the given stackframe
          */
-        _copyFrame: function(frame, ctx, shouldCopyStack) {
-            var frameScript,
-                sourceFile,
-                analyzer,
-                stack,
-                thisVal,
-                frameCopy = {};
-
-            if (FBTrace.DBG_CROSSFIRE_FRAMES)
-                FBTrace.sysout("_copyFrame frame is: " + frame, frame);
-
-            // recursively copy scope chain
-            if (frame && frame.isValid) {
-                try {
-                    sourceFile = Firebug.SourceFile.getSourceFileByScript(ctx, frame.script)
-                    if (sourceFile) {
-                        analyzer = sourceFile.getScriptAnalyzer(frame.script);
-                        if (analyzer) {
-                            lineno = analyzer.getSourceLineFromFrame(ctx, frame);
-                            frameCopy["line"] = lineno;
-                            frameScript = sourceFile.href.toString();
-                            if (FBTrace.DBG_CROSSFIRE_FRAMES)
-                                FBTrace.sysout("frame.script is " + frameScript);
-
-                            frameCopy["script"] = frameScript;
-                        }
-                    }
-                } catch (x) {
-                    if (FBTrace.DBG_CROSSFIRE_FRAMES) FBTrace.sysout("Exception getting script name");
-                    frameCopy["line"] = frame.line;
-                }
-                frameCopy["scope"] = this._copyScope(frame.scope);
-                if (frame.thisValue) {
-                    if (FBTrace.DBG_CROSSFIRE_FRAMES)
-                        FBTrace.sysout("copying thisValue from frame...");
-                    try {
-                       thisVal = frame.thisValue.getWrappedValue();
-                       frameCopy["thisValue"] = Crossfire.serialize(thisVal);
-                    } catch( e) {
-                        if (FBTrace.DBG_CROSSFIRE_FRAMES) FBTrace.sysout("Exception copying thisValue => " + e);
-                    }
-                } else if (FBTrace.DBG_CROSSFIRE_FRAMES) {
-                    FBTrace.sysout("no thisValue in frame");
-                }
-                frameCopy["functionName"] = frame.functionName;
-                // copy eval so we can call it from 'evaluate' command
-                frameCopy["eval"] = function() { return frame.eval.apply(frame, arguments); };
-                if (shouldCopyStack) {
-                    if (frame.callingFrame) {
-                        stack = this._copyStack(frame.callingFrame, ctx);
-                        stack.push(frameCopy);
-                        frameCopy["stack"] = stack;
-                        frameCopy["frameIndex"] = stack.length -1;
-                    } else {
-                        frameCopy["frameIndex"] = 0;
-                    }
-                }
-            }
-            return frameCopy;
-        },
-
-        /**
-         * @name _copyStack
-         * @description recursively copies all of the stack elements from the given frame
-         * @function
-         * @private
-         * @memberOf CrossfireServer
-         * @param the current frame
-         * @type Array
-         * @returns the Array for the copied stack
-         * @since 0.3a1
-         */
-        _copyStack: function(aFrame, aCtx) {
+        _copyFrame: function(frame, ctx) {
             if (FBTrace.DBG_CROSSFIRE_FRAMES) {
-                FBTrace.sysout("CROSSFIRE copyStack: calling frame is => " +  aFrame.callingFrame, aFrame.callingFrame);
+                FBTrace.sysout("CROSSFIRE: _copyFrame - frame is: " + frame, frame);
             }
-            if (aFrame.callingFrame && aFrame.callingFrame) {
-                // recursively copy stack
-                var stack = this._copyStack(aFrame.callingFrame);
-                //splice last frame onto stack
-                stack.splice(0,0,this._copyFrame(aFrame, aCtx, false));
-                return stack;
-            } else {
-                return [ this._copyFrame(aFrame, aCtx, false) ];
+            if(frame && frame instanceof FBL.StackFrame) {
+            	var scopes = frame.getScopes(false);
+            	var thisval = frame.getThisValue();
+	            var copy = {
+	            		"eval": function() { return frame.eval.apply(frame, arguments); },
+	            		"functionName": frame.getFunctionName(),
+	            		"line": frame.getLineNumber(),
+	            		"thisValue": thisval,
+	            		"scopes": scopes,
+	            		"script": frame.getURL()
+	            };
+	            return copy;
             }
-        },
-
-        /**
-         * @name _copyScope
-         * @description recursively copies the given scope and returns a new serialized scope
-         * @function
-         * @private
-         * @memberOf CrossfireServer
-         * @param the scope to copy
-         * @type String
-         * @returns the {@link String} serialized copied scope
-         * @since 0.3a1
-         */
-        _copyScope: function(aScope) {
             if (FBTrace.DBG_CROSSFIRE_FRAMES) {
-                FBTrace.sysout("Copying scope => " + aScope, aScope);
+                FBTrace.sysout("CROSSFIRE: _copyFrame - not an instanceof FBL.Stackframe", frame);
             }
-            var copiedScope = {};
-            try {
-                var listValue = {value: null}, lengthValue = {value: 0};
-                aScope.getProperties(listValue, lengthValue);
-                for (var i = 0; i < lengthValue.value; ++i) {
-                    var prop = listValue.value[i];
-                    var name = prop.name.getWrappedValue();
-                    if (name) {
-                        copiedScope[name.toString()] = prop.value.getWrappedValue();
-                    } else if (FBTrace.DBG_CROSSFIRE_FRAMES) {
-                        FBTrace.sysout("Failed to get value for property with no name at index " + i + ": " + prop.value, prop);
-                    }
-                }
-            } catch (ex) {
-                if (FBTrace.DBG_CROSSFIRE_FRAMES)
-                    FBTrace.sysout("Exception copying scope => " + ex, ex);
-            }
-            return Crossfire.serialize(copiedScope);
+            return null;
         },
 
         /**
@@ -1821,8 +1698,9 @@ FBL.ns(function() {
          */
         _sendEvent: function(event, data) {
             if (this.transport && Crossfire.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
-                if (FBTrace.DBG_CROSSFIRE)
+                if (FBTrace.DBG_CROSSFIRE) {
                     FBTrace.sysout("CROSSFIRE: _sendEvent => " + event + " ["+data+"]");
+                }
                 this.transport.sendEvent(event, data);
             }
         }
