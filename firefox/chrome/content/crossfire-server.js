@@ -934,7 +934,7 @@ FBL.ns(function() {
 	            }
         	}
         	catch(e) {
-            	Firebug.Console.log("CROSSFIRE getScopes exception computing scopes"+e.getMessage());
+        		FBTrace.sysout("CROSSFIRE getScopes exception computing scopes"+e.getMessage(), e);
         	}
             return null;
         },
@@ -985,7 +985,7 @@ FBL.ns(function() {
 	            }
         	}
             catch(e) {
-            	FBTrace.sysout("CROSSFIRE getScope exception computing scope at index: "+index+" for frame: "+frameIndex+" "+e.getMessage());
+            	FBTrace.sysout("CROSSFIRE getScope exception computing scope at index: "+index+" for frame: "+frameIndex+" "+e.getMessage(), e);
             }
             return null;
         },
