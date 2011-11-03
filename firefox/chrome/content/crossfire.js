@@ -475,7 +475,6 @@ FBL.ns(function() {
                     || obj == -Infinity)) {
                         serialized["value"] = obj.toString();
                 } else {
-                	FBTrace.sysout("CROSSFIRE serialize unknown type: " + type, obj);
                     serialized["value"] = obj;
                 }
                 return serialized;
