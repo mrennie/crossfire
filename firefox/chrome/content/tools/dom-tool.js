@@ -36,7 +36,9 @@ FBL.ns(function() {
 
         // Firebug listener
         initialize: function() {
-            FBTrace.sysout("dom-tool initialize");
+        	if (FBTrace.DBG_CROSSFIRE_TOOLS) {
+        		FBTrace.sysout("DOM-tool initialize");
+        	}
         },
 
         initContext: function(context) {

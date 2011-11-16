@@ -331,15 +331,11 @@ CrossfireSocketTransport.prototype =
      * @see https://developer.mozilla.org/en/nsISocketTransportService
      */
     _createTransport: function (host, port) {
-
-        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
             FBTrace.sysout("_createTransport");
-
+        }
         if (this.isServer) {
-
-            this._serverSocket = Cc["@mozilla.org/network/server-socket;1"]
-                                  .createInstance(Ci.nsIServerSocket);
-
+            this._serverSocket = Cc["@mozilla.org/network/server-socket;1"].createInstance(Ci.nsIServerSocket);
             // mcollins: issue 3606
             // create a preference to pass to serverSocket.init() so we can connect to more than loopback.
             // https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIServerSocket#init%28%29
@@ -348,32 +344,29 @@ CrossfireSocketTransport.prototype =
                 var prefBranch = PrefService.getBranch("extensions.firebug.crossfire.");
                 if (prefBranch) {
                     isLoopbackOnly = prefBranch.getBoolPref("loopbackOnly");
-                    if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                    if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
                         FBTrace.sysout("Crossfire got loopbackOnly pref: " + isLoopbackOnly);
+                    }
                 }
             } catch (e1) {
-                if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
                     FBTrace.sysout("Exception getting loopbackOnly pref. Crossfire will only accept connections from localhost.");
+                }
             }
             try {
                 this._serverSocket.init(port, isLoopbackOnly, -1);
                 this._listenForHandshake();
                 this._notifyConnection(CROSSFIRE_STATUS.STATUS_WAIT_SERVER);
             } catch (e2) {
-                if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
                     FBTrace.sysout("exception creating crossfire server: " + e2);
-                // TODO: notifyConnection of failure
+                }
             }
         } else {
-            var transportService = Cc["@mozilla.org/network/socket-transport-service;1"]
-                                      .getService(Ci.nsISocketTransportService);
-
+            var transportService = Cc["@mozilla.org/network/socket-transport-service;1"].getService(Ci.nsISocketTransportService);
             this._transport = transportService.createTransport(null,0, host, port, null);
-
             this._createInputStream();
-
             this._createOutputStream();
-
             this._sendHandshake();
         }
     },
@@ -629,6 +622,14 @@ CrossfireSocketTransport.prototype =
         }, timeout);
     },
 
+    /**
+     * @name _readToolString
+     * @description Reads in and parses the comma-separated list of tools to be activated. For all tool names parsed 
+     * the listener list is consulted to send <code>activateTool</code> events
+     * @function
+     * @private
+     * @memberOf CrossfireSocketTransport
+     */
     _readToolString: function() {
         var tools, prev, cur, toolString = "";
         if (this._inputStream.available() > 0) {
@@ -637,26 +638,24 @@ CrossfireSocketTransport.prototype =
                 toolString += cur;
                 prev = cur;
             }
-            if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
                 FBTrace.sysout("toolString is: " + toolString);
+            }
 
             tools = toolString.split(",");
-
-            var activationListener;
             for (var i = 0; i < this.listeners.length; ++i) {
-                listener = this.listeners[i];
-                if (typeof(listener.activateTool) == "function") {
-                    activationListener = listener;
-                    break;
-                }
-            }
-            if (activationListener) {
-                for (var i in tools) {
-                    try {
-                        activationListener.activateTool(tools[i]);
-                    } catch (e) {
-                        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
-                            FBTrace.sysout("exception activating tool: " + tools[i] + ", " + e);
+                if (typeof(this.listeners[i].activateTool) == "function") {
+                	for (var t in tools) {
+                		if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
+                            FBTrace.sysout("Trying to activate tool "+t+" with listener "+this.listeners[i], this.listeners[i]);
+                        }
+                        try {
+                        	this.listeners[i].activateTool(tools[t]);
+                        } catch (e) {
+                            if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
+                                FBTrace.sysout("exception activating tool: " + tools[t], e);
+                            }
+                        }
                     }
                 }
             }

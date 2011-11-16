@@ -16,18 +16,35 @@ FBL.ns(function() {
         events: ["onConsoleLog", "onConsoleDebug", "onConsoleInfo", "onConsoleWarn", "onConsoleError" ],
 
         handleRequest: function( request) {
-
+        	if (FBTrace.DBG_CROSSFIRE_TOOLS) {
+        		FBTrace.sysout("console-tool handleRequest");
+        	}
         },
 
+        initialize: function() {
+        	if (FBTrace.DBG_CROSSFIRE_TOOLS) {
+        		FBTrace.sysout("console-tool initialize");
+        	}
+        }
+        
         onConnectionStatusChanged: function( status) {
+        	if (FBTrace.DBG_CROSSFIRE_TOOLS) {
+        		FBTrace.sysout("console-tool onConnectionStatusChanged");
+        	}
             this.status = status;
         },
 
         onRegistered: function() {
+        	if (FBTrace.DBG_CROSSFIRE_TOOLS) {
+        		FBTrace.sysout("console-tool onRegistered");
+        	}
             Firebug.Console.addListener(this);
         },
 
         onUnregistered: function() {
+        	if (FBTrace.DBG_CROSSFIRE_TOOLS) {
+        		FBTrace.sysout("console-tool onUnregistered");
+        	}
             Firebug.Console.removeListener(this);
         },
 
@@ -60,7 +77,7 @@ FBL.ns(function() {
          */
         log: function(context, object, className, rep, noThrottle, sourceLink) {
             if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE log");
+                FBTrace.sysout("CROSSFIRE ConsoleTool log");
             }
             if(context && context.context && context.trace) {
                 var cid = context.context.Crossfire.crossfire_id;

@@ -44,39 +44,30 @@ FBL.ns(function() {
          * @extends Firebug.Module
          */
         initialize: function() {
-        if (FBTrace.DBG_CROSSFIRE)
-            FBTrace.sysout("CROSSFIRE initialize");
-            // -- add tools --
-            //TODO: load tools conditionally upon enablement
-            //Components.utils.import("resource://crossfire/tools/console-tool.js");
-            var consoleTool = new Crossfire.ConsoleTool();
-            if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                FBTrace.sysout("CROSSFIRE created ConsoleTool: " + consoleTool);
-            this.registerTool("console", consoleTool);
-
-            //Components.utils.import("resource://crossfire/tools/inspector-tool.js");
-            var inspectorTool = new Crossfire.InspectorTool();
-            if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                FBTrace.sysout("CROSSFIRE created InspectorTool: " + inspectorTool);
-            this.registerTool("inspector", inspectorTool);
-
-            //Components.utils.import("resource://crossfire/tools/net-tool.js");
-            var netTool = new Crossfire.NetTool();
-            if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                FBTrace.sysout("CROSSFIRE created NetTool: " + netTool);
-            this.registerTool("net", netTool);
-
-            //Components.utils.import("resource://crossfire/tools/dom-tool.js");
-            var domTool = new Crossfire.DomTool();
-            if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                FBTrace.sysout("CROSSFIRE created DomTool: " + domTool);
-            this.registerTool("dom", domTool);
+	        if (FBTrace.DBG_CROSSFIRE) {
+	            FBTrace.sysout("CROSSFIRE initialize");
+	        }
+	        
+	        // -- register tools --
+            this.registerTool("console", new Crossfire.ConsoleTool());
+            this.registerTool("inspector", new Crossfire.InspectorTool());
+            this.registerTool("net", new Crossfire.NetTool());
+            this.registerTool("dom", new Crossfire.DomTool());
 
             // initialize refs
             this._clearRefs();
             this.status = CROSSFIRE_STATUS.STATUS_DISCONNECTED;
         },
 
+        /**
+         * @name getServerTransport
+         * @description Returns the currently used CrossfireSocketTransport. If the transport has not been created
+         * yet, a new one is created and returned
+         * @function
+         * @public
+         * @memberOf CrossfireModule
+         * @returns a new CrossfireSocketTransport
+         */
         getServerTransport: function() {
             this._ensureTransport();
             return this.serverTransport;
@@ -87,14 +78,17 @@ FBL.ns(function() {
             return this.clientTransport;
         },
 
-        /*
-         * integer server port number or null if this is not a server
+        /**
+         * @name getServerPort
+         * @description Returns the integer port number specified on the command line
+         * @function
+         * @public
+         * @memberOf CrossfireModule
+         * @returns the integer port number
          */
-        getServerPort: function()
-        {
+        getServerPort: function() {
             var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
             var port = commandLine.getServerPort();
-            // FIXME: allow UI to change the value
             return port;
         },
         
@@ -105,9 +99,9 @@ FBL.ns(function() {
          * @private
          */
         _ensureTransport: function() {
-            if (FBTrace.DBG_CROSSFIRE)
+            if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("Crossfire _ensureTransport");
-
+            }
             if (! this.serverTransport) {
                 this.serverTransport = getCrossfireServer();
                 this.serverTransport.addListener(this);
@@ -127,8 +121,9 @@ FBL.ns(function() {
          * @memberOf CrossfireModule
          */
         disconnect: function() {
-            if (FBTrace.DBG_CROSSFIRE)
+            if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE disconnect");
+            }
             if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER
                     || this.status == CROSSFIRE_STATUS.STATUS_WAIT_SERVER) {
                 this.serverTransport.close();
@@ -193,7 +188,6 @@ FBL.ns(function() {
                 this.clientTransport = null;
                 this.serverTransport = null;
             }
-
         },
 
         /**
@@ -662,29 +656,6 @@ FBL.ns(function() {
                 }
             }
         },
-
-        /*
-         * @name setRunning
-         * @description Update the Crossfire running status.
-         * @function
-         * @public
-         * @memberOf CrossfireModule
-         * @param isRunning the desired running state for Crossfire
-         *
-        setRunning: function( isRunning) {
-            if (FBTrace.DBG_CROSSFIRE)
-                FBTrace.sysout("CROSSFIRE setRunning", isRunning);
-            var icon = FBL.$("crossfireIcon");
-            if (icon) {
-                if (isRunning) {
-                     FBL.setClass(icon, "running");
-                } else {
-                     FBL.removeClass(icon, "running");
-                }
-            }
-            this.running = isRunning;
-        }
-         */
 
         // FBTest listener
         onGetTestList: function(testLists)
