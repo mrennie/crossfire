@@ -57,7 +57,6 @@ var CROSSFIRE_STATUS = {
         STATUS_WAIT_SERVER: "wait_server",
         STATUS_CONNECTING: "connecting",
         STATUS_CONNECTED_SERVER: "connected_server",
-        STATUS_CONNECTED_CLIENT: "connected_client",
 		STATUS_RESETTING_CONNECTION: "resetting"
 };
 
@@ -292,27 +291,22 @@ CrossfireSocketTransport.prototype =
      */
     reset: function() {
         if (this.isServer) {
-             if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+             if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
                  FBTrace.sysout("Crossfire server resetting");
-
+             }
             this._closeStreams();
-
             if (this._transport) {
                 this._transport.close(CROSSFIRE_STATUS.STATUS_RESETTING_CONNECTION);
             }
-
             this._defer(function() {
                 try {
                     this._notifyConnection(CROSSFIRE_STATUS.STATUS_WAIT_SERVER);
                 } catch (e) {
-                    if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+                    if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
                         FBTrace.sysout("exception resetting: " + e);
+                    }
                 }
-
-                //this._createTransport(this.host, this.port);
             });
-
-
         }
     },
 
@@ -380,14 +374,11 @@ CrossfireSocketTransport.prototype =
      * @see https://developer.mozilla.org/en/nsScriptableInputStream
      */
     _createInputStream: function() {
-        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
             FBTrace.sysout("_createInputStream");
-
+        }
         this._inputStream = this._transport.openInputStream(Ci.nsITransport.OPEN_BLOCKING | Ci.nsITransport.OPEN_UNBUFFERED, 0, 0);
-
-        this._scriptableInputStream = Cc["@mozilla.org/scriptableinputstream;1"]
-                            .createInstance(Ci.nsIScriptableInputStream);
-
+        this._scriptableInputStream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
         this._scriptableInputStream.init(this._inputStream);
     },
 
@@ -400,11 +391,10 @@ CrossfireSocketTransport.prototype =
      * @see https://developer.mozilla.org/en/nsIOutputStream
      */
     _createOutputStream: function() {
-        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
             FBTrace.sysout("_createOutputStream");
-
+        }
         this._outputStream = this._transport.openOutputStream(Ci.nsITransport.OPEN_BLOCKING | Ci.nsITransport.OPEN_UNBUFFERED, 0, 0);
-
         this._outputStreamCallback = {
                 _packets: [],
 
@@ -447,15 +437,13 @@ CrossfireSocketTransport.prototype =
      * @see https://developer.mozilla.org/en/nsISocketTransportService
      */
     _destroyTransport: function() {
-        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
             FBTrace.sysout("_destroyTransport");
-
+        }
         delete this._outputStreamCallback;
         delete this._outputStream;
-
         delete this._scriptableInputStream;
         delete this._inputStream;
-
         delete this._transport;
     },
 
@@ -471,7 +459,6 @@ CrossfireSocketTransport.prototype =
         if (this._inputStream) {
             this._inputStream.close(null);
         }
-
         if (this._outputStream) {
             this._outputStream.flush();
             this._outputStream.close();
@@ -542,9 +529,9 @@ CrossfireSocketTransport.prototype =
      * @memberOf CrossfireSocketTransport
      */
     _sendHandshake: function() {
-        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
             FBTrace.sysout("_sendHandshake");
-
+        }
         var self = this;
         this._outputStream.asyncWait( {
             QueryInterface: function( iid) {
@@ -585,9 +572,9 @@ CrossfireSocketTransport.prototype =
      * @param timeout the amount of time to wait for a handshake acknowledgment
      */
     _waitHandshake: function( timeout) {
-        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
             FBTrace.sysout("_waitHandshake");
-
+        }
         this._defer(function() {
             try {
                 if (this._inputStream.available() >= CROSSFIRE_HANDSHAKE.length) {
@@ -600,10 +587,6 @@ CrossfireSocketTransport.prototype =
                                 buff = this._scriptableInputStream.read(2);
                             this._readToolString();
                             this._sendHandshake();
-                        } else {
-                            this.connected = true;
-                            this._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT);
-                            this._waitOnPacket();
                         }
                         return;
                     }
@@ -671,8 +654,9 @@ CrossfireSocketTransport.prototype =
      * @param packet the packet to send over the underlying transport
      */
     _sendPacket: function( packet) {
-        if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+        if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
             FBTrace.sysout("_sendPacket " + packet, packet);
+        }
         if (this._outputStreamCallback) {
             this._outputStreamCallback.addPacket(packet);
         }
@@ -694,8 +678,9 @@ CrossfireSocketTransport.prototype =
      */
     _waitOnPacket: function() {
         var avail, response;
-        if (!this.connected || !this._inputStream)
+        if (!this.connected || !this._inputStream) {
             return;
+        }
         try {
             avail = this._inputStream.available();
         } catch (e) {
@@ -709,13 +694,11 @@ CrossfireSocketTransport.prototype =
         }
         if (avail) {
             response = this._scriptableInputStream.read(avail);
-
-            if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
+            if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
                 FBTrace.sysout("_waitOnPacket got response => " + response);
-
+            }
             if (response) {
                 this._buffer += response;
-
                 while(this._parseBuffer()){
                     // until nothing more is recognized
                 }

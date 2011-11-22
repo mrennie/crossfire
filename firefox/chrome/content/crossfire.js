@@ -49,10 +49,10 @@ FBL.ns(function() {
 	        }
 	        
 	        // -- register tools --
-            this.registerTool("console", new Crossfire.ConsoleTool());
-            this.registerTool("inspector", new Crossfire.InspectorTool());
-            this.registerTool("net", new Crossfire.NetTool());
-            this.registerTool("dom", new Crossfire.DomTool());
+            this._registerTool(new Crossfire.ConsoleTool());
+            this._registerTool(new Crossfire.InspectorTool());
+            this._registerTool(new Crossfire.NetTool());
+            this._registerTool(new Crossfire.DomTool());
 
             // initialize refs
             this._clearRefs();
@@ -60,7 +60,7 @@ FBL.ns(function() {
         },
 
         /**
-         * @name getServerTransport
+         * @name getTransport
          * @description Returns the currently used CrossfireSocketTransport. If the transport has not been created
          * yet, a new one is created and returned
          * @function
@@ -68,14 +68,9 @@ FBL.ns(function() {
          * @memberOf CrossfireModule
          * @returns a new CrossfireSocketTransport
          */
-        getServerTransport: function() {
+        getTransport: function() {
             this._ensureTransport();
             return this.serverTransport;
-        },
-
-        getClientTransport: function() {
-            this._ensureTransport();
-            return this.clientTransport;
         },
 
         /**
@@ -106,11 +101,6 @@ FBL.ns(function() {
                 this.serverTransport = getCrossfireServer();
                 this.serverTransport.addListener(this);
             }
-
-            if (! this.clientTransport) {
-                this.clientTransport = new CrossfireSocketTransport();
-                this.clientTransport.addListener(this);
-            }
         },
 
         /**
@@ -127,15 +117,13 @@ FBL.ns(function() {
             if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER
                     || this.status == CROSSFIRE_STATUS.STATUS_WAIT_SERVER) {
                 this.serverTransport.close();
-            } else if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
-                this.clientTransport.close();
             }
             this._clearRefs();
 
-            this.unregisterTool("console");
-            this.unregisterTool("inspector");
-            this.unregisterTool("net");
-            this.unregisterTool("dom");
+            this._unregisterTool("console");
+            this._unregisterTool("inspector");
+            this._unregisterTool("net");
+            this._unregisterTool("dom");
             this._updatePanel();
         },
 
@@ -144,7 +132,7 @@ FBL.ns(function() {
          * @description Fetches the entered parameters from the server-start dialog
          * @function
          * @private
-         * @memberOf Crossfire
+         * @memberOf CrossfireModule
          * @param isServer if the dialog should ask for server start-up parameters or client connect parameters
          * @type Array
          * @returns an Array of dialog parameters
@@ -172,20 +160,14 @@ FBL.ns(function() {
          * @param {String} status the status to report
          */
         onConnectionStatusChanged: function( status) {
-            if (FBTrace.DBG_CROSSFIRE)
+            if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE onConnectionStatusChanged: " + status);
+            }
             this.status = status;
             this.updateStatusText(status);
             this.updateStatusIcon(status);
-
             this._updatePanel();
-
-            // xxxMcollins: standalone client hack
-            if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT
-                    && this.registeredTools["RemoteClient"]) {
-                this.activateTool("RemoteClient");
-            } else if (this.status == CROSSFIRE_STATUS.STATUS_DISCONNECTED) {
-                this.clientTransport = null;
+            if (this.status == CROSSFIRE_STATUS.STATUS_DISCONNECTED) {
                 this.serverTransport = null;
             }
         },
@@ -204,169 +186,195 @@ FBL.ns(function() {
             }
         },
 
-        handleRequest: function(request) {
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE received request " + request.toSource());
-            }
-            var response, toolName, command = request.command;
-
-            if (command == "enableTool") {
-                toolName = request.toolName;
-                if (toolName in this.registeredTools) {
-                    response = this.activateTool(toolName);
-                }
-            } else if (command == "disableTool") {
-                if (toolName in this.registeredTools) {
-                    response = this.deactivateTool(toolName);
-                }
-            }
-        },
-
         // ----- Crossfire Protocol Extensions (Tools API) -----
 
         registeredTools: {},
 
         /**
-         *
+         * @name _registerTool
+         * @description caches the given tool by its name and calls back to <code>#onRegistered()</code>
+         * @function
+         * @private
+         * @memberOf CrossfireModule
+         * @param tool {@link Object} the tool itself
+         * @since 0.3a7
          */
-        registerTool: function( toolName, toolListener) {
-            if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                FBTrace.sysout("CROSSFIRE: registerTool " + toolName, toolListener);
-
+        _registerTool: function(tool) {
+        	var name = tool.getToolName();
+            if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE: _registerTool " + name, tool);
+            }
             try {
-                this.registeredTools[toolName] = toolListener;
-                if (toolListener.onRegistered) {
-                    toolListener.onRegistered();
+                this.registeredTools[name] = tool;
+                if (tool.onRegistered) {
+                    tool.onRegistered();
                 }
                 if (this.status == "connected_server") {
-                    this.registeredTools[toolName].onTransportCreated(this.serverTransport);
+                    tool.onTransportCreated(this.serverTransport);
                 }
             } catch(e) {
-                if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                    FBTrace.sysout("CROSSFIRE: registerTool fails: " + e, e);
+                if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE: _registerTool fails: " + e, e);
+                }
             }
-
         },
 
         /**
-         *
+         * @name _unregisterTool
+         * @description removes the tool with the given name and calls-back to the function <code>#onUnregistered()</code>
+         * @function
+         * @private
+         * @memberOf CrossfireModule
+         * @param name the {@link String} name of the tool
+         * @since 0.3a7
          */
-        unregisterTool: function( toolName) {
-            if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                FBTrace.sysout("CROSSFIRE: unregisterTool " + toolName);
+        _unregisterTool: function(name) {
+            if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE: _unregisterTool " + name);
+            }
             try {
-                var tool = this.registeredTools[toolName];
-                delete this.registeredTools[toolName];
-                if (tool.onUnregistered)
-                tool.onUnregistered();
+                var tool = this.registeredTools[name];
+                delete this.registeredTools[name];
+                if (tool.onUnregistered) {
+                	tool.onUnregistered();
+                }
             } catch (e) {
-                if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                    FBTrace.sysout("CROSSFIRE: unregisterTool fails: " + e, e);
+                if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE: _unregisterTool fails: " + e, e);
+                }
             }
         },
 
-        enableTools: function( tools) {
-            if (typeof tools == "string" ) {
-                try {
-                    this.activateTool(tools);
-                } catch (e1) {
-                    if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                        FBTrace.sysout("CROSSFIRE: enableTools fails: " +e1);
-                    return false;
-                }
-            } else {
+        /**
+         * @name enableTools
+         * @description enables all of the tools with the given names 
+         * @function
+         * @public
+         * @memberOf CrossfireModule
+         * @param tools the {@link Array} of tool names of type {@link String}
+         * @returns the Array of tools that were enabled
+         * @since 0.3a7
+         */
+        enableTools: function(tools) {
+        	var enabletools = [];
+            if (typeof tools == "array" ) {
                 for (var t in tools) {
                      try {
-                        this.activateTool(tools[t]);
-                    } catch (e2) {
-                        if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                            FBTrace.sysout("CROSSFIRE: enableTools fails for " + t + " , " +e2);
-                        return false;
+                    	var enabledtool = this.activateTool(tools[t]);
+                    	if(enabledtool) {
+                    		enabledtools.push(enabledtool);
+                    	}
+                    } catch (e) {
+                        if (FBTrace.DBG_CROSSFIRE) {
+                            FBTrace.sysout("CROSSFIRE: enableTools fails for tool: " + t, e);
+                        }
                     }
                 }
             }
-            return this.getTools();
+            return enabledtools;
         },
 
-        disableTools: function( tools) {
-            if (typeof tools == "string" ) {
-                try {
-                    this.deactivateTool(tools);
-                } catch (e1) {
-                    if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                        FBTrace.sysout("CROSSFIRE: disableTools fails: " +e1);
-                    return false;
-                }
-            } else {
+        /**
+         * @name disableTools
+         * @description disables all of the tools with the given names 
+         * @function
+         * @public
+         * @memberOf CrossfireModule
+         * @param tools the {@link Array} of tool names of type {@link String}
+         * @returns the array of tools that were disabled
+         * @since 0.3a7
+         */
+        disableTools: function(tools) {
+        	var distools = [];
+            if (typeof tools == "array" ) {
                 for (var t in tools) {
                      try {
-                        this.deactivateTool(tools[t]);
-                    } catch (e2) {
-                        if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                            FBTrace.sysout("CROSSFIRE: disableTool fails for " + t + " , " +e2);
-                        return false;
+                        var distool = this.deactivateTool(tools[t]);
+                        if(distool) {
+                        	distools.push(distool);
+                        }
+                    } catch (e) {
+                        if (FBTrace.DBG_CROSSFIRE) {
+                            FBTrace.sysout("CROSSFIRE: disableTool fails for " + t + " , " +e);
+                        }
                     }
                 }
             }
-            return this.getTools();
+            return distools;
         },
 
-        // called by transport listener after receiving tool string in handshake
-        activateTool: function( toolName) {
-            if (toolName in this.registeredTools) {
-                 if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                     FBTrace.sysout("Crossfire activating tool: " + toolName);
+        /**
+         * @name activateTool
+         * @description Attempts to activate the registered tool with the given name 
+         * @function
+         * @public
+         * @memberOf CrossfireModule
+         * @param name the {@link String} name of the tool to try and activate
+         * @returns the tool {@link Object} that was activated or <code>null</code> if the tool could not be activated
+         * @since 0.3a7
+         */
+        activateTool: function(name) {
+            if (name in this.registeredTools) {
+                 if (FBTrace.DBG_CROSSFIRE) {
+                     FBTrace.sysout("CROSSFIRE: activateTool " + name);
+                 }
+                 var tool = this.registeredTools[name];
                  try {
-                     //FIXME: a way to tell tools whether they are connected to client vs. server?
-                     if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
-                         this.registeredTools[toolName].onTransportCreated(this.clientTransport);
-                     } else if ( this.status == CROSSFIRE_STATUS.STATUS_CONNECTING ||
-                             this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
-                         this.registeredTools[toolName].onTransportCreated(this.serverTransport);
+                     if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTING || this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
+                         tool.onTransportCreated(this.serverTransport);
                      }
-                     this.registeredTools[toolName].activated = true;
-                     return true;
+                     tool.activated = true;
+                     return tool;
                  } catch (e) {
-                     FBTrace.sysout("exception deactivationg tool: " + e);
-                     return false;
+                     FBTrace.sysout("exception activationg tool: "+name, e);
                  }
             }
-            return false;
+            return null;
         },
 
-        deactivateTool: function( toolName) {
-            if (toolName in this.registeredTools) {
-                if (FBTrace.DBG_CROSSFIRE_TOOLS)
-                    FBTrace.sysout("Crossfire activating tool: " + toolName);
+        /**
+         * @name deactivateTool
+         * @description Attempts to deactivate the registered tool with the given name 
+         * @function
+         * @public
+         * @memberOf CrossfireModule
+         * @param name the {@link String} name of the tool to try and activate
+         * @returns the tool {@link Object} that was deactivated or <code>null</code> if the tool could not be deactivated
+         * @since 0.3a7
+         */
+        deactivateTool: function(name) {
+            if (name in this.registeredTools) {
+                if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE: deactivateTool" + name);
+                }
+                var tool = this.registeredTools[name];
                 try {
-                    this.registeredTools[toolName].onTransportDestroyed(this.transport);
-                    this.registeredTools[toolName].activated = false;
-                    return true;
+                    tool.onTransportDestroyed(this.transport);
+                    tool.activated = false;
+                    return tool;
                 } catch (e) {
-                    FBTrace.sysout("exception deactivationg tool: " + e);
-                    return false;
+                    FBTrace.sysout("exception deactivationg tool: "+name, e);
                 }
             }
-            return false;
+            return null;
         },
 
         /**
          * @name getTools
-         * @description return a list of tools registered with crossfire.
+         * @description Returns the complete list of registered tools 
          * @function
-         *
+         * @public
+         * @memberOf CrossfireModule
+         * @returns the complete list of registered tools
+         * @since 0.3a7
          */
         getTools: function() {
-            var tool, tools = [];
+        	if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE: getTools");
+            }
+            var tools = [];
             for (var name in this.registeredTools) {
-                tool = this.registeredTools[name];
-                tools.push({ "name": name,
-                             "enabled": tool.activated,
-                             "commands": tool.commands,
-                             "events": tool.events,
-                             "desc": tool.getDescription()
-
-                    });
+                tools.push(this.registeredTools[name].asObject());
             }
             return { "tools": tools };
         },
@@ -593,8 +601,7 @@ FBL.ns(function() {
             with (FBL) {
                 var icon = $("crossfireIcon");
                 if (icon) {
-                    if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER
-                            || status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
+                    if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
                         setClass($("menu_connectCrossfireClient"), "hidden");
                         setClass($("menu_startCrossfireServer"), "hidden");
 
@@ -651,8 +658,6 @@ FBL.ns(function() {
                     $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connecting...");
                 } else if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
                     $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connected to client on port " + this.serverTransport.port);
-                } else if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_CLIENT) {
-                    $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connected to " + this.clientTransport.host + ":" + this.clientTransport.port);
                 }
             }
         },

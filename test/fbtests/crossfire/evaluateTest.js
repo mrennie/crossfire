@@ -18,7 +18,7 @@ function runTest() {
     function evaluateNext() {
          var nextExpression = expressions[++testIndex];
          if (!nextExpression) {
-             CrossfireModule.getClientTransport().removeListener(testListener);
+             CrossfireModule.getTransport().removeListener(testListener);
              FBTestFirebug.testDone("evaluateTest.finished no more expressions.");
          } else {
              nextResult = (eval(nextExpression)).toString();
@@ -63,7 +63,7 @@ function runTest() {
 
         FBTest.ok( FW.Firebug.chrome.isOpen(), "Firebug is open");
 
-        CrossfireModule.getClientTransport().addListener(testListener);
+        CrossfireModule.getTransport().addListener(testListener);
 
         // kick it off
         CrossfireClient._sendCommand('listcontexts');

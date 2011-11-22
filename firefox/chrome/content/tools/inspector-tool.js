@@ -9,11 +9,15 @@ FBL.ns(function() {
 
     };
 
-    Crossfire.InspectorTool.prototype = FBL.extend(Crossfire.ToolListener, {
+    Crossfire.InspectorTool.prototype = FBL.extend(Crossfire.Tool, {
         toolName: "inspector",
         commands: ["inspect"],
         events: ["onInspectNode"],
 
+        getName: function() {
+        	return this.toolName;
+        },
+        
         onRegistered: function() {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE inspectorTool onRegistered");

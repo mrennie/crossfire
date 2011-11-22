@@ -7,18 +7,15 @@
     <!--script type="application/javascript" src="chrome://crossfire/content/crossfire-firefox.js"/-->
 
     <script type="application/javascript" src="chrome://crossfire/content/crossfire-server.js"/>
-    <script type="application/javascript" src="chrome://crossfire/content/crossfire-client.js"/>
 
     <script type="application/javascript" src="chrome://crossfire/content/crossfire-panel.js"/>
 
-    <script type="application/javascript" src="chrome://crossfire/content/tools/tool-listener.js"/>
+    <script type="application/javascript" src="chrome://crossfire/content/tools/tool.js"/>
     <!-- Load tool files. TODO: lazily load via 'require' or similar -->
     <script type="application/javascript" src="chrome://crossfire/content/tools/console-tool.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/tools/inspector-tool.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/tools/net-tool.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/tools/dom-tool.js"/>
-
-    <!--script type="application/javascript" src="chrome://crossfire/content/crossfire-loopback.js"/-->
 
     <!-- Firefox 3.6 Status Bar Icon -->
     <statusbar id="status-bar">
@@ -27,9 +24,6 @@
         </statusbarpanel>
         <menupopup id="crossfireStatusMenu">
             <menuitem id="menu_startCrossfireServer" label="Start Server" onclick="Crossfire.startServer()"/>
-            <menuitem id="menu_connectCrossfireClient" label="Connect as client" onclick="Crossfire.connect()"/>
-            <!-- menuitem id="menu_connectCrossfireClient" label="Connect as client" onclick="Crossfire.Firefox.onConnect()"/-->
-            <menuitem id="menu_loopbackCrossfire" class="hidden" label="Loopback" onclick="Crossfire.Loopback.openFirebugClient()"/>
             <menuitem id="menu_disconnectCrossfire" class="hidden" label="Disconnect..." onclick="Crossfire.disconnect()"/>
         </menupopup>
     </statusbar>

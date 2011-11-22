@@ -9,11 +9,15 @@ FBL.ns(function() {
 
     };
 
-    Crossfire.DomTool.prototype = FBL.extend(Crossfire.ToolListener, {
+    Crossfire.DomTool.prototype = FBL.extend(Crossfire.Tool, {
         toolName: "dom",
         commands: [""],
         events: ["onDomMutate"],
 
+        getName: function() {
+        	return this.toolName;
+        },
+        
         handleRequest: function( request) {
 
         },
@@ -36,8 +40,8 @@ FBL.ns(function() {
 
         // Firebug listener
         initialize: function() {
-        	if (FBTrace.DBG_CROSSFIRE_TOOLS) {
-        		FBTrace.sysout("DOM-tool initialize");
+        	if (FBTrace.DBG_CROSSFIRE_DOM_TOOL) {
+        		FBTrace.sysout("dom-tool initialize");
         	}
         },
 

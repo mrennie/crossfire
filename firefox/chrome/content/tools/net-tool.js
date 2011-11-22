@@ -9,11 +9,15 @@ FBL.ns(function() {
 
     };
 
-    Crossfire.NetTool.prototype = FBL.extend(Crossfire.ToolListener, {
+    Crossfire.NetTool.prototype = FBL.extend(Crossfire.Tool, {
         toolName: "net",
         commands: [],
         events: ["onNetworkRequest", "onNetworkResponse"],
 
+        getName: function() {
+        	return this.toolName;
+        },
+        
         onRegistered: function() {
             Firebug.NetMonitor.addListener(this);
         },

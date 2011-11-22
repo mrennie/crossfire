@@ -1,7 +1,10 @@
 pref("extensions.firebug.DBG_CROSSFIRE", false);
 pref("extensions.firebug.DBG_CROSSFIRE_FRAMES", false);
 pref("extensions.firebug.DBG_CROSSFIRE_TRANSPORT", false);
-pref("extensions.firebug.DBG_CROSSFIRE_TOOLS", false);
+pref("extensions.firebug.DBG_CROSSFIRE_TOOL", false);
 pref("extensions.firebug.DBG_CROSSFIRE_BPS", false);
 pref("extensions.firebug.DBG_CROSSFIRE_SERIALIZE", false);
-pref("extensions.firebug.crossfire.loopbackOnly", true);
+pref("extensions.firebug.DBG_CROSSFIRE_CONSOLE_TOOL", false);
+pref("extensions.firebug.DBG_CROSSFIRE_DOM_TOOL", false);
+pref("extensions.firebug.DBG_CROSSFIRE_INSPECT_TOOL", false);
+pref("extensions.firebug.DBG_CROSSFIRE_NET_TOOL", false);

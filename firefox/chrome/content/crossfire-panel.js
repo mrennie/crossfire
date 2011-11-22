@@ -7,7 +7,6 @@ FBL.ns(function() { with(FBL) {
             STATUS_WAIT_SERVER: "wait_server",
             STATUS_CONNECTING: "connecting",
             STATUS_CONNECTED_SERVER: "connected_server",
-            STATUS_CONNECTED_CLIENT: "connected_client"
 
     };
 
@@ -226,10 +225,7 @@ FBL.ns(function() { with(FBL) {
                  message = "connecting...";
             } else if (status == CrossfireStatus.STATUS_CONNECTED_SERVER) {
                  message = "connected to client on port " + top.Crossfire.serverTransport.port;
-            } else if (status == CrossfireStatus.STATUS_CONNECTED_CLIENT) {
-                 message =  "connected to " + top.Crossfire.clientTransport.host + ":" + top.Crossfire.clientTransport.port;
             }
-
             remotePanelTemplate.tag.replace({object: {"status": message}}, this.panelNode, remotePanelTemplate);
         },
 

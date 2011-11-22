@@ -50,10 +50,9 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE startServer: host => " + host + " port => " + port);
             }
-
             this.serverPort = port;
             try {
-                this.transport = Crossfire.getServerTransport();
+                this.transport = Crossfire.getTransport();
                 this._addListeners();
                 this.transport.addListener(this);
 

@@ -3,46 +3,56 @@
 /**
  * Crossfire Console Tool
  */
-
 FBL.ns(function() {
 
+	/**
+	 * @constructor
+	 * @returns a new {@link ConsoleTool} object
+	 */
     Crossfire.ConsoleTool = function ConsoleTool() {
 
     };
 
-    Crossfire.ConsoleTool.prototype = FBL.extend(Crossfire.ToolListener, {
+    Crossfire.ConsoleTool.prototype = FBL.extend(Crossfire.Tool, {
         toolName: "console",
         commands: ["setloglevel", "setloglimit"],
         events: ["onConsoleLog", "onConsoleDebug", "onConsoleInfo", "onConsoleWarn", "onConsoleError" ],
 
+        getName: function() {
+        	if (FBTrace.DBG_CROSSFIRE_CONSOLE_TOOL) {
+        		FBTrace.sysout("console-tool getName");
+        	}
+        	return this.toolName;
+        },
+        
         handleRequest: function( request) {
-        	if (FBTrace.DBG_CROSSFIRE_TOOLS) {
+        	if (FBTrace.DBG_CROSSFIRE_CONSOLE_TOOL) {
         		FBTrace.sysout("console-tool handleRequest");
         	}
         },
 
         initialize: function() {
-        	if (FBTrace.DBG_CROSSFIRE_TOOLS) {
+        	if (FBTrace.DBG_CROSSFIRE_CONSOLE_TOOL) {
         		FBTrace.sysout("console-tool initialize");
         	}
-        }
+        },
         
         onConnectionStatusChanged: function( status) {
-        	if (FBTrace.DBG_CROSSFIRE_TOOLS) {
+        	if (FBTrace.DBG_CROSSFIRE_CONSOLE_TOOL) {
         		FBTrace.sysout("console-tool onConnectionStatusChanged");
         	}
             this.status = status;
         },
 
         onRegistered: function() {
-        	if (FBTrace.DBG_CROSSFIRE_TOOLS) {
+        	if (FBTrace.DBG_CROSSFIRE_CONSOLE_TOOL) {
         		FBTrace.sysout("console-tool onRegistered");
         	}
             Firebug.Console.addListener(this);
         },
 
         onUnregistered: function() {
-        	if (FBTrace.DBG_CROSSFIRE_TOOLS) {
+        	if (FBTrace.DBG_CROSSFIRE_CONSOLE_TOOL) {
         		FBTrace.sysout("console-tool onUnregistered");
         	}
             Firebug.Console.removeListener(this);
@@ -76,8 +86,8 @@ FBL.ns(function() {
          * @param sourceLink
          */
         log: function(context, object, className, rep, noThrottle, sourceLink) {
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE ConsoleTool log");
+            if (FBTrace.DBG_CROSSFIRE_CONSOLE_TOOL) {
+                FBTrace.sysout("console-tool log");
             }
             if(context && context.context && context.trace) {
                 var cid = context.context.Crossfire.crossfire_id;
@@ -122,8 +132,8 @@ FBL.ns(function() {
          * @param sourceLink
          */
         logFormatted: function(context, objects, className, sourceLink) {
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE ConsoleTool logFormatted");
+            if (FBTrace.DBG_CROSSFIRE_CONSOLE_TOOL) {
+                FBTrace.sysout("console-tool logFormatted");
             }
             var win = context.window;
             var winFB = (win.wrappedJSObject?win.wrappedJSObject:win)._firebug;

@@ -35,7 +35,7 @@ function runTest() {
     function sendNextCommand() {
         var nextCommand = commands[++testIndex];
         if (!nextCommand) {
-            CrossfireModule.getClientTransport().removeListener(testListener);
+            CrossfireModule.getTransport().removeListener(testListener);
             FBTestFirebug.testDone("commandsTest.finished no more commands");
         } else {
             FBTest.sysout("sending command: " + nextCommand);
@@ -74,7 +74,7 @@ function runTest() {
 
         FBTest.ok( FW.Firebug.chrome.isOpen(), "Firebug is open");
 
-        CrossfireModule.getClientTransport().addListener(testListener);
+        CrossfireModule.getTransport().addListener(testListener);
 
         // kick it off
         sendNextCommand();
