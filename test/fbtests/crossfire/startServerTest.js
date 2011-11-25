@@ -4,7 +4,7 @@ function runTest() {
 
     Components.utils.import("resource://crossfire/SocketTransport.js");
 
-    var CrossfireModule = FW.top.Crossfire;
+    var CrossfireModule = FW.Crossfire;
     var CrossfireServer = CrossfireModule.CrossfireServer;
 
     var status = CrossfireModule.status;

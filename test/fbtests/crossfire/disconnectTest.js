@@ -3,7 +3,7 @@ function runTest() {
     FBTest.sysout("disconnectTest.started");
 
     Components.utils.import("resource://crossfire/SocketTransport.js");
-    var CrossfireModule = FW.top.Crossfire;
+    var CrossfireModule = FW.Crossfire;
 
     var status = CrossfireModule.status;
     FBTest.sysout("disconnecting Crossfire");

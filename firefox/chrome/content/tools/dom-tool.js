@@ -5,51 +5,37 @@
  */
 FBL.ns(function() {
 
+	/**
+	 * @constructor
+	 * @returns a new {@link DomTool} object
+	 */
     Crossfire.DomTool = function DomTool() {
 
     };
 
     Crossfire.DomTool.prototype = FBL.extend(Crossfire.Tool, {
         toolName: "dom",
-        commands: [""],
+        commands: [],
         events: ["onDomMutate"],
 
-        getName: function() {
-        	return this.toolName;
-        },
-        
-        handleRequest: function( request) {
-
-        },
-
-        handleEvent: function( event) {
-
-        },
-
-        onConnectionStatusChanged: function( status) {
-            this.status = status;
-        },
-
+        /**
+         * @see Crossfire.Tool#onRegistered in /firefox/chrome/content/tools/tool.js
+         */
         onRegistered: function() {
             Firebug.registerModule(this);
         },
 
+        /**
+         * @see Crossfire.Tool#onUnregistered in /firefox/chrome/content/tools/tool.js
+         */
         onUnregistered: function() {
             Firebug.unregisterModule(this);
         },
 
-        // Firebug listener
-        initialize: function() {
-        	if (FBTrace.DBG_CROSSFIRE_DOM_TOOL) {
-        		FBTrace.sysout("dom-tool initialize");
-        	}
-        },
-
-        initContext: function(context) {
-
-        },
-
         loadedContext: function(context) {
+        	if (FBTrace.DBG_CROSSFIRE_DOM_TOOL) {
+        		FBTrace.sysout("dom-tool loadedContext");
+        	}
             var doc, self = this;
             if (context.window) {
                 doc = context.window.document;
@@ -60,7 +46,10 @@ FBL.ns(function() {
             }
         },
 
-        onDomMutate: function( context, mutateEvent) {
+        onDomMutate: function(context, mutateEvent) {
+        	if (FBTrace.DBG_CROSSFIRE_DOM_TOOL) {
+        		FBTrace.sysout("dom-tool onDomMutate");
+        	}
             if (this.transport && this.status == "connected_server") {
                 this.transport.sendEvent("onDomMutate", { "contextId": context.Crossfire.crossfire_id, "body": mutateEvent}, "dom");
             }

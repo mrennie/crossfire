@@ -2,7 +2,7 @@
 function runTest() {
     FBTest.sysout("evaluateTest.started");
 
-    var CrossfireModule = FW.top.Crossfire;
+    var CrossfireModule = FW.Crossfire;
     var CrossfireClient = CrossfireModule.CrossfireClient;
 
     var expressions = [

@@ -36,8 +36,8 @@ FBL.ns(function() { with(FBL) {
                     ),
 
                onButtonClick: function(evt) {
-                   FBTrace.sysout("CrossfirePanel toggle connect top.Crossfire is " + top.Crossfire, top.Crossfire);
-                   top.Crossfire.disconnect();
+                   FBTrace.sysout("CrossfirePanel toggle connect Crossfire is " + Crossfire, Crossfire);
+                   Crossfire.disconnect();
                    //FBL.$("crossfireStatusMenu").openPopup(el, "before_end", 0,0,false,false);
                }
         });
@@ -190,7 +190,7 @@ FBL.ns(function() { with(FBL) {
      *
      */
     function CrossfirePanel() {
-        top.Crossfire.panel = this;
+        Crossfire.panel = this;
     }
     CrossfirePanel.prototype = FBL.extend(Firebug.Panel, {
         name: "CrossfirePanel",
@@ -214,17 +214,17 @@ FBL.ns(function() { with(FBL) {
         refresh: function( status) {
             var message = " unknown.";
 
-            if (top.Crossfire && !status)
-                status = top.Crossfire.status;
+            if (Crossfire && !status)
+                status = Crossfire.status;
 
             if (status == CrossfireStatus.STATUS_DISCONNECTED) {
                 message = "disconnected.";
             } else if (status == CrossfireStatus.STATUS_WAIT_SERVER) {
-                 message = "accepting connections on port " + top.Crossfire.serverTransport.port;
+                 message = "accepting connections on port " + Crossfire.serverTransport.port;
             } else if (status == CrossfireStatus.STATUS_CONNECTING) {
                  message = "connecting...";
             } else if (status == CrossfireStatus.STATUS_CONNECTED_SERVER) {
-                 message = "connected to client on port " + top.Crossfire.serverTransport.port;
+                 message = "connected to client on port " + Crossfire.serverTransport.port;
             }
             remotePanelTemplate.tag.replace({object: {"status": message}}, this.panelNode, remotePanelTemplate);
         },

@@ -2,15 +2,13 @@
 
 <?xml-stylesheet href="chrome://crossfire/skin/crossfire.css" ?>
 
-<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" >
+<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" 
+         xmlns:html="http://www.w3.org/1999/xhtml">
     <script type="application/javascript" src="chrome://crossfire/content/crossfire.js"/>
-    <!--script type="application/javascript" src="chrome://crossfire/content/crossfire-firefox.js"/-->
-
     <script type="application/javascript" src="chrome://crossfire/content/crossfire-server.js"/>
-
     <script type="application/javascript" src="chrome://crossfire/content/crossfire-panel.js"/>
-
     <script type="application/javascript" src="chrome://crossfire/content/tools/tool.js"/>
+    
     <!-- Load tool files. TODO: lazily load via 'require' or similar -->
     <script type="application/javascript" src="chrome://crossfire/content/tools/console-tool.js"/>
     <script type="application/javascript" src="chrome://crossfire/content/tools/inspector-tool.js"/>

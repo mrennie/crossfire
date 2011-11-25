@@ -5,6 +5,10 @@
  */
 FBL.ns(function() {
 
+	/**
+	 * @constructor
+	 * @returns a new {@link NetTool} object
+	 */
     Crossfire.NetTool = function NetTool() {
 
     };
@@ -13,29 +17,24 @@ FBL.ns(function() {
         toolName: "net",
         commands: [],
         events: ["onNetworkRequest", "onNetworkResponse"],
-
-        getName: function() {
-        	return this.toolName;
-        },
         
+        /**
+         * @see Crossfire.Tool#onRegistered in /firefox/chrome/content/tools/tool.js
+         */
         onRegistered: function() {
             Firebug.NetMonitor.addListener(this);
         },
 
+        /**
+         * @see Crossfire.Tool#onUnregistered in /firefox/chrome/content/tools/tool.js
+         */
         onUnregistered: function() {
             Firebug.NetMonitor.removeListener(this);
         },
 
-        handleRequest: function( request) {
-
-        },
-
-        onConnectionStatusChanged: function( status) {
-            this.status = status;
-        },
-
-        // --- NetMonitor ---
-
+        /**
+         * @see Crossfire.Tool#onRequest in /firefox/chrome/content/tools/tool.js
+         */
         onRequest: function(context, file) {
             if (this.status == "connected_server") {
                 this.transport.sendEvent("onNetworkRequest",
@@ -47,6 +46,9 @@ FBL.ns(function() {
             }
         },
 
+        /**
+         * @see Crossfire.Tool#onResponse in /firefox/chrome/content/tools/tool.js
+         */
         onResponse: function(context, file) {
             if (this.status == "connected_server") {
                 this.transport.sendEvent("onNetworkResponse",

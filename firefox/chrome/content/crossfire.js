@@ -10,26 +10,20 @@
  */
 var CROSSFIRE_VERSION = "0.3";
 
-/**
- * @name Crossfire
- * @description Firebug extension to add support for remote debug protocol.
- * @public
- */
-top.Crossfire =  {};
-
 Components.utils.import("resource://crossfire/SocketTransport.js");
 
 FBL.ns(function() {
 
     /**
-     * @name CrossfireModule
+     * @name Crossfire
      * @module Firebug Module for Crossfire. This module acts as a controller
      * between Firebug and the remote debug connection.  It is responsible for
      * opening a connection to the remote debug host.
      */
-    top.Crossfire = FBL.extend(Firebug.Module,  {
+    Crossfire = FBL.extend(Firebug.Module,  {
         contexts: [],
         refs: [],
+        registeredTools: [],
         dispatchName: "Crossfire",
         toolName: "all", // receive all packets, regardless of 'tool' header
         version: CROSSFIRE_VERSION,
@@ -40,15 +34,15 @@ FBL.ns(function() {
          * @description Initializes Crossfire
          * @function
          * @private
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @extends Firebug.Module
          */
         initialize: function() {
 	        if (FBTrace.DBG_CROSSFIRE) {
 	            FBTrace.sysout("CROSSFIRE initialize");
 	        }
-	        
 	        // -- register tools --
+	        this.registeredTools = [];
             this._registerTool(new Crossfire.ConsoleTool());
             this._registerTool(new Crossfire.InspectorTool());
             this._registerTool(new Crossfire.NetTool());
@@ -65,10 +59,13 @@ FBL.ns(function() {
          * yet, a new one is created and returned
          * @function
          * @public
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @returns a new CrossfireSocketTransport
          */
         getTransport: function() {
+        	if (FBTrace.DBG_CROSSFIRE) {
+	            FBTrace.sysout("CROSSFIRE getTransport");
+	        }
             this._ensureTransport();
             return this.serverTransport;
         },
@@ -78,7 +75,7 @@ FBL.ns(function() {
          * @description Returns the integer port number specified on the command line
          * @function
          * @public
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @returns the integer port number
          */
         getServerPort: function() {
@@ -108,7 +105,7 @@ FBL.ns(function() {
          * @description Disconnects the current connection and closes the socket.
          * @function
          * @public
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          */
         disconnect: function() {
             if (FBTrace.DBG_CROSSFIRE) {
@@ -119,11 +116,11 @@ FBL.ns(function() {
                 this.serverTransport.close();
             }
             this._clearRefs();
-
             this._unregisterTool("console");
             this._unregisterTool("inspector");
             this._unregisterTool("net");
             this._unregisterTool("dom");
+            this.registeredTools = [];
             this._updatePanel();
         },
 
@@ -132,21 +129,18 @@ FBL.ns(function() {
          * @description Fetches the entered parameters from the server-start dialog
          * @function
          * @private
-         * @memberOf CrossfireModule
-         * @param isServer if the dialog should ask for server start-up parameters or client connect parameters
+         * @memberOf Crossfire
          * @type Array
          * @returns an Array of dialog parameters
          */
-        _getDialogParams: function(isServer) {
+        _getDialogParams: function() {
+        	if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE _getDialogParams");
+            }
             var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
             var host = commandLine.getHost();
             var port = commandLine.getPort();
-            var title;
-            if (isServer) {
-                title = "Crossfire - Start Server";
-            } else {
-                title = "Crossfire - Connect to Server";
-            }
+            var title = "Crossfire - Start Server";
             return { "host": null, "port": null, "title": title, "cli_host": host, "cli_port": port };
         },
 
@@ -156,7 +150,7 @@ FBL.ns(function() {
          * @description Called when the status of the transport's connection changes.
          * @function
          * @public
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @param {String} status the status to report
          */
         onConnectionStatusChanged: function( status) {
@@ -173,9 +167,17 @@ FBL.ns(function() {
         },
 
         /**
-         *
+         * @name _updatePanel
+         * @description call-back to update the UI of the Remote panel
+         * @function
+         * @private
+         * @memberOf Crossfire
+         * @since 0.3a8
          */
         _updatePanel: function() {
+        	if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE _updatePanel");
+            }
             if (this.panel) {
                 try {
                     this.panel.refresh(status);
@@ -186,16 +188,12 @@ FBL.ns(function() {
             }
         },
 
-        // ----- Crossfire Protocol Extensions (Tools API) -----
-
-        registeredTools: {},
-
         /**
          * @name _registerTool
          * @description caches the given tool by its name and calls back to <code>#onRegistered()</code>
          * @function
          * @private
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @param tool {@link Object} the tool itself
          * @since 0.3a7
          */
@@ -224,7 +222,7 @@ FBL.ns(function() {
          * @description removes the tool with the given name and calls-back to the function <code>#onUnregistered()</code>
          * @function
          * @private
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @param name the {@link String} name of the tool
          * @since 0.3a7
          */
@@ -250,7 +248,7 @@ FBL.ns(function() {
          * @description enables all of the tools with the given names 
          * @function
          * @public
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @param tools the {@link Array} of tool names of type {@link String}
          * @returns the Array of tools that were enabled
          * @since 0.3a7
@@ -279,7 +277,7 @@ FBL.ns(function() {
          * @description disables all of the tools with the given names 
          * @function
          * @public
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @param tools the {@link Array} of tool names of type {@link String}
          * @returns the array of tools that were disabled
          * @since 0.3a7
@@ -308,7 +306,7 @@ FBL.ns(function() {
          * @description Attempts to activate the registered tool with the given name 
          * @function
          * @public
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @param name the {@link String} name of the tool to try and activate
          * @returns the tool {@link Object} that was activated or <code>null</code> if the tool could not be activated
          * @since 0.3a7
@@ -337,7 +335,7 @@ FBL.ns(function() {
          * @description Attempts to deactivate the registered tool with the given name 
          * @function
          * @public
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @param name the {@link String} name of the tool to try and activate
          * @returns the tool {@link Object} that was deactivated or <code>null</code> if the tool could not be deactivated
          * @since 0.3a7
@@ -364,7 +362,7 @@ FBL.ns(function() {
          * @description Returns the complete list of registered tools 
          * @function
          * @public
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @returns the complete list of registered tools
          * @since 0.3a7
          */
@@ -379,14 +377,12 @@ FBL.ns(function() {
             return { "tools": tools };
         },
 
-        // ----- helpers
-
         /**
          * @name _getRef
          * @description Returns a reference id for the given object handle
          * @function
          * @private
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @type Array
          * @returns the Array object describing the object handle, contains <code>ref.handle</code>,
          * <code>ref.type</code> and optionally <code>ref.contextId</code>
@@ -432,7 +428,7 @@ FBL.ns(function() {
          * @description clears the reference id cache
          * @function
          * @private
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @since 0.3a1
          */
         _clearRefs: function() {
@@ -445,7 +441,7 @@ FBL.ns(function() {
          * @description prepare a JavaScript object to be serialized into JSON.
          * @function
          * @private
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @param obj the JavaScript {@link Object} to serialize
          */
         serialize: function(obj) {
@@ -493,7 +489,7 @@ FBL.ns(function() {
          * @description Serializes the properties for the given object
          * @function
          * @private
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @param obj the {@link Object} to serialize the properties for
          * @param the computed reference id for <code>obj</code>
          * @type Object
@@ -584,20 +580,18 @@ FBL.ns(function() {
             return o;
         },
 
-
-        // -----Crossfire UI functions -----
-
         /**
          * @name updateStatusIcon
          * @description Update the Crossfire connection status icon.
          * @function
          * @public
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @param status the status to update the icon to
          */
         updateStatusIcon: function( status) {
-            if (FBTrace.DBG_CROSSFIRE)
+            if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE updateStatusIcon");
+            }
             with (FBL) {
                 var icon = $("crossfireIcon");
                 if (icon) {
@@ -641,15 +635,15 @@ FBL.ns(function() {
          * @description Updates the Crossfire status text
          * @function
          * @public
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire
          * @param status the status to update the text to
          */
         updateStatusText: function( status) {
-            if (FBTrace.DBG_CROSSFIRE)
+            if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE updateStatusText: " + status);
+            }
             with (FBL) {
                 var icon = $("crossfireIcon");
-
                 if (status == CROSSFIRE_STATUS.STATUS_DISCONNECTED) {
                     $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: disconnected.");
                 } else if (status == CROSSFIRE_STATUS.STATUS_WAIT_SERVER) {
@@ -677,7 +671,7 @@ FBL.ns(function() {
     });
 
     // register module
-    Firebug.registerModule(top.Crossfire);
+    Firebug.registerModule(Crossfire);
 
     // ----- Crossfire XUL Event Listeners -----
 
@@ -689,7 +683,7 @@ FBL.ns(function() {
      * @memberOf Crossfire
      * @param el
      */
-    top.Crossfire.onStatusClick = function( el) {
+    Crossfire.onStatusClick = function( el) {
         FBL.$("crossfireStatusMenu").openPopup(el, "before_end", 0,0,false,false);
     };
 
@@ -701,62 +695,23 @@ FBL.ns(function() {
      * @memberOf Crossfire
      * @param menu the menu showing
      */
-    top.Crossfire.onStatusMenuShowing = function( menu) {
-        //CrossfireModule.onStatusMenuShowing(menu);
+    Crossfire.onStatusMenuShowing = function( menu) {
+        //Crossfire.onStatusMenuShowing(menu);
     };
 
 
     /**
      * @name Crossfire.startServer
-     * @description Delegate to {@link CrossfireModule#startServer(host, port)}
+     * @description Delegate to {@link Crossfire#startServer(host, port)}
      * @function
      * @public
      * @memberOf Crossfire
      */
-    top.Crossfire.startServer = function() {
-        var params = top.Crossfire._getDialogParams(true);
+    Crossfire.startServer = function() {
+        var params = Crossfire._getDialogParams();
         window.openDialog("chrome://crossfire/content/connect-dialog.xul", "crossfire-connect","chrome,modal,dialog", params);
         if (params.host && params.port) {
             Crossfire.CrossfireServer.startServer(params.host, parseInt(params.port));
         }
     };
-
-    /**
-     * @name Crossfire.connect
-     * @description Delegate to {@link CrossfireClient#connectClient(host, port)}
-     * @function
-     * @public
-     * @memberOf Crossfire
-     */
-    top.Crossfire.connect = function() {
-        var params = Crossfire._getDialogParams(false);
-        window.openDialog("chrome://crossfire/content/connect-dialog.xul", "crossfire-connect","chrome,modal,dialog", params);
-        if (params.host && params.port) {
-            Crossfire.CrossfireClient.connectClient(params.host, parseInt(params.port));
-        }
-    };
-
-    /**
-     * @name _getDialogParams
-     * @description Fetches the entered parameters from the server-start dialog
-     * @function
-     * @private
-     * @memberOf Crossfire
-     * @param isServer if the dialog should ask for server start-up parameters or client connect parameters
-     * @type Array
-     * @returns an Array of dialog parameters
-     */
-    function _getDialogParams( isServer) {
-        var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
-        var host = commandLine.getHost();
-        var port = commandLine.getPort();
-        var title;
-        if (isServer) {
-            title = "Crossfire - Start Server";
-        } else {
-            title = "Crossfire - Connect to Server";
-        }
-        return { "host": null, "port": null, "title": title, "cli_host": host, "cli_port": port };
-    };
-
 });

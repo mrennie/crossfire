@@ -11,8 +11,6 @@ var CONTEXT_ID_SEED = Math.round(Math.random() * 10000000);
 
 FBL.ns(function() {
 
-    var Crossfire = top.Crossfire;
-
     Crossfire.CrossfireServer = FBL.extend(Firebug.Module,  {
         contexts: [],
         breakpoints: [], //mapping of breakpoint id (Integer) to breakpoint object
@@ -37,6 +35,36 @@ FBL.ns(function() {
             }
         },
 
+        /**
+         * @name shutdown
+         * @description Call-back from firebug to shut down the module
+         * @function
+         * @private
+         * @memberOf CrossfireServer
+         * @extends Firebug.Module
+         * @since 0.3a9
+         */
+        shutdown: function() {
+        	this.stopServer();
+        },
+        
+        /**
+         * @name onConnectionStatusChanged
+         * @description Called when the status of the transport's connection changes.
+         * @function
+         * @public
+         * @memberOf Crossfire
+         * @param {String} status the status to report
+         */
+        onConnectionStatusChanged: function( status) {
+            if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE onConnectionStatusChanged: " + status);
+            }
+            if (this.status == CROSSFIRE_STATUS.STATUS_DISCONNECTED) {
+                this.stopServer();
+            }
+        },
+        
         /**
          * @name startServer
          * @description Listen for incoming connections on a port.
@@ -75,9 +103,15 @@ FBL.ns(function() {
          */
         _addListeners: function() {
             if (Firebug.connection) {
+            	if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE _addListeners: adding BTI listener");
+                }
                 // Firebug 1.8 Browser BTI listener
                 Firebug.connection.addListener(this);
             } else {
+            	if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE _addListeners: adding pre-1.8 listener");
+                }
                 // pre 1.8 listener
                 Firebug.Debugger.addListener(this);
             }
@@ -862,7 +896,7 @@ FBL.ns(function() {
                 for (var i in Crossfire.refs) {
                	    for (var j = 0; j < handles.length; j++) {
 				        if (handles[j] == i) {
-	                        obj = top.Crossfire.refs[i];
+	                        obj = Crossfire.refs[i];
 	                        var arr = Crossfire.serialize(obj);
 	                        if(source) {
 	                            try {

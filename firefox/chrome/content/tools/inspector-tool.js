@@ -5,6 +5,10 @@
  */
 FBL.ns(function() {
 
+	/**
+	 * @constructor
+	 * @returns a new {@link InspectorTool} object
+	 */
     Crossfire.InspectorTool = function InspectorTool() {
 
     };
@@ -14,25 +18,27 @@ FBL.ns(function() {
         commands: ["inspect"],
         events: ["onInspectNode"],
 
-        getName: function() {
-        	return this.toolName;
-        },
-        
+        /**
+         * @see Crossfire.Tool#onRegistered in /firefox/chrome/content/tools/tool.js
+         */
         onRegistered: function() {
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE inspectorTool onRegistered");
-            }
             Firebug.Inspector.addListener(this);
         },
 
+        /**
+         * @see Crossfire.Tool#onUnregistered in /firefox/chrome/content/tools/tool.js
+         */
         onUnregistered: function() {
             Firebug.Inspector.removeListener(this);
         },
 
+        /**
+         * @see Crossfire.Tool#handleReqest in /firefox/chrome/content/tools/tool.js
+         */
         handleRequest: function( request) {
             var response;
             if (request.command == "inspect") {
-                var context = CrossfireModule.findContext(request.contextId);
+                var context = Crossfire.findContext(request.contextId);
                 var contextid;
                 if (context) {
                     response = this.doInspect(context, args);
@@ -40,10 +46,6 @@ FBL.ns(function() {
                 }
                 this.transport.sendResponse(request.command, request.seq, contextid, response, {"running":true, "code": 0}, this.toolName);
             }
-        },
-
-        onConnectionStatusChanged: function( status) {
-            this.status = status;
         },
 
         /**
@@ -62,7 +64,7 @@ FBL.ns(function() {
          * </ul>
          * <br><br>
          * If both <code>xpath</code> and <code>selector</code> are given <code>xpath</code> is used.
-         * @since 0.3a1
+         * @since 0.3a7
          */
         doInspect: function(context, args) {
             var selector = args["selector"];
@@ -88,8 +90,6 @@ FBL.ns(function() {
             return {};
         },
 
-        // ----- Firebug.Inspector Listener -----
-
         /**
          * @name onInspectNode
          * @description Handles a node being inspected in Firebug.
@@ -106,6 +106,7 @@ FBL.ns(function() {
          * @memberOf InspectorTool
          * @param context the current Crossfire context
          * @param node the node being inspected
+         * @since 0.3a7
          */
         onInspectNode: function(context, node) {
             if (this.status == "connected_server") {
@@ -125,10 +126,10 @@ FBL.ns(function() {
          * @description resolves the path to the given element within the DOM tree.
          * @function
          * @private
-         * @memberOf CrossfireModule
+         * @memberOf Crossfire.InspectorTool
          * @param element the current DOM node context
          * @param if we should use the tags names when constructing the path. i.e. <code>/html[1]/body[1]/div[4]/span[21]/...</code>
-         * @since 0.3a1
+         * @since 0.3a7
          */
         _resolveElementPath: function(element, useTagNames) {
             var nameLookup = [];
@@ -150,6 +151,5 @@ FBL.ns(function() {
             }
             return "/" + paths.join("/");
         }
-
     });
 });

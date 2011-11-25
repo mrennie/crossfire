@@ -4,7 +4,7 @@ function runTest() {
 
     Components.utils.import("resource://crossfire/SocketTransport.js");
 
-    var CrossfireModule = FBTest.FirebugWindow.top.Crossfire;
+    var CrossfireModule = FBTest.FirebugWindow.Crossfire;
     var CrossfireClient = CrossfireModule.CrossfireClient;
 
     var status = CrossfireClient.status;
