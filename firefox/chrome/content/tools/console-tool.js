@@ -73,7 +73,9 @@ FBL.ns(function() {
 	            	"message": object.message,
 	            	"stackTrace": (trace ? Crossfire.serialize(trace.frames) : null)
 	            };
-	            this.transport.sendEvent("onConsoleError", {"contextId": context.Crossfire.crossfire_id, "body": body}, "console");
+	            if (this.transport && this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
+	            	this.transport.sendEvent("onConsoleError", {"contextId": context.Crossfire.crossfire_id, "body": body}, "console");
+	            }
             }
         },
         

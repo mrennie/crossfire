@@ -400,9 +400,6 @@ FBL.ns(function() {
                 }
                 for (var i = 0; i < this.refs.length; i++) {
                     if (this.refs[i] === obj) {
-                        if (FBTrace.DBG_CROSSFIRE) {
-                            FBTrace.sysout("CROSSFIRE _getRef ref exists with handle: " + i + " type = "+typeof(obj), obj);
-                        }
                         ref["handle"] = i;
                         return ref;
                     }
@@ -417,7 +414,7 @@ FBL.ns(function() {
             }
             catch(ex) {
                 if(FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE _getRef failed: "+ex+" [object: "+obj+"]");
+                    FBTrace.sysout("CROSSFIRE _getRef failed: "+ex.message, obj);
                 }
                 return null;
             }
@@ -478,7 +475,7 @@ FBL.ns(function() {
                 return serialized;
             } catch (e) {
                 if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
-                    FBTrace.sysout("CROSSFIRE serialize failed for: " + obj + ", "+e, obj);
+                    FBTrace.sysout("CROSSFIRE serialize failed: " + e.message, obj);
                 }
                 return null;
             }
@@ -497,55 +494,53 @@ FBL.ns(function() {
          * @since 0.3a2
          */
         _serializeProperties: function(obj, ref) {
-            var p, pName, prop, properties,
-                o = {};
-
+            var properties;
             if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
-                FBTrace.sysout("CROSSFIRE _serializeProperties: obj " + obj
-                        + ", typeof(obj) " + typeof(obj), obj);
+                FBTrace.sysout("CROSSFIRE: _serializeProperties", obj);
             }
-
             if ((typeof(obj)).indexOf("XrayWrapper" != -1)) {
-                if (FBTrace.DBG_CROSSFIRE_SERIALIZE)
-                    FBTrace.sysout("CROSSFIRE _serializeProperties unwrapping " + obj, obj);
+                if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
+                    FBTrace.sysout("CROSSFIRE: _serializeProperties unwrapping XrayWrapper", obj);
+                }
                 try {
                     //obj = FBL.unwrapIValue(obj);
                      obj = XPCNativeWrapper.unwrap(obj);
                      properties = [];
-                     for (p in obj) properties.push(p);
+                     for (var p in obj) {
+                    	 properties.push(p);
+                     }
                 } catch (ex) {
                     if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
-                      FBTrace.sysout("_serializeProperties can't unwrap: " + ex,ex);
+                      FBTrace.sysout("CROSSFIRE: _serializeProperties can't unwrap XrayWrapper: " + ex.message, obj);
                     }
                 }
             }
-            else if (obj instanceof Object && Object.keys)
-            {
+            else if (obj instanceof Object && Object.keys) {
                 if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
-                    FBTrace.sysout("_serializeProperties getting Object.keys()");
+                    FBTrace.sysout("CROSSFIRE: _serializeProperties getting Object.keys()");
                 }
                 properties = Object.keys(obj);
             }
             else {
                 properties = [];
-                for (p in obj) {
+                for (var p in obj) {
                     try {
                         if (Object.prototype.hasOwnProperty.call(obj,p)) {
                             properties.push(p);
                         }
                     } catch (exc) {
                         if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
-                            FBTrace.sysout("_serializeProperties exception: " + exc, exc);
+                            FBTrace.sysout("CROSSFIRE: _serializeProperties exception: " + exc.message, exc);
                         }
                     }
                 }
             }
-            for (var i = 0; i < properties.length; i++) {
-                pName = properties[i];
-                prop = obj[pName];
+            var o = {};
+            for (var index = 0; index < properties.length; index++) {
                 try {
-                    if (typeof(prop) == "object" || typeof(prop) == "function")
-                    {
+                	var pName = properties[index];
+                	var prop = obj[pName];
+                    if (typeof(prop) == "object" || typeof(prop) == "function") {
                         if (prop == null) {
                             o[pName] = this.serialize(prop);//"null";
                         } else if (prop && prop.type && prop.handle) {
@@ -557,25 +552,24 @@ FBL.ns(function() {
                     else if (pName === obj) {
                         o[pName] = ref;
                     }
-                    else
-                    {
+                    else {
                         o[pName] = this.serialize(prop);
                     }
                 } catch (x) {
-                    o[pName] = null;
-                    if(FBTrace.DBG_CROSSFIRE) {
-                        FBTrace.sysout("CROSSFIRE _serializeProperties: ERROR on [property: "+p+"] with [exception: "+x+"]");
+                	o[pName] = this.serialize(x.message);
+                    if(FBTrace.DBG_CROSSFIRE_SERIALIZE) {
+                        FBTrace.sysout("CROSSFIRE _serializeProperties failed for: "+pName, prop);
                     }
                 }
             }
-            if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
-                FBTrace.sysout("_serializeProperties finished iterating properties");
-            }
-            if(obj.constructor && obj.constructor != obj) {
+            if(!o.constructor && obj.constructor && obj.constructor != obj) {
                 o["constructor"] = this._getRef(obj.constructor);
             }
-            if(obj.prototype && obj.prototype != obj) {
+            if(!o.proto && obj.prototype && obj.prototype != obj) {
                 o["proto"] = this._getRef(obj.prototype);
+            }
+            if (FBTrace.DBG_CROSSFIRE_SERIALIZE) {
+                FBTrace.sysout("CROSSFIRE: _serializeProperties finished", o);
             }
             return o;
         },

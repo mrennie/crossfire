@@ -308,7 +308,7 @@ FBL.ns(function() {
                 contextId = context.Crossfire.crossfire_id;
                 for (var i = 0; i < this.contexts.length; i++) {
                     if (this.contexts[i].Crossfire.crossfire_id == contextId) {
-                        delete this.contexts[i].Crossfire.currentFrame;
+                        delete this.contexts[i].Crossfire.currentStack;
                         this._sendEvent("onContextDestroyed", {"body":{"contextId": this.contexts[i].Crossfire.crossfire_id}});
                         this.contexts.splice(i, 1);
                         break;
@@ -729,8 +729,8 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         getFrame: function(context, args) {
-        	if(FBTrace.DBG_CROSSFIRE) {
-        		FBTrace.sysout("CROSSFIRE getframe with args => "+args);
+        	if(FBTrace.DBG_CROSSFIRE_FRAMES) {
+        		FBTrace.sysout("CROSSFIRE: getframe", context);
         	}
             var index = args["index"];
             if(!index || index < 0) {
@@ -754,7 +754,7 @@ FBL.ns(function() {
                     locals["this"] = Crossfire.serialize(frame.thisValue);
                 }
                 if (includeScopes) {
-                    var scopes = (this.getScopes(context, {"index": 1, "frameIndex": index })).scopes;
+                    var scopes = this.getScopes(context, {"index": 0, "frameIndex": index });
                     return {
                         "frame": {
     	                    "index": frame.index,
@@ -762,7 +762,7 @@ FBL.ns(function() {
     	                    "url": frame.script,
     	                    "locals": locals,
     	                    "line": frame.line,
-    	                    "scopes": scopes
+    	                    "scopes": scopes.scopes
     	                }
                     };
                 }
@@ -776,7 +776,7 @@ FBL.ns(function() {
 	                }
                 };
             } catch (e) {
-                if (FBTrace.DBG_CROSSFIRE) {
+                if (FBTrace.DBG_CROSSFIRE_FRAMES) {
                     FBTrace.sysout("CROSSFIRE exception returning frame: "+e.getMessage());
                 }
             }
@@ -1431,6 +1431,9 @@ FBL.ns(function() {
          * @param context the current Crossfire context
          */
         onStartDebugging: function(context) {
+        	if (FBTrace.DBG_CROSSFIRE_FRAMES) {
+                FBTrace.sysout("CROSSFIRE: onStartDebugging", context);
+            }
             var frame = FBL.getStackFrame(context.stoppedFrame, context);
             var lineno = frame.getLineNumber();
             var url = frame.getURL();
@@ -1446,6 +1449,9 @@ FBL.ns(function() {
             	parent = parent.getCallingFrame();
             }
             context.Crossfire.currentStack = stack;
+            if (FBTrace.DBG_CROSSFIRE_FRAMES) {
+                FBTrace.sysout("CROSSFIRE: onStartDebugging - setting stack", stack);
+            }
             var bcause = context.breakingCause;
             var cause =  bcause ? {"title":bcause.title, "message":bcause.message} : {};
             var location = {"url" : url, "line": lineno};
@@ -1704,6 +1710,9 @@ FBL.ns(function() {
          * @returns a copy of the given stackframe
          */
         _copyFrame: function(frame, ctx) {
+        	if (FBTrace.DBG_CROSSFIRE_FRAMES) {
+                FBTrace.sysout("CROSSFIRE: _copyFrame", frame);
+            }
             if(frame && frame instanceof FBL.StackFrame) {
 	            var copy = {
 	            		"eval": function() { return frame.eval.apply(frame, arguments); },
