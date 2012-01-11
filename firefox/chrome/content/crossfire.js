@@ -590,7 +590,7 @@ FBL.ns(function() {
                 var icon = Firebug.Firefox.getElementById("crossfireIcon");
                 if (icon) {
                     if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
-                        setClass(Firebug.Firefox.getElementById("menu_connectCrossfireClient"), "hidden");
+                        //setClass(Firebug.Firefox.getElementById("menu_connectCrossfireClient"), "hidden");
                         setClass(Firebug.Firefox.getElementById("menu_startCrossfireServer"), "hidden");
 
                         removeClass(Firebug.Firefox.getElementById("menu_disconnectCrossfire"), "hidden");
@@ -602,7 +602,7 @@ FBL.ns(function() {
                     } else if (status == CROSSFIRE_STATUS.STATUS_WAIT_SERVER
                             /* TODO: create a separate icon state for 'connecting' */
                             || status == CROSSFIRE_STATUS.STATUS_CONNECTING) {
-                        setClass(Firebug.Firefox.getElementById("menu_connectCrossfireClient"), "hidden");
+                        //setClass(Firebug.Firefox.getElementById("menu_connectCrossfireClient"), "hidden");
                         setClass(Firebug.Firefox.getElementById("menu_startCrossfireServer"), "hidden");
 
                         removeClass(Firebug.Firefox.getElementById("menu_disconnectCrossfire"), "hidden");
@@ -613,7 +613,7 @@ FBL.ns(function() {
 
                     } else { //we are disconnected if (status == CROSSFIRE_STATUS.STATUS_DISCONNECTED) {
                         setClass(Firebug.Firefox.getElementById("menu_disconnectCrossfire"), "hidden");
-                        removeClass(Firebug.Firefox.getElementById("menu_connectCrossfireClient"), "hidden");
+                        //removeClass(Firebug.Firefox.getElementById("menu_connectCrossfireClient"), "hidden");
                         removeClass(Firebug.Firefox.getElementById("menu_startCrossfireServer"), "hidden");
 
                         removeClass(icon, "connected");
