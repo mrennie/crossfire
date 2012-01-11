@@ -587,13 +587,13 @@ FBL.ns(function() {
                 FBTrace.sysout("CROSSFIRE updateStatusIcon");
             }
             with (FBL) {
-                var icon = $("crossfireIcon");
+                var icon = Firebug.Firefox.getElementById("crossfireIcon");
                 if (icon) {
                     if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
-                        setClass($("menu_connectCrossfireClient"), "hidden");
-                        setClass($("menu_startCrossfireServer"), "hidden");
+                        setClass(Firebug.Firefox.getElementById("menu_connectCrossfireClient"), "hidden");
+                        setClass(Firebug.Firefox.getElementById("menu_startCrossfireServer"), "hidden");
 
-                        removeClass($("menu_disconnectCrossfire"), "hidden");
+                        removeClass(Firebug.Firefox.getElementById("menu_disconnectCrossfire"), "hidden");
 
                         removeClass(icon, CROSSFIRE_STATUS.STATUS_DISCONNECTED);
                         removeClass(icon, "waiting");
@@ -602,19 +602,19 @@ FBL.ns(function() {
                     } else if (status == CROSSFIRE_STATUS.STATUS_WAIT_SERVER
                             /* TODO: create a separate icon state for 'connecting' */
                             || status == CROSSFIRE_STATUS.STATUS_CONNECTING) {
-                        setClass($("menu_connectCrossfireClient"), "hidden");
-                        setClass($("menu_startCrossfireServer"), "hidden");
+                        setClass(Firebug.Firefox.getElementById("menu_connectCrossfireClient"), "hidden");
+                        setClass(Firebug.Firefox.getElementById("menu_startCrossfireServer"), "hidden");
 
-                        removeClass($("menu_disconnectCrossfire"), "hidden");
+                        removeClass(Firebug.Firefox.getElementById("menu_disconnectCrossfire"), "hidden");
 
                         removeClass(icon, CROSSFIRE_STATUS.STATUS_DISCONNECTED);
                         removeClass(icon, "connected");
                         setClass(icon, "waiting");
 
                     } else { //we are disconnected if (status == CROSSFIRE_STATUS.STATUS_DISCONNECTED) {
-                        setClass($("menu_disconnectCrossfire"), "hidden");
-                        removeClass($("menu_connectCrossfireClient"), "hidden");
-                        removeClass($("menu_startCrossfireServer"), "hidden");
+                        setClass(Firebug.Firefox.getElementById("menu_disconnectCrossfire"), "hidden");
+                        removeClass(Firebug.Firefox.getElementById("menu_connectCrossfireClient"), "hidden");
+                        removeClass(Firebug.Firefox.getElementById("menu_startCrossfireServer"), "hidden");
 
                         removeClass(icon, "connected");
                         removeClass(icon, "waiting");
@@ -637,15 +637,15 @@ FBL.ns(function() {
                 FBTrace.sysout("CROSSFIRE updateStatusText: " + status);
             }
             with (FBL) {
-                var icon = $("crossfireIcon");
+                var icon = Firebug.Firefox.getElementById("crossfireIcon");
                 if (status == CROSSFIRE_STATUS.STATUS_DISCONNECTED) {
-                    $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: disconnected.");
+                    icon.setAttribute("tooltiptext", "Crossfire: disconnected.");
                 } else if (status == CROSSFIRE_STATUS.STATUS_WAIT_SERVER) {
-                    $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: accepting connections on port " + this.serverTransport.port);
+                    icon.setAttribute("tooltiptext", "Crossfire: accepting connections on port " + this.serverTransport.port);
                 } else if (status == CROSSFIRE_STATUS.STATUS_CONNECTING) {
-                    $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connecting...");
+                    icon.setAttribute("tooltiptext", "Crossfire: connecting...");
                 } else if (status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
-                    $("crossfireIcon").setAttribute("tooltiptext", "Crossfire: connected to client on port " + this.serverTransport.port);
+                    icon.setAttribute("tooltiptext", "Crossfire: connected to client on port " + this.serverTransport.port);
                 }
             }
         },
@@ -669,6 +669,10 @@ FBL.ns(function() {
 
     // ----- Crossfire XUL Event Listeners -----
 
+    // Expose the object also to the global space. The status bar icon and associated
+    // menu handlers need it.
+    top.Crossfire = Crossfire;
+
     /**
      * @name Crossfire.onStatusClick
      * @description Call-back for menu pop-up
@@ -678,7 +682,8 @@ FBL.ns(function() {
      * @param el
      */
     Crossfire.onStatusClick = function( el) {
-        FBL.$("crossfireStatusMenu").openPopup(el, "before_end", 0,0,false,false);
+        Firebug.Firefox.getElementById("crossfireStatusMenu").openPopup(
+            el, "before_end", 0, 0, false, false);
     };
 
     /**

@@ -38,7 +38,7 @@ FBL.ns(function() { with(FBL) {
                onButtonClick: function(evt) {
                    FBTrace.sysout("CrossfirePanel toggle connect Crossfire is " + Crossfire, Crossfire);
                    Crossfire.disconnect();
-                   //FBL.$("crossfireStatusMenu").openPopup(el, "before_end", 0,0,false,false);
+                   //Firebug.Firefox.getElementById("crossfireStatusMenu").openPopup(el, "before_end", 0,0,false,false);
                }
         });
 

@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet href="chrome://crossfire/skin/crossfire.css" ?>
+
+<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" 
+         xmlns:html="http://www.w3.org/1999/xhtml">
+
+    <!-- Firefox 3.6 Status Bar Icon -->
+    <statusbar id="status-bar">
+        <statusbarpanel id="crossfireStatusBar" context="crossfireContextMenu"
+            onmousedown="Crossfire.onStatusClick(this)">
+            <image id="crossfireIcon" class="disconnected" tooltiptext="Crossfire: no status set"/>
+        </statusbarpanel>
+        <menupopup id="crossfireStatusMenu">
+            <menuitem id="menu_startCrossfireServer" label="Start Server"
+                onclick="Crossfire.startServer()"/>
+            <menuitem id="menu_disconnectCrossfire" class="hidden" label="Disconnect..."
+                onclick="Crossfire.disconnect()"/>
+            <!-- <menuitem id="menu_connectCrossfireClient" class="hidden" label="Connect..."
+                onclick=""/> -->
+        </menupopup>
+    </statusbar>
+
+    <!-- Fennec button -->
+    <vbox id="browser-controls">
+        <toolbarbutton class="button-control">
+            <image id="crossfireIcon" class="disconnected" tooltiptext="Crossfire: no status set"/>
+        </toolbarbutton>
+    </vbox>
+</overlay>
