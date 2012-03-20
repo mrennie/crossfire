@@ -620,7 +620,11 @@ FBL.ns(function() {
                     var loc = bp.location;
                     if(loc && loc.url && loc.line) {
                         Firebug.Debugger.clearBreakpoint({"href": loc.url}, loc.line);
-                        this.breakpoints.splice(this.breakpoints.indexOf(bp), 1);
+                        //https://github.com/firebug-crossfire/crossfire/issues/1
+                        var idx = this.breakpoints.indexOf(bp);
+                        if(idx > -1) {
+                        	this.breakpoints.splice(idx, 1);
+                        }
                     }
 	            }
 	            return {};
