@@ -551,7 +551,7 @@ FBL.ns(function() {
 	                    //we want to allow the condition to be changed iff:
 	                    //1. the conditions differ AND
 	                    //2. the condition is a string or null (this would mean a removal)
-	                    if (bp.attributes.condition != attributes.condition && (typeof(attributes.condition) == "string"))) {
+	                    if (bp.attributes.condition != attributes.condition && (typeof(attributes.condition) == "string")) {
 	                        FBL.fbs.setBreakpointCondition({"href":loc.url}, loc.line, attributes.condition, Firebug.Debugger);
 	                    }
 	                    if (bp.attributes.enabled != attributes.enabled) {
