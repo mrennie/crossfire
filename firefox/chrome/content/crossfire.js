@@ -10,8 +10,6 @@
  */
 var CROSSFIRE_VERSION = "0.3";
 
-Components.utils.import("resource://crossfire/SocketTransport.js");
-
 FBL.ns(function() {
 
     /**

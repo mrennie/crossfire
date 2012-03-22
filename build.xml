@@ -1,39 +1,98 @@
 <?xml version="1.0"?>
-<project name="crossfire" default="all" basedir=".">
+<project name="crossfire" default="xpi" basedir=".">
 
+	<!--
+	   These properties must be changed for each new release of Crossfire. They are written into the 
+	   install.rdf and update.rdf file automatically
+	-->
+	<property name="VERSION" value="0.3"/>
+	<property name="RELEASE" value="a11"/>
+	
+	<!--
+	   These build-time paths are relative to the root of the project (where the root of the project
+	   means the folder containgin the .project file)
+	   
+	   To perform the building + XPI'ing in an alternate location simply change these
+	-->
     <property name="dist.dir" value="dist/"/>
     <property name="build.dir" value="build/"/>
+	
+	<!-- this path must point to the root of the extracted JSDoc bundle -->
+	<property name="jsdoc.home" value="C:/Users/mrennie/Desktop/jsdoc_toolkit-2.4.0/jsdoc-toolkit"/>
+	<property name="jsdoc.dir" value="doc/jsdocs"/>
 
-    <target name="all" depends="firefox,clean,doc"/>
-
-    <target name="firefox">
-         <ant dir="${basedir}/firefox"/>
-    </target>
-
-    <target name="clean">
-        <delete dir="${build.dir}"/>
-        <delete dir="${dist.dir}"/>
-    </target>
-
-    <target name="detrace">
-        <echo>Nothing happened.</echo>
-    </target>
-
-    <!-- generate documentation -->
-    <property name="jsdoc.home" value="${basedir}/../../../../jsdoc/"/>
-    <property name="jsdoc.dir" value="doc/jsdocs"/>
-
-    <path id="jsdoc.path">
-        <pathelement path="${jsdoc.home}/jsdoctoolkit-ant-task-1.0.1.jar"/>
-        <pathelement path="${jsdoc.home}/js.jar"/>
+	<!--
+	   This path requires that the 'jsdoc-toolkit-ant-task-1.1.2.jar' be in the root of the extracted
+	   JSDoc location.
+	-->
+	<path id="jsdoc.path" description="the classpath reference for creating the JSDoc">
+        <pathelement path="${jsdoc.home}/jsdoc-toolkit-ant-task-1.1.2.jar"/>
+        <pathelement path="${jsdoc.home}/java/classes/js.jar"/>
     </path>
-
-    <target name="doc">
-        <delete dir="${jsdoc.dir}"/>
+	
+	<!--
+        This target will create the JSDoc for Crossfire and dump it into the /doc directory.
+        
+        The template used is the default 'jsdoc' template
+    -->
+	<target name="doc" description="creates the JSDoc for Crossfire">
+        <delete includeemptydirs="true" failonerror="false" dir="${jsdoc.dir}"/>
         <mkdir dir="${jsdoc.dir}"/>
         <taskdef name="jsdoctoolkit" classname="uk.co.darrenhurley.ant.tasks.JsDocToolkit" classpathref="jsdoc.path"/>
-        <jsdoctoolkit jsdochome="${jsdoc.home}/jsdoc-toolkit-2.3.0/" template="firebug" inputdir="." outputdir="${jsdoc.dir}">
+        <jsdoctoolkit jsdochome="${jsdoc.home}/" template="jsdoc" inputdir="." outputdir="${jsdoc.dir}">
         </jsdoctoolkit>
     </target>
+	
+	<!--
+	   The default task to building the installable XPI file.
+	   
+	   This target is fail-fast when trying to build the XPI, the reason being 
+	   is that Firefox will not allow an extension in an inconsistent state to be installed.
+	-->
+    <target name="xpi" depends="clean" description="zip files into a firefox XPI">
+    	<tstamp>
+          <format property="build.time" pattern="HHmmssSS"/>
+        </tstamp>
+        <mkdir dir="${build.dir}"/>
+    	<!-- copy install.rdf and replace tokens -->
+        <copy file="install.rdf" tofile="${build.dir}/install.rdf" overwrite="true" failonerror="true" verbose="true">
+            <filterchain>
+                <replacetokens>
+                     <token key="VERSION" value="${VERSION}"/>
+                     <token key="RELEASE" value="${RELEASE}"/>
+                </replacetokens>
+            </filterchain>
+        </copy>
+    	<!-- copy chrome.manifest -->
+        <copy file="chrome.manifest" tofile="${build.dir}/chrome.manifest" overwrite="true" failonerror="true"/>
+        <copy todir="${build.dir}" failonerror="true" overwrite="true" includeemptydirs="false">
+            <fileset dir="${basedir}/firefox" includes="chrome/**/*"/>
+            <fileset dir="${basedir}/firefox" includes="defaults/**/*"/>
+            <fileset dir="${basedir}/firefox" includes="components/**/*"/>
+            <fileset dir="${basedir}" includes="license.txt"/>
+        </copy>
+        <mkdir dir="${dist.dir}"/>
+        <zip destfile="${dist.dir}/${ant.project.name}-${VERSION}${RELEASE}.xpi" basedir="${build.dir}" includes="**/*" />
+        <checksum file="${dist.dir}/${ant.project.name}-${VERSION}${RELEASE}.xpi" property="updateHash" algorithm="SHA-1"/>
+        <echo>Update hash is ${updateHash}</echo>
+        <copy file="update.rdf" tofile="${dist.dir}/update.rdf" overwrite="true" verbose="true">
+            <filterchain>
+                <replacetokens>
+                     <token key="VERSION" value="${VERSION}"/>
+                     <token key="RELEASE" value="${RELEASE}"/>
+                     <token key="UPDATEHASH" value="${updateHash}"/>
+                </replacetokens>
+            </filterchain>
+        </copy>
+        <!-- clean up build artifacts after we are done -->
+        <delete includeemptydirs="true" failonerror="false" dir="${build.dir}"/>
+    </target>
 
+	<!--
+	   Cleans up the /build and /dist directories
+	-->
+	<target name="clean" description="cleans the /build and /dist directories">
+        <delete includeemptydirs="true" failonerror="false" dir="${build.dir}" verbose="true"/>
+        <delete includeemptydirs="true" failonerror="false" dir="${dist.dir}" verbose="true"/>
+    </target>
 </project>

@@ -27,8 +27,6 @@ const HANDSHAKE_RETRY = 1007;
  */
 var EXPORTED_SYMBOLS = [ "CrossfireSocketTransport", "getCrossfireServer", "CROSSFIRE_STATUS" ];
 
-Cu.import("resource://crossfire/Packet.js");
-
 try {
     Cu.import("resource://firebug/firebug-trace-service.js");
     FBTrace = traceConsoleService.getTracer("extensions.firebug");
