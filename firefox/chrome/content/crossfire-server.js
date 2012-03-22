@@ -527,10 +527,10 @@ FBL.ns(function() {
                 attributes = args["attributes"];
 
             if (FBTrace.DBG_CROSSFIRE_BPS) {
-                FBTrace.sysout("CROSSFIRE: changeBreakpoints handles => " + handles +" attributes => "+attributes.toSource());
+                FBTrace.sysout("CROSSFIRE: changeBreakpoints handles => " + handles +" attributes => "+attributes.toSource(), attributes);
             }
 
-            if(attributes.enabled && typeof(attributes.enabled) != "boolean") {
+            if(typeof(attributes.enabled) != "boolean") {
                 return null;
             }
 
@@ -541,50 +541,35 @@ FBL.ns(function() {
 		                	return null;
 		                }
 	                }
-
 	                // the breakpoint handles all appear to be valid so now make the changes
-
                     for (var i = 0; i < handles.length; i++) {
 	                    bp = this._findBreakpoint(handles[i]);
-
-	                    var conditionChanged = false;
-	                    if(attributes.condition) {
-	                        conditionChanged = bp.attributes.condition != attributes.condition;
-	                    }
-	                    if (FBTrace.DBG_CROSSFIRE_BPS) {
-	                        FBTrace.sysout("CROSSFIRE: changeBreakpoints condition changed => " + conditionChanged);
-	                    }
-	                    var enabledChanged = false;
-	                    if (attributes.enabled) {
-	                    	enabledChanged = true;
-	                        bp.attributes.enabled != attributes.enabled
-	                    }
-	                    if (FBTrace.DBG_CROSSFIRE_BPS) {
-	                        FBTrace.sysout("CROSSFIRE: changeBreakpoints enabled changed => " + enabledChanged);
-	                    }
 	                    for(var p in attributes) {
 	                        bp.attributes[p] = attributes[p];
 	                    }
 	                    loc = bp.location;
-	                    if (conditionChanged) {
+	                    //we want to allow the condition to be changed iff:
+	                    //1. the conditions differ AND
+	                    //2. the condition is a string or null (this would mean a removal)
+	                    if (bp.attributes.condition != attributes.condition && (typeof(attributes.condition) == "string"))) {
 	                        FBL.fbs.setBreakpointCondition({"href":loc.url}, loc.line, attributes.condition, Firebug.Debugger);
 	                    }
-	                    if (enabledChanged) {
-	                        if(attributes.enabled == true) {
+	                    if (bp.attributes.enabled != attributes.enabled) {
+	                        if(attributes.enabled) {
 	                            FBL.fbs.enableBreakpoint(loc.url, loc.line);
 	                        } else {
 	                            FBL.fbs.disableBreakpoint(loc.url, loc.line);
 	                        }
 	                    }
 	                    if (FBTrace.DBG_CROSSFIRE_BPS) {
-	                        FBTrace.sysout("CROSSFIRE: changeBreakpoints completed => " + bp.toSource());
+	                        FBTrace.sysout("CROSSFIRE: changeBreakpoints completed => " + bp.toSource(), bp);
 	                    }
 	                }
 	                return {};
 	            }
             } catch (e) {
                 if (FBTrace.DBG_CROSSFIRE_BPS) {
-                    FBTrace.sysout("CROSSFIRE: changeBreakpoints exception => " + e);
+                    FBTrace.sysout("CROSSFIRE: changeBreakpoints exception => " + e, e);
                 }
             }
             return null;
