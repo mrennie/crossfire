@@ -326,7 +326,7 @@ FBL.ns(function() {
          * @function
          * @public
          * @memberOf CrossfireServer
-         * @param request the original request from {@link SocketTransport}
+         * @param request the original request from {@link CrossfireSocketTransport}
          */
         handleRequest: function(request) {
             if (FBTrace.DBG_CROSSFIRE) {

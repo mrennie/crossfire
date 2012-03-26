@@ -131,7 +131,7 @@ CrossfireSocketTransport.prototype =
      * @public
      * @memberOf CrossfireSocketTransport
      * @param listener An object which contains a method named "handleRequest".
-     * @see Packet.js
+     * @see packet.js
      */
     addListener: function( listener) {
         // don't push the listener again if it is already there
@@ -158,7 +158,7 @@ CrossfireSocketTransport.prototype =
 
     /**
      * @name sendResponse
-     * @description Builds and sends a response packet. @see also Packet.js
+     * @description Builds and sends a response packet. @see also packet.js
      * @function
      * @public
      * @memberOf CrossfireSocketTransport
@@ -180,12 +180,13 @@ CrossfireSocketTransport.prototype =
 
     /**
      * @name sendEvent
-     * @description Send an event packet. @see also Packet.js
+     * @description Send an event packet.
      * @function
      * @public
      * @memberOf CrossfireSocketTransport
      * @param event Event name
      * @param data optional JSON object containing additional data about the event.
+     * @see also packet.js
      */
     sendEvent: function( event, data, tool) {
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT)
@@ -203,10 +204,11 @@ CrossfireSocketTransport.prototype =
 
     /**
      * @name sendRequest
-     * @description Send a request packet. @see also Packet.js
+     * @description Send a request packet. 
      * @function
      * @public
      * @memberOf CrossfireSocketTransport
+     * @see also packet.js
      */
     sendRequest: function(command, data, tool) {
         var packet;

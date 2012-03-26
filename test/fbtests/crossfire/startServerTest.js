@@ -2,7 +2,7 @@
 function runTest() {
     FBTest.sysout("startServerTest.started");
 
-    Components.utils.import("resource://crossfire/SocketTransport.js");
+    //Components.utils.import("resource://crossfire/SocketTransport.js");
 
     var CrossfireModule = FW.Crossfire;
     var CrossfireServer = CrossfireModule.CrossfireServer;

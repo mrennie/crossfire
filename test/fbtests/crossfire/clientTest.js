@@ -2,7 +2,7 @@
 function runTest() {
     FBTest.sysout("clientTest.started");
 
-    Components.utils.import("resource://crossfire/SocketTransport.js");
+    //Components.utils.import("resource://crossfire/SocketTransport.js");
 
     var CrossfireModule = FBTest.FirebugWindow.Crossfire;
     var CrossfireClient = CrossfireModule.CrossfireClient;
