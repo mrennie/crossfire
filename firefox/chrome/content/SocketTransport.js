@@ -31,7 +31,7 @@ try {
     FBTrace = {};
 }
 
-const PrefService = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefService);
+const PrefService = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService);
 
 /**
  * @name CROSSFIRE_STATUS
@@ -106,7 +106,7 @@ function CrossfireSocketTransport( isServer) {
 
     // quit-application observer
     var transport = this;
-    Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService).addObserver({
+    Components.classes["@mozilla.org/observer-service;1"].getService(Components.interfaces.nsIObserverService).addObserver({
         observe: function(subject, topic, data)
         {
             if (FBTrace.DBG_CROSSFIRE_TRANSPORT) FBTrace.sysout("quit application observed");
@@ -324,7 +324,7 @@ CrossfireSocketTransport.prototype =
             FBTrace.sysout("_createTransport");
         }
         if (this.isServer) {
-            this._serverSocket = Cc["@mozilla.org/network/server-socket;1"].createInstance(Ci.nsIServerSocket);
+            this._serverSocket = Components.classes["@mozilla.org/network/server-socket;1"].createInstance(Components.interfaces.nsIServerSocket);
             // mcollins: issue 3606
             // create a preference to pass to serverSocket.init() so we can connect to more than loopback.
             // https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIServerSocket#init%28%29
@@ -352,7 +352,7 @@ CrossfireSocketTransport.prototype =
                 }
             }
         } else {
-            var transportService = Cc["@mozilla.org/network/socket-transport-service;1"].getService(Ci.nsISocketTransportService);
+            var transportService = Components.classes["@mozilla.org/network/socket-transport-service;1"].getService(Components.interfaces.nsISocketTransportService);
             this._transport = transportService.createTransport(null,0, host, port, null);
             this._createInputStream();
             this._createOutputStream();
@@ -372,8 +372,8 @@ CrossfireSocketTransport.prototype =
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
             FBTrace.sysout("_createInputStream");
         }
-        this._inputStream = this._transport.openInputStream(Ci.nsITransport.OPEN_BLOCKING | Ci.nsITransport.OPEN_UNBUFFERED, 0, 0);
-        this._scriptableInputStream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
+        this._inputStream = this._transport.openInputStream(Components.interfaces.nsITransport.OPEN_BLOCKING | Components.interfaces.nsITransport.OPEN_UNBUFFERED, 0, 0);
+        this._scriptableInputStream = Components.classes["@mozilla.org/scriptableinputstream;1"].createInstance(Components.interfaces.nsIScriptableInputStream);
         this._scriptableInputStream.init(this._inputStream);
     },
 
@@ -389,7 +389,7 @@ CrossfireSocketTransport.prototype =
         if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {
             FBTrace.sysout("_createOutputStream");
         }
-        this._outputStream = this._transport.openOutputStream(Ci.nsITransport.OPEN_BLOCKING | Ci.nsITransport.OPEN_UNBUFFERED, 0, 0);
+        this._outputStream = this._transport.openOutputStream(Components.interfaces.nsITransport.OPEN_BLOCKING | Components.interfaces.nsITransport.OPEN_UNBUFFERED, 0, 0);
         this._outputStreamCallback = {
                 _packets: [],
 
@@ -398,7 +398,7 @@ CrossfireSocketTransport.prototype =
                 },
 
                 QueryInterface: function(iid) {
-                    if(!iid.equals(Ci.nsISupports) && !iid.equals(Ci.nsIOutputStreamCallback))
+                    if(!iid.equals(Components.interfaces.nsISupports) && !iid.equals(Components.interfaces.nsIOutputStreamCallback))
                         throw NS_ERROR_NO_INTERFACE;
                     return this;
                 },
@@ -473,10 +473,10 @@ CrossfireSocketTransport.prototype =
     _defer: function( callback, delay) {
         if (!delay) delay = 1;
         var self = this;
-        var timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+        var timer = Components.classes["@mozilla.org/timer;1"].createInstance(Components.interfaces.nsITimer);
         timer.initWithCallback( {
             QueryInterface: function( iid) {
-                if(!iid.equals(Ci.nsISupports) && !iid.equals(Ci.nsITimerCallback))
+                if(!iid.equals(Components.interfaces.nsISupports) && !iid.equals(Components.interfaces.nsITimerCallback))
                     throw NS_ERROR_NO_INTERFACE;
                 return this;
             },
@@ -498,7 +498,7 @@ CrossfireSocketTransport.prototype =
         var self = this;
         this._serverSocket.asyncListen({
             QueryInterface: function(iid) {
-                if(!iid.equals(Ci.nsISupports) && !iid.equals(Ci.nsIServerSocketListener))
+                if(!iid.equals(Components.interfaces.nsISupports) && !iid.equals(Components.interfaces.nsIServerSocketListener))
                     throw NS_ERROR_NO_INTERFACE;
                 return this;
             },
@@ -530,7 +530,7 @@ CrossfireSocketTransport.prototype =
         var self = this;
         this._outputStream.asyncWait( {
             QueryInterface: function( iid) {
-                if(!iid.equals(Ci.nsISupports) && !iid.equals(Ci.nsIOutputStreamCallback))
+                if(!iid.equals(Components.interfaces.nsISupports) && !iid.equals(Components.interfaces.nsIOutputStreamCallback))
                     throw NS_ERROR_NO_INTERFACE;
                 return this;
             },
