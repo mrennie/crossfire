@@ -498,20 +498,32 @@ CrossfireSocketTransport.prototype =
         var self = this;
         this._serverSocket.asyncListen({
             QueryInterface: function(iid) {
-                if(!iid.equals(Components.interfaces.nsISupports) && !iid.equals(Components.interfaces.nsIServerSocketListener))
+                if(!iid.equals(Components.interfaces.nsISupports) && !iid.equals(Components.interfaces.nsIServerSocketListener)) {
                     throw NS_ERROR_NO_INTERFACE;
+                }
                 return this;
             },
 
+            /**
+             * https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIServerSocketListener#onSocketAccepted()
+             */
             onSocketAccepted: function( socket, transport) {
                 self._transport = transport;
-
                 self._createInputStream();
-
                 self._createOutputStream();
-
                 self._notifyConnection(CROSSFIRE_STATUS.STATUS_CONNECTING);
                 self._waitHandshake();
+            },
+            
+            /**
+             * https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIServerSocketListener#onStopListening()
+             */
+            onStopListening: function(socket, aStatus) {
+            	//clean up after ourselves
+            	//https://github.com/firebug-crossfire/crossfire/issues/4
+            	self._closeStreams();
+            	self._destroyTransport();
+            	self.listeners = [];
             }
         });
     },
