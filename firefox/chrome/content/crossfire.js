@@ -230,9 +230,11 @@ FBL.ns(function() {
             }
             try {
                 var tool = this.registeredTools[name];
-                delete this.registeredTools[name];
-                if (tool.onUnregistered) {
-                	tool.onUnregistered();
+                if(tool) {
+	                delete this.registeredTools[name];
+	                if (tool.onUnregistered) {
+	                	tool.onUnregistered();
+	                }
                 }
             } catch (e) {
                 if (FBTrace.DBG_CROSSFIRE) {
