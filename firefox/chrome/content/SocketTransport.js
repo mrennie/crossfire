@@ -1,8 +1,5 @@
 /* See license.txt for terms of usage */
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
 /**
  * @name CROSSFIRE_HANDSHAKE
  * @description the String representing the handshake that is negotiated when initially connecting
@@ -28,7 +25,7 @@ const HANDSHAKE_RETRY = 1007;
 var EXPORTED_SYMBOLS = [ "CrossfireSocketTransport", "getCrossfireServer", "CROSSFIRE_STATUS" ];
 
 try {
-    Cu.import("resource://firebug/firebug-trace-service.js");
+    Components.utils.import("resource://firebug/firebug-trace-service.js");
     FBTrace = traceConsoleService.getTracer("extensions.firebug");
 } catch(ex) {
     FBTrace = {};
