@@ -17,6 +17,7 @@ FBL.ns(function() {
         breakpoint_ids: 1, //default id seed for breakpoint handles
         dispatchName: "CrossfireServer",
         toolName: "all", // receive all packets, regardless of 'tool' header
+        suppressToggle: false,
 
         /**
          * @name initialize
@@ -197,124 +198,6 @@ FBL.ns(function() {
                 }
             }
             return null;
-        },
-
-        // ----- context listeners -----
-        /**
-         * @name initContext
-         * @description Handles a context being created - i.e. a new tab has been opened.
-         * <br><br>
-         * Fires an <code>onContextCreated</code> event.
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>body</code> - the event payload with the <code>url</code> value set</li>
-         * </ul>
-         * @function
-         * @public
-         * @memberOf CrossfireServer
-         * @param context the new context
-         */
-        initContext: function(context) {
-            context.Crossfire = { "crossfire_id" : this._generateId() };
-            this.contexts.push(context);
-            var url = "";
-            try {
-                url = context.window.location.href;
-            } catch(e) {
-                //do nothing
-            }
-            this._sendEvent("onContextCreated", {"body": {"url": url, "contextId": context.Crossfire.crossfire_id}});
-            Crossfire._updatePanel();
-        },
-
-        /**
-         * @name loadedContext
-         * @description Handles a context being loaded - i.e. the scripts in a given context have completed being compiled.
-         * <br><br>
-         * Fires an <code>onContextLoaded</code> event.
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>body</code> - the event payload with the <code>url</code> value set</li>
-         * </ul>
-         * @function
-         * @public
-         * @memberOf CrossfireServer
-         * @param context the context that completed loading
-         */
-        loadedContext: function( context) {
-            var url = "";
-            try {
-                url = context.window.location.href;
-            } catch(e) {
-                //do nothing
-            }
-
-            // load/sync breakpoints
-            this.getAllBreakpoints(context);
-
-            this._sendEvent("onContextLoaded", {"body": {"url": url, "contextId": context.Crossfire.crossfire_id}});
-        },
-
-        /**
-         * @name showContext
-         * @description Handles a context being shown - i.e. a tab has been switched to.
-         * <br><br>
-         * Fires an <code>onContextSelected</code> event
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>body</code> - the event payload with the <code>url</code>, <code>oldUrl</code>, <code>contextId</code> and <code>oldContextId</code> values set</li>
-         * </ul>
-         * @function
-         * @public
-         * @memberOf CrossfireServer
-         * @param browser the browser the context was changed to in
-         * @param context the context that was switched to
-         */
-        showContext: function(browser, context) {
-            if(context && this.currentContext && this.currentContext.Crossfire) {
-                var url =  this.currentContext.window.location.href;
-                var newUrl =  context.window.location.href;
-                if(url != newUrl) {
-                    this._sendEvent("onContextSelected", {"body": {"oldContextId": this.currentContext.Crossfire.crossfire_id, "oldUrl": url,
-                        "contextId": context.Crossfire.crossfire_id, "url": newUrl}});
-                }
-            }
-            this.currentContext = context;
-        },
-
-        /**
-         * @name destroyContext
-         * @description Handles a context being destroyed - i.e. a tab has been closed in the browser.
-         * <br><br>
-         * Fires an <code>onContextDestroyed</code> event.
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>contextId</code> - the id of the Crossfire context that was destroyed</li>
-         * </ul>
-         * @function
-         * @public
-         * @memberOf CrossfireServer
-         * @param context the context that has been destroyed
-         */
-        destroyContext: function(context) {
-            var contextId;
-            if (context && context.Crossfire) {
-                contextId = context.Crossfire.crossfire_id;
-                for (var i = 0; i < this.contexts.length; i++) {
-                    if (this.contexts[i].Crossfire.crossfire_id == contextId) {
-                        delete this.contexts[i].Crossfire.currentStack;
-                        this._sendEvent("onContextDestroyed", {"body":{"contextId": this.contexts[i].Crossfire.crossfire_id}});
-                        this.contexts.splice(i, 1);
-                        break;
-                    }
-                }
-            }
         },
 
         // ----- Crossfire transport listener -----
@@ -1107,16 +990,10 @@ FBL.ns(function() {
             list: for(var bp = 0; bp < this.breakpoints.length; bp++) {
                 var bpobj = this.breakpoints[bp];
                 if (handle) { // look up by handle
-                    if (FBTrace.DBG_CROSSFIRE_BPS) {
-                        FBTrace.sysout("CROSSFIRE: findBreakpoint with handle => " + handle);
-                    }
                     if (bpobj.handle == handle)
                         return bpobj;
                 }
                 else if (location) { // then we want to look up by location
-                    if (FBTrace.DBG_CROSSFIRE_BPS) {
-                        FBTrace.sysout("CROSSFIRE: findBreakpoint with location => " + location.toSource());
-                    }
                     loc = bpobj.location;
                     if(loc) {
                         //breakpoints are equal if their locations are equal
@@ -1127,15 +1004,12 @@ FBL.ns(function() {
                             }
                         }
                     }
-                    if (FBTrace.DBG_CROSSFIRE_BPS) {
-                        FBTrace.sysout("CROSSFIRE: findBreakpoint found breakpoint with location => " + bpobj.location.toSource());
-                    }
                     return bpobj;
                 }
             }
 
             if (FBTrace.DBG_CROSSFIRE_BPS) {
-                FBTrace.sysout("CROSSFIRE: findBreakpoint failed to find breakpoint");
+                FBTrace.sysout("CROSSFIRE: findBreakpoint failed to find breakpoint", locationOrHandle);
             }
             return null;
         },
@@ -1161,7 +1035,7 @@ FBL.ns(function() {
                 "handle": this.breakpoint_ids++,
                 "type": type,
                 "location": location,
-                "attributes": (attributes ? attributes : {"enabled":true, "condition":null})
+                "attributes": (attributes != undefined ? attributes : {"enabled":true, "condition":null})
             };
             this.breakpoints.push(bp);
             return bp;
@@ -1192,7 +1066,7 @@ FBL.ns(function() {
         			var location = bpObj["location"];
             		var attributes = bpObj["attributes"];
 		            if (FBTrace.DBG_CROSSFIRE_BPS) {
-		                FBTrace.sysout("CROSSFIRE: setBreakpoints location => "+location.toSource()+" attributes => "+attributes.toSource());
+		                FBTrace.sysout("CROSSFIRE: setBreakpoints location => "+location.toSource()+" attributes => "+attributes.toSource(), args);
 		            }
             		var bp = this._findBreakpoint(location);
 		            if (!bp) {
@@ -1206,38 +1080,40 @@ FBL.ns(function() {
 		        }
 
 		        // the specified breakpoints all appear to be valid, so now add them
-
-		        for (var i = 0; i < breakpoints.length; i++) {
-		        	var bp = breakpoints[i];
-	                var url = bp.location.url;
-	                var line = bp.location.line;
-	                if(url && line) {
-	                    if(context) {
-	                        var sourceFile = context.sourceFileMap[url];
-	                        if (sourceFile) {
-	                            Firebug.Debugger.setBreakpoint(sourceFile, line);
-	                        }
-	                    }
-	                    else {
-	                        Firebug.TabWatcher.iterateContexts(function doit(context) {
-	                            var sourceFile = context.sourceFileMap[url];
-	                            if (sourceFile) {
-	                                Firebug.Debugger.setBreakpoint(sourceFile, line);
-	                            }
-	                        });
-	                    }
-	                    if (attributes.condition) {
-	                        FBL.fbs.setBreakpointCondition({"href": url}, line, attributes.condition, Firebug.Debugger);
-	                    }
-	                    // by default, setting a new breakpoint is enabled, so only check if we want to disable it.
-	                    if (!attributes.enabled) {
-	                        FBL.fbs.disableBreakpoint(url, line);
-	                    }
-	                }
-	            }
-	            if (FBTrace.DBG_CROSSFIRE_BPS) {
-	                FBTrace.sysout("CROSSFIRE: setBreakpoint complete bp => "+bp.toSource());
-	            }
+        		this.suppressToggle = true;
+        		try {
+			        for (var i = 0; i < breakpoints.length; i++) {
+			        	var bp = breakpoints[i];
+		                var url = bp.location.url;
+		                var line = bp.location.line;
+		                if(url && line) {
+		                    if(context) {
+		                        var sourceFile = context.sourceFileMap[url];
+		                        if (sourceFile) {
+		                            Firebug.Debugger.setBreakpoint(sourceFile, line);
+		                        }
+		                    }
+		                    else {
+		                        Firebug.TabWatcher.iterateContexts(function doit(context) {
+		                            var sourceFile = context.sourceFileMap[url];
+		                            if (sourceFile) {
+		                                Firebug.Debugger.setBreakpoint(sourceFile, line);
+		                            }
+		                        });
+		                    }
+		                    if (bp.attributes.condition != undefined) {
+		                        FBL.fbs.setBreakpointCondition({"href": url}, line, bp.attributes.condition, Firebug.Debugger);
+		                    }
+		                    // by default, setting a new breakpoint is enabled, so only check if we want to disable it.
+		                    if (!bp.attributes.enabled) {
+		                        FBL.fbs.disableBreakpoint(url, line);
+		                    }
+		                }
+		            }
+        		}
+        		finally {
+        			this.suppressToggle = false;
+        		}
 	            return {"breakpoints": breakpoints};
             }
             return null;
@@ -1303,43 +1179,174 @@ FBL.ns(function() {
             return script;
         },
 
-
-        // ----- Firebug listener -----
         /**
-         * @name onSourceFileCreated
-         * @description Handles a script being loaded - i.e. a script has been compiled in the current context.
-         * <br><br>
-         * Fires an <code>onScript</code> event.
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug</li>
-         * </ul>
+         * @name _copyFrame
+         * @description Make a copy of a frame since the jsdIStackFrame's are ephemeral,
+         * but our protocol is asynchronous so the original frame object may
+         * be gone by the time the remote host requests it.
          * @function
          * @public
          * @memberOf CrossfireServer
-         * @param context the context of this event
-         * @param sourceFile the source file object
+         * @param frame the stackframe to copy
+         * @param ctx the current Crossfire context
+         * @type Array
+         * @returns a copy of the given stackframe
          */
-        onSourceFileCreated: function(context, sourceFile) {
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE:  onSourceFileCreated => " + sourceFile.href);
+        _copyFrame: function(frame, ctx) {
+        	if (FBTrace.DBG_CROSSFIRE_FRAMES) {
+                FBTrace.sysout("CROSSFIRE: _copyFrame", frame);
             }
-            this._handleSource(context, sourceFile, false);
+            if(frame && frame instanceof FBL.StackFrame) {
+	            var copy = {
+	            		"eval": function() { return frame.eval.apply(frame, arguments); },
+	            		"functionName": frame.fn,
+	            		"line": frame.line,
+	            		"thisValue": frame.getThisValue(),
+	            		"scopes": frame.getScopes(false),
+	            		"script": frame.href
+	            };
+	            return copy;
+            }
+            if (FBTrace.DBG_CROSSFIRE_FRAMES) {
+                FBTrace.sysout("CROSSFIRE: _copyFrame - not an instanceof FBL.Stackframe", frame);
+            }
+            return null;
         },
 
         /**
+         * @name _sendEvent
+         * @description Sends the given event data over the backing transport
+         * @function
+         * @private
+         * @memberOf CrossfireServer
+         * @param event the String name for the event
+         * @param data the data Array for the event packet
+         * @since 0.3a1
+         */
+        _sendEvent: function(event, data) {
+            if (this.transport && Crossfire.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
+                if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE: _sendEvent => " + event + " ["+data+"]");
+                }
+                this.transport.sendEvent(event, data);
+            }
+        },
+        
+//FIREBUG.TABCONTEXT FUNCTIONS ################################################################################################################
+        
+        /**
+         * @name initContext
+         * @description Handles a context being created - i.e. a new tab has been opened.
+         * <br><br>
+         * Fires an <code>onContextCreated</code> event.
+         * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
+         * @function
+         * @public
+         * @memberOf CrossfireServer
+         * @param context the new context
+         * @extends TabWatchListener
+         * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/bti/inProcess/browser.js
+         */
+        initContext: function(context) {
+            context.Crossfire = { "crossfire_id" : this._generateId() };
+            this.contexts.push(context);
+            var url = "";
+            try {
+                url = context.window.location.href;
+            } catch(e) {
+                //do nothing
+            }
+            this._sendEvent("onContextCreated", {"body": {"url": url, "contextId": context.Crossfire.crossfire_id}});
+            Crossfire._updatePanel();
+        },
+
+        /**
+         * @name loadedContext
+         * @description Handles a context being loaded - i.e. the scripts in a given context have completed being compiled.
+         * <br><br>
+         * Fires an <code>onContextLoaded</code> event.
+         * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
+         * @function
+         * @public
+         * @memberOf CrossfireServer
+         * @param context the context that completed loading
+         * @extends TabWatchListener
+         * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/bti/inProcess/browser.js
+         */
+        loadedContext: function( context) {
+            var url = "";
+            try {
+                url = context.window.location.href;
+            } catch(e) {
+                //do nothing
+            }
+
+            // load/sync breakpoints
+            this.getAllBreakpoints(context);
+
+            this._sendEvent("onContextLoaded", {"body": {"url": url, "contextId": context.Crossfire.crossfire_id}});
+        },
+
+        /**
+         * @name showContext
+         * @description Handles a context being shown - i.e. a tab has been switched to.
+         * <br><br>
+         * Fires an <code>onContextSelected</code> event
+         * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
+         * @function
+         * @public
+         * @memberOf CrossfireServer
+         * @param browser the browser the context was changed to in
+         * @param context the context that was switched to
+         * @extends TabWatchListener
+         * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/bti/inProcess/browser.js
+         */
+        showContext: function(browser, context) {
+            if(context && this.currentContext && this.currentContext.Crossfire) {
+                var url =  this.currentContext.window.location.href;
+                var newUrl =  context.window.location.href;
+                if(url != newUrl) {
+                    this._sendEvent("onContextSelected", {"body": {"oldContextId": this.currentContext.Crossfire.crossfire_id, "oldUrl": url,
+                        "contextId": context.Crossfire.crossfire_id, "url": newUrl}});
+                }
+            }
+            this.currentContext = context;
+        },
+
+        /**
+         * @name destroyContext
+         * @description Handles a context being destroyed - i.e. a tab has been closed in the browser.
+         * <br><br>
+         * Fires an <code>onContextDestroyed</code> event.
+         * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
+         * @function
+         * @public
+         * @memberOf CrossfireServer
+         * @param context the context that has been destroyed
+         * @extends TabWatchListener
+         * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/bti/inProcess/browser.js
+         */
+        destroyContext: function(context) {
+            var contextId;
+            if (context && context.Crossfire) {
+                contextId = context.Crossfire.crossfire_id;
+                for (var i = 0; i < this.contexts.length; i++) {
+                    if (this.contexts[i].Crossfire.crossfire_id == contextId) {
+                        delete this.contexts[i].Crossfire.currentStack;
+                        this._sendEvent("onContextDestroyed", {"body":{"contextId": this.contexts[i].Crossfire.crossfire_id}});
+                        this.contexts.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+        },
+        
+        /**
          * @name onCompilationUnit
          * @description handles the callback for when a new source file is created or compiled in Firebug
-         *  <br><br>
-         * Fires an <code>onScript</code> event.
          * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug</li>
-         * </ul>
+         * Fires an <code>onScript</code> event.
+         * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @private
          * @memberOf CrossfireServer
@@ -1347,6 +1354,8 @@ FBL.ns(function() {
          * @param url the compilation unit url
          * @param kind a {@link String} value describing the kind of compilation unit it is. Compilation unit kinds are described in
          * /firebug1.9/content/firebug/bti/inProcess/compilationunit.js
+         * @extends Firebug.TabContext
+         * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/chrome/tabContext.js
          * @since 0.3a8
          */
         onCompilationUnit: function(context, url, kind) {
@@ -1401,23 +1410,41 @@ FBL.ns(function() {
         	return sourceFile && ("js" ==  type || "scriptTagAppend" == type || "scriptTag" == type || "top-level" == type || "event" == type);
         },
         
-        // ----- Firebug Debugger listener -----
-
+        /**
+         * @name onSourceFileCreated
+         * @description Handles a script being loaded - i.e. a script has been compiled in the current context.
+         * <br><br>
+         * Fires an <code>onScript</code> event.
+         * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
+         * @function
+         * @public
+         * @memberOf CrossfireServer
+         * @param context the context of this event
+         * @param sourceFile the source file object
+         * @extends TabWatchListener
+         * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/bti/inProcess/browser.js
+         */
+        onSourceFileCreated: function(context, sourceFile) {
+            if (FBTrace.DBG_CROSSFIRE) {
+                FBTrace.sysout("CROSSFIRE:  onSourceFileCreated => " + sourceFile.href);
+            }
+            this._handleSource(context, sourceFile, false);
+        },
+        
+//FIREBUG.DEBUGGER FUNCTIONS ############################################################################################################
+        
         /**
          * @name onStartDebugging
          * @description Handles Firebug suspending.
          * <br><br>
          * Fires an <code>onBreak</code> event.
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>body</code> - the event payload from Firebug with the <code>url</code> and <code>line</code> values set</li>
-         * </ul>
+         * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
          * @memberOf CrossfireServer
          * @param context the current Crossfire context
+         * @extends Firebug.Debugger
+         * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/js/debugger.js
          */
         onStartDebugging: function(context) {
         	if (FBTrace.DBG_CROSSFIRE_FRAMES) {
@@ -1449,131 +1476,11 @@ FBL.ns(function() {
         },
 
         /**
-         * @name onStop
-         * @description Handles Firebug stopping
-         * <br><br>
-         * Fires an <code>onStop</code> event.
-         * @function
-         * @public
-         * @memberOf CrossfireServer
-         * @param context the current Crossfire context
-         * @param frame the current stackframe
-         * @param type
-         * @param rv
-         */
-        onStop: function(context, frame, type, rv) {
-            if (FBTrace.DBG_CROSSFIRE)
-                FBTrace.sysout("CROSSFIRE:  onStop");
-        },
-
-        /**
-         * @name onResume
-         * @description Handles Firebug resuming and sets the running state to <code>true</code>.
-         * <br><br>
-         * Fires an <code>onResume</code> event.
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * </ul>
-         * @function
-         * @public
-         * @memberOf CrossfireServer
-         * @param context the current Crossfire context
-         */
-        onResume: function( context) {
-            context.Crossfire.currentStack = null;
-            //this._clearRefs();
-            this._sendEvent("onResume", {"contextId": context.Crossfire.crossfire_id});
-            this.running = true;
-        },
-
-        /**
-         * @name onToggleBreakpoint
-         * @description Handles a breakpoint being toggled on or off in the Firebug.
-         * <br><br>
-         * Fires an <code>onToggleBreakpoint</code> event.
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>body</code> - the event payload from Firebug which contains
-         * the <code>url</code>, <code>line</code>, <code>set</code> and <code>props</code> entries</li>
-         * </ul>
-         * @function
-         * @public
-         * @memberOf CrossfireServer
-         * @param context the current Crossfire context
-         * @param url the URL that the breakpoint was toggled within
-         * @param lineNo the number of the line the breakpoint was toggled on
-         * @param isSet the toggled state of the breakpoint.
-         * <code>true</code> if the breakpoint was toggled on (created), <code>false</code> otherwise
-         * @param props a collection of additional properties from Firebug
-         * @see FirebugEventAdapter.onToggleBreakpoint
-         */
-        onToggleBreakpoint: function(context, url, lineNo, isSet, props) {
-            if (FBTrace.DBG_CROSSFIRE_BPS) {
-                FBTrace.sysout("CROSSFIRE: onToggleBreakpoint: url => " + url + " lineNo => " + lineNo + " isSet => " + isSet);
-            }
-            var loc = {"url":url,"line":lineNo};
-            var bp = this._findBreakpoint(loc);
-            var data = {};
-            if(!isSet) {
-                if(bp) {
-                    data = {"breakpoint":bp,"set":isSet};
-                    this.breakpoints.splice(this.breakpoints.indexOf(bp), 1);
-                    this._mergeBreakpointProperties(bp, props); //merge after so the object compare will be ok
-                }
-            }
-            else {
-                if(!bp) {
-                    var type = "line";
-                    if(props && props.bp_type) {
-                        type = bp_type;
-                        delete props.bp_type; //we don't want this info apearing in the attributes body when we merge properties
-                    }
-                    var attributes = {"enabled":isSet, "condition":(props ? props.condition : null)};
-                    bp = this._newBreakpoint(type, loc, attributes);
-                } else {
-                }
-                this._mergeBreakpointProperties(bp, props);
-                data = {"breakpoint":bp,"set":isSet};
-            }
-            this._sendEvent("onToggleBreakpoint", {"contextId":context.Crossfire.crossfire_id,"body": data});
-        },
-
-        /**
-         * @name _mergeBreakpointProperties
-         * @description merges the set of breakpoint properties from <code>props</code> into <code>breakpoint.attributes</code>
-         * @function
-         * @private
-         * @memberOf CrossfireServer
-         * @param breakpoint the breakpoint to have properties merged into
-         * @param props the object to merge properties from
-         * @since 0.3a7
-         */
-        _mergeBreakpointProperties: function(breakpoint, props) {
-            if(breakpoint && props) {
-                for(var prop in props) {
-                    if(props.hasOwnProperty(prop)) {
-                        breakpoint.attributes[prop] = props[prop];
-                    }
-                }
-            }
-        },
-
-        /**
          * @name onToggleErrorBreakpoint
          * @description Handles toggling an error breakpoint on or off in Firebug.
          * <br><br>
          * Fires an <code>onToggleBreakpoint</code> event.
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>data</code> - the event payload from Firebug which contains
-         * the <code>url</code>, <code>line</code>, <code>set</code> and <code>props</code> entries</li>
-         * </ul>
+         * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
          * @memberOf CrossfireServer
@@ -1583,7 +1490,8 @@ FBL.ns(function() {
          * @param isSet the toggled state of the breakpoint.
          * <code>true</code> if the breakpoint was toggled on (created), <code>false</code> otherwise
          * @param props a collection of additional properties from Firebug
-         * @see FirebugEventAdapter.onToggleBreakpoint
+         * @extends Firebug.Debugger
+         * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/js/debugger.js
          */
         onToggleErrorBreakpoint: function(context, url, lineNo, isSet, props) {
             if (FBTrace.DBG_CROSSFIRE) {
@@ -1592,25 +1500,73 @@ FBL.ns(function() {
             props.bp_type = "error";
             this.onToggleBreakpoint(context, url, lineNo, isSet, props);
         },
+        
+        /**
+         * @name onToggleBreakpoint
+         * @description Handles a breakpoint being toggled on or off in the Firebug.
+         * <br><br>
+         * Fires an <code>onToggleBreakpoint</code> event.
+         * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
+         * @function
+         * @public
+         * @memberOf CrossfireServer
+         * @param context the current Crossfire context
+         * @param url the URL that the breakpoint was toggled within
+         * @param lineNo the number of the line the breakpoint was toggled on
+         * @param isSet the toggled state of the breakpoint.
+         * <code>true</code> if the breakpoint was toggled on (created), <code>false</code> otherwise
+         * @param props a collection of additional properties from Firebug
+         * @extends Firebug.Debugger
+         * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/js/debugger.js
+         */
+        onToggleBreakpoint: function(context, url, lineNo, isSet) {
+        	if(this.suppressToggle) {
+        		return;
+        	}
+            if (FBTrace.DBG_CROSSFIRE_BPS) {
+                FBTrace.sysout("CROSSFIRE: onToggleBreakpoint", context);
+            }
+            var loc = {"url":url,"line":lineNo};
+            var bp = this._findBreakpoint(loc);
+            var fbsbp = FBL.fbs.findBreakpoint(loc.url, loc.line);
+            if(!fbsbp) {
+            	if(bp && !isSet) {
+            		//removed
+                    this.breakpoints.splice(this.breakpoints.indexOf(bp), 1);
+            	}
+            	else {
+            		return;
+            	}
+            }
+            if(bp) {
+            	bp.attributes.enabled = fbsbp.disabled == 0;
+            	bp.attributes.condition = fbsbp.condition;
+            }
+            else {
+                var type = "line";
+                var attributes = {"enabled":fbsbp.disabled == 0, "condition": fbsbp.condition};
+                bp = this._newBreakpoint(type, loc, attributes);
+            } 
+            var data = {"breakpoint":bp,"set":isSet};
+            this._sendEvent("onToggleBreakpoint", {"contextId":context.Crossfire.crossfire_id,"body": data});
+        },
 
+//HTML MODULE MUTATION BREAKPOINTS LISTENER FUNCTIONS ################################################################################### 
+        
         /**
          * @name onModifyBreakpoint
          * @description Handles an HTML element breakpoint being toggled
          * <br><br>
          * Fires an <code>onToggleBreakpoint</code> event for HTML breakpoints.
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>body</code> - the event payload from Firebug which contains
-         * the <code>xpath</code> and <code>type</code> entries</li>
-         * </ul>
+         * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
          * @memberOf CrossfireServer
          * @param context the current Crossfire context
          * @param xpath the xpath the breakpoint was modified for
          * @param type the type of the breakpoint. Breakpoint type are defined in: http://code.google.com/p/fbug/source/browse/branches/firebug1.7/content/firebug/html.js
+         * @extends Firebug.HTMLModule.MutationBreakpoints
+         * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/html/htmlPanel.js
          */
         onModifyBreakpoint: function(context, xpath, type) {
              var data, cid = context.Crossfire.crossfire_id,
@@ -1624,7 +1580,7 @@ FBL.ns(function() {
              //the breakpoint is considered set if it is enabled
              this._sendEvent("onToggleBreakpoint", {"contextId": cid, "body": data});
         },
-
+        
         /**
          * @name _getHTMLBreakpointType
          * @description translates the integer type of an HTML breakpoint to a human readable type
@@ -1637,104 +1593,59 @@ FBL.ns(function() {
         _getHTMLBreakpointType: function(type) {
             if(typeof(type) == "number") {
                 switch(type) {
-                    case 1: {
-                        return "html_attribute_change";
-                    }
-                    case 2: {
-                        return "html_child_change";
-                    }
-                    case 3: {
-                        return "html_remove";
-                    }
-                    case 4: {
-                        return "html_text";
-                    }
+                    case 1: return "html_attribute_change";
+                    case 2: return "html_child_change";
+                    case 3: return "html_remove";
+                    case 4: return "html_text";
                 }
             }
             return "html_unknown_type";
         },
+        
+//FIREBUG.DEBUGLISTENER FUNCTIONS ##################################################################################################
 
+        /**
+         * @name onResume
+         * @description Handles Firebug resuming and sets the running state to <code>true</code>.
+         * <br><br>
+         * Fires an <code>onResume</code> event.
+         * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
+         * @function
+         * @public
+         * @memberOf CrossfireServer
+         * @param context the current Crossfire context
+         * @extends Firebug.DebugListener
+         * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/js/debugger.js
+         */
+        onResume: function( context) {
+            context.Crossfire.currentStack = null;
+            this._sendEvent("onResume", {"contextId": context.Crossfire.crossfire_id});
+            this.running = true;
+        },
+        
         /**
          * @name onError
          * @description call-back from Firebug when an error is encountered
          * <br><br>
          * The object or message logged is contained in the packet's <code>data</code> property.
-         * <br><br>
-         * Fires the <code>onError</code> event.
-         * <br><br>
-         * The event body contains the following:
-         * <ul>
-         * <li><code>contextId</code> - the id of the current Crossfire context</li>
-         * <li><code>body</code> - the event payload from Firebug</li>
-         * </ul>
+         * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
          * @memberOf CrossfireServer
          * @param context the FB context
          * @param frame the current stackframe context
          * @param error the current error
+         * @extends Firebug.DebugListener
+         * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/js/debugger.js
          * @since 0.3a8
          */
         onError: function(context, frame, error) {
         	if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE onError => "+error);
+                FBTrace.sysout("CROSSFIRE onError", error);
             }
             if(context && context.Crossfire) {
                 var cid = context.Crossfire.crossfire_id;
                 this._sendEvent("onError", {"contextId": cid, "body": {"frame":Crossfire.serialize(frame), "error": error}});
-            }
-        },
-
-        /**
-         * @name _copyFrame
-         * @description Make a copy of a frame since the jsdIStackFrame's are ephemeral,
-         * but our protocol is asynchronous so the original frame object may
-         * be gone by the time the remote host requests it.
-         * @function
-         * @public
-         * @memberOf CrossfireServer
-         * @param frame the stackframe to copy
-         * @param ctx the current Crossfire context
-         * @type Array
-         * @returns a copy of the given stackframe
-         */
-        _copyFrame: function(frame, ctx) {
-        	if (FBTrace.DBG_CROSSFIRE_FRAMES) {
-                FBTrace.sysout("CROSSFIRE: _copyFrame", frame);
-            }
-            if(frame && frame instanceof FBL.StackFrame) {
-	            var copy = {
-	            		"eval": function() { return frame.eval.apply(frame, arguments); },
-	            		"functionName": frame.fn,
-	            		"line": frame.line,
-	            		"thisValue": frame.getThisValue(),
-	            		"scopes": frame.getScopes(false),
-	            		"script": frame.href
-	            };
-	            return copy;
-            }
-            if (FBTrace.DBG_CROSSFIRE_FRAMES) {
-                FBTrace.sysout("CROSSFIRE: _copyFrame - not an instanceof FBL.Stackframe", frame);
-            }
-            return null;
-        },
-
-        /**
-         * @name _sendEvent
-         * @description Sends the given event data over the backing transport
-         * @function
-         * @private
-         * @memberOf CrossfireServer
-         * @param event the String name for the event
-         * @param data the data Array for the event packet
-         * @since 0.3a1
-         */
-        _sendEvent: function(event, data) {
-            if (this.transport && Crossfire.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
-                if (FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE: _sendEvent => " + event + " ["+data+"]");
-                }
-                this.transport.sendEvent(event, data);
             }
         }
     });
