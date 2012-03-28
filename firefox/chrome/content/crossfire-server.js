@@ -17,7 +17,6 @@ FBL.ns(function() {
         breakpoint_ids: 1, //default id seed for breakpoint handles
         dispatchName: "CrossfireServer",
         toolName: "all", // receive all packets, regardless of 'tool' header
-        suppressToggle: false,
 
         /**
          * @name initialize
@@ -259,8 +258,8 @@ FBL.ns(function() {
                 else if(command == "getBreakpoints") {
                     response = this.getSpecificBreakpoints(context, args);
                 }
-                else if(command == "changeBreakpoints") {
-                    response = this.changeBreakpoints(context, args);
+                else if(command == "changeBreakpoint") {
+                    response = this.changeBreakpoint(context, args);
                 }
                 else if(command == "deleteBreakpoints") {
                     response = this.deleteBreakpoints(context, args);
@@ -389,8 +388,8 @@ FBL.ns(function() {
         },
 
         /**
-         * @name changeBreakpoints
-         * @description Changes the specified breakpoints, if they all exist, with the given information.
+         * @name changeBreakpoint
+         * @description Changes the specified breakpoint, if if exists, with the given information.
          * @function
          * @public
          * @memberOf CrossfireServer
@@ -398,61 +397,42 @@ FBL.ns(function() {
          * @param context the optional associated context {@link Object}
          * @param args the array of arguments which contains:
          * <ul>
-         * <li>an {@link Array} <code>handles</code>, which contains the ids of the breakpoints to change</li>
+         * <li>an {@link Number} <code>handle</code>, which contains the id of the breakpoint to change</li>
          * <li>an {@link Object} <code>attributes</code>, which is the new collection of breakpoint attributes to set</li>
          * </ul>
          * @since 0.3a1
          */
-        changeBreakpoints: function(context, args) {
-            var bp,
-                loc,
-                handles = args["handles"],
+        changeBreakpoint: function(context, args) {
+            var handle = args["handle"],
                 attributes = args["attributes"];
-
             if (FBTrace.DBG_CROSSFIRE_BPS) {
-                FBTrace.sysout("CROSSFIRE: changeBreakpoints handles => " + handles +" attributes => "+attributes.toSource(), attributes);
+                FBTrace.sysout("CROSSFIRE: changeBreakpoint [handle: " + handle +"] [attributes: "+attributes.toSource()+"]", args);
             }
-
-            if(typeof(attributes.enabled) != "boolean") {
-                return null;
-            }
-
             try {
-                if (handles) {
-                    for (var i = 0; i < handles.length; i++) {
-	                    if (!this._findBreakpoint(handles[i])) {
-		                	return null;
-		                }
-	                }
-	                // the breakpoint handles all appear to be valid so now make the changes
-                    for (var i = 0; i < handles.length; i++) {
-	                    bp = this._findBreakpoint(handles[i]);
+                if (handle) {
+                    var bp = this._findBreakpoint(handle);
+                    if(bp) {
+                    	if (FBTrace.DBG_CROSSFIRE_BPS) {
+                            FBTrace.sysout("CROSSFIRE: changeBreakpoint found bp", bp);
+                        }
 	                    for(var p in attributes) {
 	                        bp.attributes[p] = attributes[p];
 	                    }
-	                    loc = bp.location;
-	                    //we want to allow the condition to be changed iff:
-	                    //1. the conditions differ AND
-	                    //2. the condition is a string or null (this would mean a removal)
-	                    if (bp.attributes.condition != attributes.condition && (typeof(attributes.condition) == "string")) {
-	                        FBL.fbs.setBreakpointCondition({"href":loc.url}, loc.line, attributes.condition, Firebug.Debugger);
+	                    var loc = bp.location;
+	                    if(typeof(attributes.condition) != undefined) { 
+	                    	FBL.fbs.setBreakpointCondition({"href":loc.url}, loc.line, attributes.condition, Firebug.Debugger);
 	                    }
-	                    if (bp.attributes.enabled != attributes.enabled) {
-	                        if(attributes.enabled) {
-	                            FBL.fbs.enableBreakpoint(loc.url, loc.line);
-	                        } else {
-	                            FBL.fbs.disableBreakpoint(loc.url, loc.line);
-	                        }
-	                    }
-	                    if (FBTrace.DBG_CROSSFIRE_BPS) {
-	                        FBTrace.sysout("CROSSFIRE: changeBreakpoints completed => " + bp.toSource(), bp);
-	                    }
-	                }
-	                return {};
+                        if(attributes.enabled) {
+                            FBL.fbs.enableBreakpoint(loc.url, loc.line);
+                        } else {
+                            FBL.fbs.disableBreakpoint(loc.url, loc.line);
+                        }
+		                return {"breakpoint":bp};
+                    }
 	            }
             } catch (e) {
                 if (FBTrace.DBG_CROSSFIRE_BPS) {
-                    FBTrace.sysout("CROSSFIRE: changeBreakpoints exception => " + e, e);
+                    FBTrace.sysout("CROSSFIRE: changeBreakpoint exception: " + e, e);
                 }
             }
             return null;
@@ -1077,43 +1057,33 @@ FBL.ns(function() {
 		                bp = this._newBreakpoint("line", location, attributes);
 		            }
 		            breakpoints.push(bp);
+		            
+		            var url = location.url;
+	                var line = location.line;
+	                if(url && line) {
+	                    if(context) {
+	                        var sourceFile = context.sourceFileMap[url];
+	                        if (sourceFile) {
+	                            Firebug.Debugger.setBreakpoint(sourceFile, line);
+	                        }
+	                    }
+	                    else {
+	                        Firebug.TabWatcher.iterateContexts(function doit(context) {
+	                            var sourceFile = context.sourceFileMap[url];
+	                            if (sourceFile) {
+	                                Firebug.Debugger.setBreakpoint(sourceFile, line);
+	                            }
+	                        });
+	                    }
+	                    if (bp.attributes.condition != undefined) {
+	                        FBL.fbs.setBreakpointCondition({"href": url}, line, bp.attributes.condition, Firebug.Debugger);
+	                    }
+	                    // by default, setting a new breakpoint is enabled, so only check if we want to disable it.
+	                    if (!bp.attributes.enabled) {
+	                        FBL.fbs.disableBreakpoint(url, line);
+	                    }
+	                }
 		        }
-
-		        // the specified breakpoints all appear to be valid, so now add them
-        		this.suppressToggle = true;
-        		try {
-			        for (var i = 0; i < breakpoints.length; i++) {
-			        	var bp = breakpoints[i];
-		                var url = bp.location.url;
-		                var line = bp.location.line;
-		                if(url && line) {
-		                    if(context) {
-		                        var sourceFile = context.sourceFileMap[url];
-		                        if (sourceFile) {
-		                            Firebug.Debugger.setBreakpoint(sourceFile, line);
-		                        }
-		                    }
-		                    else {
-		                        Firebug.TabWatcher.iterateContexts(function doit(context) {
-		                            var sourceFile = context.sourceFileMap[url];
-		                            if (sourceFile) {
-		                                Firebug.Debugger.setBreakpoint(sourceFile, line);
-		                            }
-		                        });
-		                    }
-		                    if (bp.attributes.condition != undefined) {
-		                        FBL.fbs.setBreakpointCondition({"href": url}, line, bp.attributes.condition, Firebug.Debugger);
-		                    }
-		                    // by default, setting a new breakpoint is enabled, so only check if we want to disable it.
-		                    if (!bp.attributes.enabled) {
-		                        FBL.fbs.disableBreakpoint(url, line);
-		                    }
-		                }
-		            }
-        		}
-        		finally {
-        			this.suppressToggle = false;
-        		}
 	            return {"breakpoints": breakpoints};
             }
             return null;
@@ -1520,33 +1490,30 @@ FBL.ns(function() {
          * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/js/debugger.js
          */
         onToggleBreakpoint: function(context, url, lineNo, isSet) {
-        	if(this.suppressToggle) {
-        		return;
-        	}
             if (FBTrace.DBG_CROSSFIRE_BPS) {
                 FBTrace.sysout("CROSSFIRE: onToggleBreakpoint", context);
             }
             var loc = {"url":url,"line":lineNo};
             var bp = this._findBreakpoint(loc);
-            var fbsbp = FBL.fbs.findBreakpoint(loc.url, loc.line);
-            if(!fbsbp) {
-            	if(bp && !isSet) {
-            		//removed
-                    this.breakpoints.splice(this.breakpoints.indexOf(bp), 1);
-            	}
-            	else {
-            		return;
-            	}
-            }
-            if(bp) {
-            	bp.attributes.enabled = fbsbp.disabled == 0;
-            	bp.attributes.condition = fbsbp.condition;
+            if(isSet) {
+            	var fbsbp = FBL.fbs.findBreakpoint(loc.url, loc.line);
+	            if(!fbsbp) {
+	            	return null;
+	            }
+	            if(bp) {
+	            	bp.attributes.enabled = fbsbp.disabled == 0;
+	            	bp.attributes.condition = fbsbp.condition;
+	            }
+	            else {
+	                var type = "line";
+	                var attributes = {"enabled":fbsbp.disabled == 0, "condition": fbsbp.condition};
+	                bp = this._newBreakpoint(type, loc, attributes);
+	            } 
             }
             else {
-                var type = "line";
-                var attributes = {"enabled":fbsbp.disabled == 0, "condition": fbsbp.condition};
-                bp = this._newBreakpoint(type, loc, attributes);
-            } 
+            	//removed
+            	 this.breakpoints.splice(this.breakpoints.indexOf(bp), 1);
+            }
             var data = {"breakpoint":bp,"set":isSet};
             this._sendEvent("onToggleBreakpoint", {"contextId":context.Crossfire.crossfire_id,"body": data});
         },
