@@ -801,12 +801,17 @@ FBL.ns(function() {
 		                }
 	            	}
 	            } else {
-		            var scope;
+	            	var idx = args["index"];
+	            	if(typeof(idx) != "number") {
+	            		idx = 0;
+	            	}
+	            	var scope;
 		            do {
-		                scope = this.getScope(context, {"index": scopes.length, "frameIndex": args["frameIndex"]});
+		                scope = this.getScope(context, {"index": idx, "frameIndex": args["frameIndex"]});
 		                if (scope) {
 		                    scopes.push(scope);
 		                }
+		                idx++;
 		            } while(scope);
 		        }
 	            if (scopes.length > 0) {
@@ -858,7 +863,7 @@ FBL.ns(function() {
 	                    frameNo = stack.length-1;
 	                }
 	                var scopes = stack[frameNo].scopes;
-	                scope = scopes[scopeNo-1];
+	                scope = scopes[scopeNo];
 	            }
 	            if (scope) {
 	                return {
