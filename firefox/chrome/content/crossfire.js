@@ -45,6 +45,22 @@ FBL.ns(function() {
             this._registerTool(new Crossfire.InspectorTool());
             this._registerTool(new Crossfire.NetTool());
             this._registerTool(new Crossfire.DomTool());
+            
+            // Init settings
+            if (!Firebug.getPref(Firebug.prefDomain, "crossfire.startHost"))
+            {
+                if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE initialize setting startHost");
+                }
+                Firebug.setPref(Firebug.prefDomain, "crossfire.startHost", "localhost");
+            }
+            if (!Firebug.getPref(Firebug.prefDomain, "crossfire.startPort"))
+            {
+                if (FBTrace.DBG_CROSSFIRE) {
+                    FBTrace.sysout("CROSSFIRE initialize setting startPort");
+                }
+                Firebug.setPref(Firebug.prefDomain, "crossfire.startPort", 5000);
+            }
 
             // initialize refs
             this._clearRefs();
@@ -138,6 +154,17 @@ FBL.ns(function() {
             var commandLine = Components.classes["@almaden.ibm.com/crossfire/command-line-handler;1"].getService().wrappedJSObject;
             var host = commandLine.getHost();
             var port = commandLine.getPort();
+            
+            // Read the last started server settings
+            if (Firebug.getPref(Firebug.prefDomain, "crossfire.startHost"))
+            {
+                host = Firebug.getPref(Firebug.prefDomain, "crossfire.startHost");
+            }
+            if (Firebug.getPref(Firebug.prefDomain, "crossfire.startPort"))
+            {
+                port = Firebug.getPref(Firebug.prefDomain, "crossfire.startPort");
+            }
+            
             var title = "Crossfire - Start Server";
             return { "host": null, "port": null, "title": title, "cli_host": host, "cli_port": port };
         },
@@ -710,6 +737,8 @@ FBL.ns(function() {
         var params = Crossfire._getDialogParams();
         window.openDialog("chrome://crossfire/content/connect-dialog.xul", "crossfire-connect","chrome,modal,dialog", params);
         if (params.host && params.port) {
+            Firebug.setPref(Firebug.prefDomain, "crossfire.startHost", params.host);
+            Firebug.setPref(Firebug.prefDomain, "crossfire.startPort", parseInt(params.port));
             Crossfire.CrossfireServer.startServer(params.host, parseInt(params.port));
         }
     };
