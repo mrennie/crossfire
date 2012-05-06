@@ -231,7 +231,40 @@ FBL.ns(function() { with(FBL) {
 
         hide: function() {
 
+        },
+
+        getOptionsMenuItems : function(context) {
+            var status = null;
+            if (Crossfire)
+                status = Crossfire.status;
+
+            return [
+                {
+                    label : (status != CrossfireStatus.STATUS_DISCONNECTED) ? "Disconnect" : "Start Server",
+                    command : bindFixed( this.runCommand, this)
+                },
+                "-",
+                {
+                    label : "Start with last settings",
+                    disabled : (status != CrossfireStatus.STATUS_DISCONNECTED),
+                    command :
+                        bindFixed(Crossfire.CrossfireServer.startServer, Crossfire.CrossfireServer,
+                            Firebug.getPref(Firebug.prefDomain, "crossfire.startHost"),
+                            Firebug.getPref(Firebug.prefDomain,"crossfire.startPort"))
+                } ];
+        },
+
+		runCommand : function(context) {
+            var status = null;
+            if (Crossfire)
+                status = Crossfire.status;
+
+            if (status != CrossfireStatus.STATUS_DISCONNECTED) {
+                Crossfire.disconnect();
+            } else {
+                Crossfire.startServer();
+            }
         }
-    });
+	});
     Firebug.registerPanel(CrossfirePanel);
 }});
