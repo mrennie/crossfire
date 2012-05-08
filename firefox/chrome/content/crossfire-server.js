@@ -600,9 +600,6 @@ FBL.ns(function() {
             try {
                 var locals = {};
                 if(frame.scopes) {
-                	if (FBTrace.DBG_CROSSFIRE_FRAMES) {
-                        FBTrace.sysout("CROSSFIRE frame scope index 0 ", frame.scopes[0]);
-                    }
                 	locals = Crossfire.serialize(frame.scopes[0]);
             	}
                 if (frame.thisValue) {
@@ -638,35 +635,6 @@ FBL.ns(function() {
             return null;
         },
 
-        /**
-         * @name _getLocals
-         * @description sanitaizes and returns the array of local variables
-         * @function
-         * @private
-         * @memberOf CrossfireServer
-         * @param stackframe
-         * @returns
-         */
-        function _getLocals(stackframe, value, locals) {
-        	if(!locals) {
-        		locals = {};
-        	}
-        	var hasProperties = Obj.hasProperties(value, !Firebug.showEnumerableProperties, Firebug.showOwnProperties);
-            var valueType = typeof(value);
-            var hasChildren = hasProperties && !(value instanceof FirebugReps.ErrorCopy) &&
-                    (valueType == "function" || (valueType == "object" && value != null)
-                    || (valueType == "string" && value.length > Firebug.stringCropLength));
-
-            // Special case for "arguments", which is not enumerable by for...in statement
-            // and so, Obj.hasProperties always returns false.
-            if (!hasChildren && value) {// arguments will never be falsy if the arguments exist
-                hasChildren = isArguments(value);
-            }
-            if (value) {
-                locals.push(value);
-            }
-        },
-        
         /**
          * @name getAllBreakpoints
          * @description Returns all the breakpoints. This method requests all breakpoints from Firebug directly
