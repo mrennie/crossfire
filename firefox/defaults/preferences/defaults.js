@@ -8,3 +8,7 @@ pref("extensions.firebug.DBG_CROSSFIRE_CONSOLE_TOOL", false);
 pref("extensions.firebug.DBG_CROSSFIRE_DOM_TOOL", false);
 pref("extensions.firebug.DBG_CROSSFIRE_INSPECT_TOOL", false);
 pref("extensions.firebug.DBG_CROSSFIRE_NET_TOOL", false);
+
+// Settings
+pref("extensions.firebug.crossfire.startHost", "localhost");
+pref("extensions.firebug.crossfire.startPort", 5000);

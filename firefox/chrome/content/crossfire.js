@@ -45,22 +45,6 @@ FBL.ns(function() {
             this._registerTool(new Crossfire.InspectorTool());
             this._registerTool(new Crossfire.NetTool());
             this._registerTool(new Crossfire.DomTool());
-            
-            // Init settings
-            if (!Firebug.getPref(Firebug.prefDomain, "crossfire.startHost"))
-            {
-                if (FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE initialize setting startHost");
-                }
-                Firebug.setPref(Firebug.prefDomain, "crossfire.startHost", "localhost");
-            }
-            if (!Firebug.getPref(Firebug.prefDomain, "crossfire.startPort"))
-            {
-                if (FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE initialize setting startPort");
-                }
-                Firebug.setPref(Firebug.prefDomain, "crossfire.startPort", 5000);
-            }
 
             // initialize refs
             this._clearRefs();
