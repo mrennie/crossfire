@@ -109,10 +109,7 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE disconnect");
             }
-            if (this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER
-                    || this.status == CROSSFIRE_STATUS.STATUS_WAIT_SERVER) {
-                this.serverTransport.close();
-            }
+            Crossfire.CrossfireServer.stopServer();
             this._clearRefs();
             this._unregisterTool("console");
             this._unregisterTool("inspector");
