@@ -10,20 +10,20 @@
     onload="onLoad(this)"
     ondialogaccept="onAccept(this)"
     ondialogcancel="onCancel(this)"
-    persist="screenX screenY">
+    >
 
     <script type="application/javascript"><![CDATA[
         function onLoad( dialog) {
-        	var params = dialog.arguments[0];
-        	if (params.title)
-				document.title = params.title;
+            var params = dialog.arguments[0];
+            if (params.title)
+                document.title = params.title;
 
-			if (params.cli_host) {
-				params.host = document.getElementById("crossfire_host").value = params.cli_host;
-			}
+            if (params.cli_host) {
+                document.getElementById("crossfire_host").value = params.cli_host;
+            }
 
             if (params.cli_port) {
-            	params.port = document.getElementById("crossfire_port").value = params.cli_port;
+                document.getElementById("crossfire_port").value = params.cli_port;
             }
         }
 
@@ -31,11 +31,9 @@
             var params = dialog.arguments[0];
             params.host = document.getElementById("crossfire_host").value;
             params.port = document.getElementById("crossfire_port").value;
-            return true;
         }
 
         function onCancel( dialog) {
-            return true;
         }
     ]]></script>
 
