@@ -41,10 +41,10 @@ FBL.ns(function() {
 	        }
 	        // -- register tools --
 	        this.registeredTools = [];
-            this._registerTool(new Crossfire.ConsoleTool());
-            this._registerTool(new Crossfire.InspectorTool());
-            this._registerTool(new Crossfire.NetTool());
-            this._registerTool(new Crossfire.DomTool());
+            this.registerTool(new Crossfire.ConsoleTool());
+            this.registerTool(new Crossfire.InspectorTool());
+            this.registerTool(new Crossfire.NetTool());
+            this.registerTool(new Crossfire.DomTool());
 
             // initialize refs
             this._clearRefs();
@@ -107,15 +107,16 @@ FBL.ns(function() {
          */
         disconnect: function() {
             if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE disconnect");
+                FBTrace.sysout("CROSSFIRE disconnect", Crossfire.CrossfireServer);
             }
-            Crossfire.CrossfireServer.stopServer();
             this._clearRefs();
-            this._unregisterTool("console");
-            this._unregisterTool("inspector");
-            this._unregisterTool("net");
-            this._unregisterTool("dom");
+            this.unregisterTool("console");
+            this.unregisterTool("inspector");
+            this.unregisterTool("net");
+            this.unregisterTool("dom");
             this.registeredTools = [];
+            Crossfire.CrossfireServer.stopServer();
+            this.status = CROSSFIRE_STATUS.STATUS_DISCONNECTED;
             this._updatePanel();
         },
 
@@ -184,7 +185,7 @@ FBL.ns(function() {
         },
 
         /**
-         * @name _registerTool
+         * @name registerTool
          * @description caches the given tool by its name and calls back to <code>#onRegistered()</code>
          * @function
          * @private
@@ -192,28 +193,28 @@ FBL.ns(function() {
          * @param tool {@link Object} the tool itself
          * @since 0.3a7
          */
-        _registerTool: function(tool) {
+        registerTool: function(tool) {
         	var name = tool.getToolName();
             if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE: _registerTool " + name, tool);
+                FBTrace.sysout("CROSSFIRE: registerTool " + name, tool);
             }
             try {
                 this.registeredTools[name] = tool;
                 if (tool.onRegistered) {
                     tool.onRegistered();
                 }
-                if (this.status == "connected_server") {
+                if (this.serverTransport) {
                     tool.onTransportCreated(this.serverTransport);
                 }
             } catch(e) {
                 if (FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE: _registerTool fails: " + e, e);
+                    FBTrace.sysout("CROSSFIRE: registerTool fails: " + e, e);
                 }
             }
         },
 
         /**
-         * @name _unregisterTool
+         * @name unregisterTool
          * @description removes the tool with the given name and calls-back to the function <code>#onUnregistered()</code>
          * @function
          * @private
@@ -221,9 +222,9 @@ FBL.ns(function() {
          * @param name the {@link String} name of the tool
          * @since 0.3a7
          */
-        _unregisterTool: function(name) {
+        unregisterTool: function(name) {
             if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE: _unregisterTool " + name);
+                FBTrace.sysout("CROSSFIRE: unregisterTool " + name);
             }
             try {
                 var tool = this.registeredTools[name];
@@ -235,7 +236,7 @@ FBL.ns(function() {
                 }
             } catch (e) {
                 if (FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE: _unregisterTool fails: " + e, e);
+                    FBTrace.sysout("CROSSFIRE: unregisterTool fails: " + e, e);
                 }
             }
         },

@@ -23,7 +23,7 @@ FBL.ns(function() {
          */
         supportsRequest: function(request) {
         	if (FBTrace.DBG_CROSSFIRE_TOOL) {
-                FBTrace.sysout("supportsRequest recieved by: " + this.toolName);
+                FBTrace.sysout("supportsRequest recieved by: " + this.toolName, request);
             }
             // default is return true if the command name is in our array of commands
             return (request.command && request.command in this.commands);
@@ -40,7 +40,7 @@ FBL.ns(function() {
          */
         handleRequest: function(request) {
         	if (FBTrace.DBG_CROSSFIRE_TOOL) {
-                FBTrace.sysout("handleRequest recieved by: " + this.toolName);
+                FBTrace.sysout("handleRequest recieved by: " + this.toolName, request);
             }
         },
 
@@ -55,7 +55,7 @@ FBL.ns(function() {
          */
         supportsEvent: function(event) {
         	if (FBTrace.DBG_CROSSFIRE_TOOL) {
-                FBTrace.sysout("supportsEvent recieved by: " + this.toolName);
+                FBTrace.sysout("supportsEvent recieved by: " + this.toolName, event);
             }
             // default is return true if the event name is in our array of events
             return (event.name && event.name in this.events);
@@ -72,7 +72,7 @@ FBL.ns(function() {
          */
         handleEvent: function(event) {
         	if (FBTrace.DBG_CROSSFIRE_TOOL) {
-                FBTrace.sysout("handleEvent recieved by: " + this.toolName);
+                FBTrace.sysout("handleEvent recieved by: " + this.toolName, event);
             }
         },
 
@@ -87,7 +87,7 @@ FBL.ns(function() {
          */
         supportsResponse: function(response) {
         	if (FBTrace.DBG_CROSSFIRE_TOOL) {
-                FBTrace.sysout("supportsResponse recieved by: " + this.toolName);
+                FBTrace.sysout("supportsResponse recieved by: " + this.toolName, response);
             }
         },
 
@@ -102,7 +102,7 @@ FBL.ns(function() {
          */
         handleResponse: function(response) {
         	if (FBTrace.DBG_CROSSFIRE_TOOL) {
-                FBTrace.sysout("handleResponse recieved by: " + this.toolName);
+                FBTrace.sysout("handleResponse recieved by: " + this.toolName, response);
             }
         },
 
@@ -117,7 +117,7 @@ FBL.ns(function() {
          */
         onTransportCreated: function(transport) {
             if (FBTrace.DBG_CROSSFIRE_TOOL) {
-                FBTrace.sysout("onTransportCreated recieved by: " + this.toolName);
+                FBTrace.sysout("onTransportCreated recieved by: " + this.toolName, transport);
             }
             this.transport = transport;
             this.transport.addListener(this);
@@ -179,7 +179,7 @@ FBL.ns(function() {
          */
         onConnectionStatusChanged: function(status) {
         	if (FBTrace.DBG_CROSSFIRE_TOOL) {
-                FBTrace.sysout("onConnectionStatusChanged recieved by: " + this.toolName);
+                FBTrace.sysout("onConnectionStatusChanged recieved by: " + this.toolName, status);
             }
             this.status = status;
         },

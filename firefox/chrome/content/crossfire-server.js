@@ -57,8 +57,8 @@ FBL.ns(function() {
          * @param {String} status the status to report
          */
         onConnectionStatusChanged: function( status) {
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE onConnectionStatusChanged: " + status);
+            if (FBTrace.DBG_CROSSFIRE_SERVER) {
+                FBTrace.sysout("CROSSFIRE-SERVER onConnectionStatusChanged: " + status);
             }
             if (this.status == CROSSFIRE_STATUS.STATUS_DISCONNECTED) {
                 this.stopServer();
@@ -83,7 +83,6 @@ FBL.ns(function() {
                 this.transport = Crossfire.getTransport();
                 this._addListeners();
                 this.transport.addListener(this);
-
                 this.transport.open(host, port);
             } catch(e) {
                 if (FBTrace.DBG_CROSSFIRE) {
