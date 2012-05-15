@@ -238,7 +238,15 @@ FBL.ns(function() { with(FBL) {
             if (Crossfire)
                 status = Crossfire.status;
 
+            var startWithFF = Firebug.getPref(Firebug.prefDomain, "crossfire.startWithFF");
+            
             return [
+                {
+                    label: "Start with Firefox",
+                    type: "checkbox",
+                    checked: startWithFF,
+                    command: bindFixed (Firebug.setPref, Firebug, Firebug.prefDomain, "crossfire.startWithFF", !startWithFF)
+                },
                 {
                     label : (status != CrossfireStatus.STATUS_DISCONNECTED) ? "Disconnect" : "Start Server",
                     command : bindFixed( this.runCommand, this)
@@ -253,7 +261,7 @@ FBL.ns(function() { with(FBL) {
                             Firebug.getPref(Firebug.prefDomain,"crossfire.startPort"))
                 } ];
         },
-
+        
 		runCommand : function(context) {
             var status = null;
             if (Crossfire)

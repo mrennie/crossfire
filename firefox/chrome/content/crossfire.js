@@ -49,6 +49,13 @@ FBL.ns(function() {
             // initialize refs
             this._clearRefs();
             this.status = CROSSFIRE_STATUS.STATUS_DISCONNECTED;
+            
+            var startWithFF = Firebug.getPref(Firebug.prefDomain, "crossfire.startWithFF");
+            if (startWithFF) {
+                Crossfire.CrossfireServer.startServer(
+                        Firebug.getPref(Firebug.prefDomain, "crossfire.startHost"),
+                        Firebug.getPref(Firebug.prefDomain,"crossfire.startPort"));
+            }
         },
 
         /**
