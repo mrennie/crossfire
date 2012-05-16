@@ -39,7 +39,6 @@ FBL.ns(function() {
             var doc, self = this;
             if (context.window) {
                 doc = context.window.document;
-
                 doc.addEventListener("DOMAttrModified", function(e) { self.onDomMutate(context, e); }, true);
                 doc.addEventListener("DOMNodeInserted", function(e) { self.onDomMutate(context, e); }, true);
                 doc.addEventListener("DOMNodeRemoved", function(e) { self.onDomMutate(context, e); }, true);
@@ -47,11 +46,13 @@ FBL.ns(function() {
         },
 
         onDomMutate: function(context, mutateEvent) {
-        	if (FBTrace.DBG_CROSSFIRE_DOM_TOOL) {
-        		FBTrace.sysout("dom-tool onDomMutate");
-        	}
-            if (this.transport && this.status == "connected_server") {
-                this.transport.sendEvent("onDomMutate", { "contextId": context.Crossfire.crossfire_id, "body": mutateEvent}, "dom");
+            if (this.transport && this.status == CROSSFIRE_STATUS.STATUS_CONNECTED_SERVER) {
+            	var body = {};
+            	if(mutateEvent) {
+            		body["type"] = mutateEvent.type;
+            		body["target"] = Crossfire.serialize(mutateEvent.target);
+            	}
+                this.transport.sendEvent("onDomMutate", { "contextId": context.Crossfire.crossfire_id, "body": body}, "dom");
             }
         }
 

@@ -627,7 +627,9 @@ CrossfireSocketTransport.prototype =
         if (this._inputStream.available() > 0) {
             while(prev != '\r' && cur != '\n') {
                 cur = this._scriptableInputStream.read(1);
-                toolString += cur;
+                if(cur != '\r') {
+                	toolString += cur;
+                }
                 prev = cur;
             }
             if (FBTrace.DBG_CROSSFIRE_TRANSPORT) {

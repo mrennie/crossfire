@@ -10,11 +10,11 @@
 	
 	<!--
 	   These build-time paths are relative to the root of the project (where the root of the project
-	   means the folder containgin the .project file)
+	   means the folder containing the .project file)
 	   
 	   To perform the building + XPI'ing in an alternate location simply change these
 	-->
-    <property name="dist.dir" value="dist/"/>
+    <property name="release.dir" value="release/"/>
     <property name="build.dir" value="build/"/>
 	
 	<!-- this path must point to the root of the extracted JSDoc bundle -->
@@ -71,11 +71,11 @@
             <fileset dir="${basedir}/firefox" includes="components/**/*"/>
             <fileset dir="${basedir}" includes="license.txt"/>
         </copy>
-        <mkdir dir="${dist.dir}"/>
-        <zip destfile="${dist.dir}/${ant.project.name}-${VERSION}${RELEASE}.xpi" basedir="${build.dir}" includes="**/*" />
-        <checksum file="${dist.dir}/${ant.project.name}-${VERSION}${RELEASE}.xpi" property="updateHash" algorithm="SHA-1"/>
+        <mkdir dir="${release.dir}"/>
+        <zip destfile="${release.dir}/${ant.project.name}-${VERSION}${RELEASE}.xpi" basedir="${build.dir}" includes="**/*" />
+        <checksum file="${release.dir}/${ant.project.name}-${VERSION}${RELEASE}.xpi" property="updateHash" algorithm="SHA-1"/>
         <echo>Update hash is ${updateHash}</echo>
-        <copy file="update.rdf" tofile="${dist.dir}/update.rdf" overwrite="true" verbose="true">
+        <copy file="update.rdf" tofile="${release.dir}/update.rdf" overwrite="true" verbose="true">
             <filterchain>
                 <replacetokens>
                      <token key="VERSION" value="${VERSION}"/>
@@ -93,6 +93,6 @@
 	-->
 	<target name="clean" description="cleans the /build and /dist directories">
         <delete includeemptydirs="true" failonerror="false" dir="${build.dir}" verbose="true"/>
-        <delete includeemptydirs="true" failonerror="false" dir="${dist.dir}" verbose="true"/>
+        <delete includeemptydirs="true" failonerror="false" dir="${release.dir}" verbose="true"/>
     </target>
 </project>

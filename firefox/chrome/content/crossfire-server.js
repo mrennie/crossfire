@@ -57,8 +57,8 @@ FBL.ns(function() {
          * @param {String} status the status to report
          */
         onConnectionStatusChanged: function( status) {
-            if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE onConnectionStatusChanged: " + status);
+            if (FBTrace.DBG_CROSSFIRE_SERVER) {
+                FBTrace.sysout("CROSSFIRE-SERVER onConnectionStatusChanged: " + status);
             }
             if (this.status == CROSSFIRE_STATUS.STATUS_DISCONNECTED) {
                 this.stopServer();
@@ -76,18 +76,17 @@ FBL.ns(function() {
          */
         startServer: function( host, port) {
             if (FBTrace.DBG_CROSSFIRE) {
-                FBTrace.sysout("CROSSFIRE startServer: host => " + host + " port => " + port);
+                FBTrace.sysout("CROSSFIRE startServer: [host: " + host + "][port: " + port+"]");
             }
             this.serverPort = port;
             try {
                 this.transport = Crossfire.getTransport();
                 this._addListeners();
                 this.transport.addListener(this);
-
                 this.transport.open(host, port);
             } catch(e) {
                 if (FBTrace.DBG_CROSSFIRE) {
-                	FBTrace.sysout("CROSSFIRE failed to start server "+e.toString());
+                	FBTrace.sysout("CROSSFIRE failed to start server", e);
                 }
                 this._removeListeners();
             }
@@ -103,16 +102,9 @@ FBL.ns(function() {
          */
         _addListeners: function() {
             if (Firebug.connection) {
-            	if (FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE _addListeners: adding BTI listener");
-                }
                 // Firebug 1.8 Browser BTI listener
                 Firebug.connection.addListener(this);
             } else {
-            	if (FBTrace.DBG_CROSSFIRE) {
-                    FBTrace.sysout("CROSSFIRE _addListeners: adding pre-1.8 listener");
-                }
-                // pre 1.8 listener
                 Firebug.Debugger.addListener(this);
             }
             Firebug.Console.addListener(this);
@@ -128,8 +120,13 @@ FBL.ns(function() {
          * @since 0.3a1
          */
         _removeListeners: function() {
+            if (Firebug.connection) {
+                // Firebug 1.8 Browser BTI listener
+                Firebug.connection.removeListener(this);
+            } else {
+            	Firebug.Debugger.removeListener(this);
+            }
             Firebug.Console.removeListener(this);
-            Firebug.Debugger.removeListener(this);
             Firebug.HTMLModule.removeListener(this);
         },
 
