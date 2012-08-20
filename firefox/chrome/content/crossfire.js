@@ -17,6 +17,7 @@ FBL.ns(function() {
      * @module Firebug Module for Crossfire. This module acts as a controller
      * between Firebug and the remote debug connection.  It is responsible for
      * opening a connection to the remote debug host.
+     * @class
      */
     Crossfire = FBL.extend(Firebug.Module,  {
         contexts: [],
@@ -212,7 +213,7 @@ FBL.ns(function() {
          * @since 0.3a7
          */
         registerTool: function(tool) {
-        	var name = tool.getToolName();
+        	var name = tool.getName();
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE: registerTool " + name, tool);
             }
@@ -694,7 +695,6 @@ FBL.ns(function() {
      * @description Call-back for menu pop-up
      * @function
      * @public
-     * @memberOf Crossfire
      * @param el
      */
     Crossfire.onStatusClick = function( el) {
@@ -707,7 +707,6 @@ FBL.ns(function() {
      * @description Call-back for the menu showing
      * @function
      * @public
-     * @memberOf Crossfire
      * @param menu the menu showing
      */
     Crossfire.onStatusMenuShowing = function( menu) {
@@ -720,7 +719,6 @@ FBL.ns(function() {
      * @description Delegate to {@link Crossfire#startServer(host, port)}
      * @function
      * @public
-     * @memberOf Crossfire
      */
     Crossfire.startServer = function() {
         var params = Crossfire._getDialogParams();

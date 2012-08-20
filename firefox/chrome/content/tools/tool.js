@@ -7,6 +7,9 @@ FBL.ns(function() {
      * A Tool is an extension that registers itself to Crossfire
      * for the purpose of sending and receiving commands and events
      * via the crossfire protocol/connection.
+     * @constructor
+     * @public
+     * @type Tool
      */
     Crossfire.Tool = {
         commands: [],
@@ -14,11 +17,12 @@ FBL.ns(function() {
 
         /**
          * @name supportsRequest
-         * @description
+         * @description Returns if this tool supports the given request or not
          * @function
          * @public
-         * @memberOf Tool
-         * @param request
+         * @memberOf Crossfire.Tool
+         * @param request the request from the client
+         * @return true if this tool supports the given request object, false otherwise
          * @since 0.3a7
          */
         supportsRequest: function(request) {
@@ -31,11 +35,12 @@ FBL.ns(function() {
 
         /**
          * @name handleRequest
-         * @description 
+         * @description Handles the request from the client iff the event applies to this tool. See {@link supportsRequest} for more 
+         * information
          * @function
          * @public
-         * @memberOf Tool
-         * @param request
+         * @memberOf Crossfire.Tool
+         * @param request the request from the client
          * @since 0.3a7
          */
         handleRequest: function(request) {
@@ -46,11 +51,12 @@ FBL.ns(function() {
 
         /**
          * @name supportsEvent
-         * @description 
+         * @description Returns if this tool supports the given event or not
          * @function
          * @public
-         * @memberOf Tool
-         * @param event
+         * @memberOf Crossfire.Tool
+         * @param event the Firebug / Crossfire  event object
+         * @return true if this tool supports the given event object, false otherwise
          * @since 0.3a7
          */
         supportsEvent: function(event) {
@@ -63,11 +69,12 @@ FBL.ns(function() {
 
         /**
          * @name handleEvent
-         * @description 
+         * @description Handles the event from Firebug iff the event applies to this tool. See {@link supportsEvent} for more 
+         * information
          * @function
          * @public
-         * @memberOf Tool
-         * @param event
+         * @memberOf Crossfire.Tool
+         * @param event the Firebug / Crossfire event object
          * @since 0.3a7
          */
         handleEvent: function(event) {
@@ -78,11 +85,12 @@ FBL.ns(function() {
 
         /**
          * @name supportsResponse
-         * @description 
+         * @description Returns if this tool supports the given response or not
          * @function
          * @public
-         * @memberOf Tool
-         * @param response
+         * @memberOf Crossfire.Tool
+         * @param response the response from the client
+         * @return true if this tool supports the given response object, false otherwise
          * @since 0.3a7
          */
         supportsResponse: function(response) {
@@ -93,11 +101,12 @@ FBL.ns(function() {
 
         /**
          * @name handleResponse
-         * @description 
+         * @description Handles a response sent to a connected client iff the response applies to this tool. See {@link supportsResponse}
+         * for more information.
          * @function
          * @public
-         * @memberOf Tool
-         * @param response
+         * @memberOf Crossfire.Tool
+         * @param response the response object sent to the client
          * @since 0.3a7
          */
         handleResponse: function(response) {
@@ -107,11 +116,11 @@ FBL.ns(function() {
         },
 
         /**
-         * @name onTransportDestroyed
+         * @name onTransportCreated
          * @description Call-back from CrossfireModule to inform the tool that the underlying transport from Crossfire has been created
          * @function
          * @public
-         * @memberOf Tool
+         * @memberOf Crossfire.Tool
          * @param transport
          * @since 0.3a7
          */
@@ -128,7 +137,7 @@ FBL.ns(function() {
          * @description Call-back from CrossfireModule to inform the tool that the underlying transport from Crossfire has been destroyed
          * @function
          * @public
-         * @memberOf Tool
+         * @memberOf Crossfire.Tool
          * @since 0.3a7
          */
         onTransportDestroyed: function() {
@@ -143,7 +152,7 @@ FBL.ns(function() {
          * @description Call-back from CrossfireModule to inform the tool that it has been registered in Crossfire
          * @function
          * @public
-         * @memberOf Tool
+         * @memberOf Crossfire.Tool
          * @since 0.3a7
          */
         onRegistered: function() {
@@ -157,7 +166,7 @@ FBL.ns(function() {
          * @description Call-back from CrossfireModule to inform the tool that it has been unregistered from Crossfire
          * @function
          * @public
-         * @memberOf Tool
+         * @memberOf Crossfire.Tool
          * @since 0.3a7
          */
         onUnregistered: function() {
@@ -172,7 +181,7 @@ FBL.ns(function() {
          * to the new status
          * @function
          * @public
-         * @memberOf Tool
+         * @memberOf Crossfire.Tool
          * @param status the String status of the connection
          * @see SocketTransport#CROSSFIRE_STATUS for the list of possbile statuses
          * @since 0.3a7
@@ -189,7 +198,7 @@ FBL.ns(function() {
          * @description Returns the human-readable description for the tool.
          * @function
          * @public
-         * @memberOf Tool
+         * @memberOf Crossfire.Tool
          * @return a String description for the tool
          * @since 0.3a7
          */
@@ -205,11 +214,11 @@ FBL.ns(function() {
          * @description Returns the human-readable name for the tool. This name is also reference from the Crossfire handshake
          * @function
          * @public
-         * @memberOf Tool
+         * @memberOf Crossfire.Tool
          * @return a String name for the tool
          * @since 0.3a9
          */
-        getToolName: function() {
+        getName: function() {
         	if (FBTrace.DBG_CROSSFIRE_TOOL) {
                 FBTrace.sysout("getName recieved by: " + this.toolName);
             }
@@ -221,7 +230,7 @@ FBL.ns(function() {
          * @description Returns the JSON representation of this tool object
          * @function
          * @public
-         * @memberOf Tool
+         * @memberOf Crossfire.Tool
          * @return a JSON Object representing this tool
          * @since 0.3a9
          */

@@ -17,9 +17,12 @@
     <property name="release.dir" value="release/"/>
     <property name="build.dir" value="build/"/>
 	
-	<!-- this path must point to the root of the extracted JSDoc bundle -->
-	<property name="jsdoc.home" value="C:/Users/mrennie/Desktop/jsdoc_toolkit-2.4.0/jsdoc-toolkit"/>
-	<property name="jsdoc.dir" value="doc/jsdocs"/>
+	<!-- this absolute path must point to the root of the extracted JSDoc bundle -->
+	<property name="jsdoc.home" value=""/>
+	
+	<!-- these must be set to absolute paths -->
+	<property name="jsdoc.input" value=""/>
+	<property name="jsdoc.dir" value=""/>
 
 	<!--
 	   This path requires that the 'jsdoc-toolkit-ant-task-1.1.2.jar' be in the root of the extracted
@@ -39,7 +42,8 @@
         <delete includeemptydirs="true" failonerror="false" dir="${jsdoc.dir}"/>
         <mkdir dir="${jsdoc.dir}"/>
         <taskdef name="jsdoctoolkit" classname="uk.co.darrenhurley.ant.tasks.JsDocToolkit" classpathref="jsdoc.path"/>
-        <jsdoctoolkit jsdochome="${jsdoc.home}/" template="jsdoc" inputdir="." outputdir="${jsdoc.dir}">
+        <jsdoctoolkit jsdochome="${jsdoc.home}/" template="jsdoc" inputdir="${jsdoc.input}/" verbose="true" includeundocumented="true" outputdir="${jsdoc.dir}">
+        	
         </jsdoctoolkit>
     </target>
 	

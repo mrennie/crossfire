@@ -11,6 +11,11 @@ var CONTEXT_ID_SEED = Math.round(Math.random() * 10000000);
 
 FBL.ns(function() {
 
+	/**
+	 * @constructor
+	 * @public
+	 * @type Crossfire.CrossfireServer
+	 */
     Crossfire.CrossfireServer = FBL.extend(Firebug.Module,  {
         contexts: [],
         breakpoints: [], //mapping of breakpoint id (Integer) to breakpoint object
@@ -23,7 +28,7 @@ FBL.ns(function() {
          * @description Initializes Crossfire
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @extends Firebug.Module
          */
         initialize: function() {
@@ -40,7 +45,7 @@ FBL.ns(function() {
          * @description Call-back from firebug to shut down the module
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @extends Firebug.Module
          * @since 0.3a9
          */
@@ -53,7 +58,7 @@ FBL.ns(function() {
          * @description Called when the status of the transport's connection changes.
          * @function
          * @public
-         * @memberOf Crossfire
+         * @memberOf Crossfire.CrossfireServer
          * @param {String} status the status to report
          */
         onConnectionStatusChanged: function( status) {
@@ -70,7 +75,7 @@ FBL.ns(function() {
          * @description Listen for incoming connections on a port.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param {String} host the host name.
          * @param {Number} port the port number to listen on.
          */
@@ -98,7 +103,7 @@ FBL.ns(function() {
          * @description Adds Crossfire as a listener to the core modules
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          */
         _addListeners: function() {
             if (Firebug.connection) {
@@ -116,7 +121,7 @@ FBL.ns(function() {
          * @description Removes Crossfire as a listener from the core modules
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @since 0.3a1
          */
         _removeListeners: function() {
@@ -135,7 +140,7 @@ FBL.ns(function() {
          * @description clears the breakpoint reference ids and resets the id counter
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @since 0.3a1
          */
         _clearBreakpoints: function() {
@@ -148,7 +153,7 @@ FBL.ns(function() {
          * @description Stops the server and closes the socket
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          */
         stopServer: function() {
             try {
@@ -167,7 +172,7 @@ FBL.ns(function() {
          * @description Generates a unique id to map to a Firebug context
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type String
          * @return a new ID to map to a Firebug context
          * @since 0.3a2
@@ -180,7 +185,7 @@ FBL.ns(function() {
          * @name findContext
          * @description Returns the Context for the given id, or <code>null</code> if no context matches the given id
          * @function
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param the String id to look up
          * @type Context
          * @returns the Context for the given id or <code>null</code>
@@ -204,7 +209,7 @@ FBL.ns(function() {
          * property and calls the requested command on that context's command adaptor.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param request the original request from {@link CrossfireSocketTransport}
          */
         handleRequest: function(request) {
@@ -308,7 +313,7 @@ FBL.ns(function() {
          * This method returns all the context id's that we know about.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns an Array of the known list of contexts
          */
@@ -336,7 +341,7 @@ FBL.ns(function() {
          * @description Returns a backtrace (stacktrace) of frames.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns an {@link Array} of the backtrace information or <code>null</code> if the backtrace could not be computed
          * @param context the associated context {@link Object}
@@ -389,7 +394,7 @@ FBL.ns(function() {
          * @description Changes the specified breakpoint, if if exists, with the given information.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @param context the optional associated context {@link Object}
          * @param args the array of arguments which contains:
@@ -440,7 +445,7 @@ FBL.ns(function() {
          * @description Remove the breakpoint objects with the specified ids, if they all exist.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Object
          * @param context the optional associated context {@link Object}
          * @param args the array of arguments which contains:
@@ -482,7 +487,7 @@ FBL.ns(function() {
          * @description Continue execution of JavaScript if suspended, if no <code>stepaction</code> is passed, simply resumes execution.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns always returns an empty array
          * @param context the associated context {@link Object}
@@ -511,12 +516,12 @@ FBL.ns(function() {
 
         /**
          * @name doEvaluate
-         * @description Evaluate a Javascript expression.
+         * @description Evaluate a JavaScript expression.
          * If a frame argument is passed, evaluates the expression in that frame,
          * otherwise the expression is evaluated in the context's global scope.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns an {@link Array} of the value returned from the evaluation
          * @param context the associated context {@link Object}
@@ -566,7 +571,7 @@ FBL.ns(function() {
          * @description Returns a new stack frame object.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns an {@link Array} of the new frame information
          * @param context the associated context {@link Object}
@@ -638,7 +643,7 @@ FBL.ns(function() {
          * for all known source files.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns an {@link Array} of all breakpoints information or <code>null</code> if there are no breakpoints set.
          * @param context the optional associated context {@link Object}
@@ -664,7 +669,7 @@ FBL.ns(function() {
          * breakpoint handles are specified.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns an {@link Array} of breakpoints information or <code>null</code> if there are no breakpoints to return.
          * @param context the optional associated context {@link Object}
@@ -694,7 +699,7 @@ FBL.ns(function() {
          * @description enumerates all of the breakpoints from the given Firebug context
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns nothing; all enumerated breakpoints are added to the global <code>breakpoints</code> listing
          * @param context the associated context {@link Object}
@@ -723,7 +728,7 @@ FBL.ns(function() {
          * @name doLookup
          * @description Lookup objects by their handles.
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns an {@link Array} of the serialized objects with the given ids
          * @param context the associated context {@link Object}
@@ -775,7 +780,7 @@ FBL.ns(function() {
          * @description  Returns scopes for a frame.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns the {@link Array} of scopes for a given frame number or <code>null</code>
          * @param context the associated context {@link Object}
@@ -831,7 +836,7 @@ FBL.ns(function() {
          * @description Returns a scope for the specified frame.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns the scope information for the specified frame or <code>null</code>
          * @param context the associated context {@link Object}
@@ -882,7 +887,7 @@ FBL.ns(function() {
          * @description Retrieve the scripts specified in the request, or all scripts if no urls are specified, and optionally their source.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns the currently known script information from the source map
          * @param context the associated context {@link Object}
@@ -931,7 +936,7 @@ FBL.ns(function() {
          * @description Retrieve a single script and optionally its source.
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns the currently known script information from the source map
          * @param context the associated context {@link Object}
@@ -952,7 +957,7 @@ FBL.ns(function() {
          * @description Retrieve a breakpoint based on its line and URL information
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Object
          * @returns the breakpoint object that has a location at the given line and URL
          * @param locationOrHandle an {@link Object} containing the location information to compare to find a
@@ -1001,7 +1006,7 @@ FBL.ns(function() {
          * @description Create a new Crossfire breakpoint object and add it to the listing
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Object
          * @returns a new breakpoint object
          * @param type a required (@String} for the name of the type of the breakpoint
@@ -1028,7 +1033,7 @@ FBL.ns(function() {
          * @description Set breakpoints and return their objects
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns the breakpoint object
          * @param context the optional associated context {@link Object}
@@ -1096,7 +1101,7 @@ FBL.ns(function() {
          * @description Try to suspend any currently running Javascript.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @returns always returns an emtpy array
          * @since 0.3a1
@@ -1111,7 +1116,7 @@ FBL.ns(function() {
          * @description Returns a new script object representing the given source file
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @type Array
          * @param context the current Firebug context
          * @param soureFile the Firebug sourceFile from the source map or from the <code>onSourceFileCreated</code> callback
@@ -1158,7 +1163,7 @@ FBL.ns(function() {
          * be gone by the time the remote host requests it.
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param frame the stackframe to copy
          * @param ctx the current Crossfire context
          * @type Array
@@ -1190,7 +1195,7 @@ FBL.ns(function() {
          * @description Sends the given event data over the backing transport
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param event the String name for the event
          * @param data the data Array for the event packet
          * @since 0.3a1
@@ -1214,7 +1219,7 @@ FBL.ns(function() {
          * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param context the new context
          * @extends TabWatchListener
          * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/bti/inProcess/browser.js
@@ -1240,7 +1245,7 @@ FBL.ns(function() {
          * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param context the context that completed loading
          * @extends TabWatchListener
          * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/bti/inProcess/browser.js
@@ -1267,7 +1272,7 @@ FBL.ns(function() {
          * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param browser the browser the context was changed to in
          * @param context the context that was switched to
          * @extends TabWatchListener
@@ -1293,7 +1298,7 @@ FBL.ns(function() {
          * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param context the context that has been destroyed
          * @extends TabWatchListener
          * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/bti/inProcess/browser.js
@@ -1321,7 +1326,7 @@ FBL.ns(function() {
          * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param context the current Firebug context
          * @param url the compilation unit url
          * @param kind a {@link String} value describing the kind of compilation unit it is. Compilation unit kinds are described in
@@ -1345,7 +1350,7 @@ FBL.ns(function() {
          * @description handles the callback for when a new source file is created or compiled in Firebug
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param context the current Firebug context
          * @param sourceFile the compilation unit object
          * @param incsrc a {@link Boolean} flag indicating if the source for the script should be computed
@@ -1373,7 +1378,7 @@ FBL.ns(function() {
          * source or something that could be remotely debugged
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param sourceFile the compilation unit object
          * @since 0.3a9
          */
@@ -1390,7 +1395,7 @@ FBL.ns(function() {
          * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param context the context of this event
          * @param sourceFile the source file object
          * @extends TabWatchListener
@@ -1413,7 +1418,7 @@ FBL.ns(function() {
          * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param context the current Crossfire context
          * @extends Firebug.Debugger
          * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/js/debugger.js
@@ -1455,7 +1460,7 @@ FBL.ns(function() {
          * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param context the current Crossfire context
          * @param url the URL that the breakpoint was toggled within
          * @param lineNo the number of the line the breakpoint was toggled on
@@ -1481,7 +1486,7 @@ FBL.ns(function() {
          * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param context the current Crossfire context
          * @param url the URL that the breakpoint was toggled within
          * @param lineNo the number of the line the breakpoint was toggled on
@@ -1530,7 +1535,7 @@ FBL.ns(function() {
          * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param context the current Crossfire context
          * @param xpath the xpath the breakpoint was modified for
          * @param type the type of the breakpoint. Breakpoint type are defined in: http://code.google.com/p/fbug/source/browse/branches/firebug1.7/content/firebug/html.js
@@ -1555,7 +1560,7 @@ FBL.ns(function() {
          * @description translates the integer type of an HTML breakpoint to a human readable type
          * @function
          * @private
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param type the integer type of the HTML breakpoint
          * @since 0.3a7
          */
@@ -1581,7 +1586,7 @@ FBL.ns(function() {
          * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param context the current Crossfire context
          * @extends Firebug.DebugListener
          * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/js/debugger.js
@@ -1600,7 +1605,7 @@ FBL.ns(function() {
          * @see https://github.com/firebug-crossfire/crossfire/wiki/Crossfire%20Protocol%20Reference 
          * @function
          * @public
-         * @memberOf CrossfireServer
+         * @memberOf Crossfire.CrossfireServer
          * @param context the FB context
          * @param frame the current stackframe context
          * @param error the current error
