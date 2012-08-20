@@ -6,7 +6,7 @@
 	   install.rdf and update.rdf file automatically
 	-->
 	<property name="VERSION" value="0.3"/>
-	<property name="RELEASE" value="a11"/>
+	<property name="RELEASE" value="a12"/>
 	
 	<!--
 	   These build-time paths are relative to the root of the project (where the root of the project
