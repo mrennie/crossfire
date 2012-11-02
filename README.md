@@ -4,7 +4,7 @@
 (like an IDE or code editor) to connect to Firebug.
 
 #Releases#
-###0.3a11###
+###0.3a11### (2012-05-15)
 * [XPI](https://github.com/mrennie/crossfire/wiki/releases/0.3a11/crossfire-0.3a11.xpi) (2012-05-15)
 * [update.rdf](https://github.com/mrennie/crossfire/wiki/releases/0.3a11/update.rdf)
 
