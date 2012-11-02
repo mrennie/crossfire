@@ -631,7 +631,7 @@ FBL.ns(function() {
                 };
             } catch (e) {
                 if (FBTrace.DBG_CROSSFIRE_FRAMES) {
-                    FBTrace.sysout("CROSSFIRE exception returning frame: "+e.getMessage());
+                    FBTrace.sysout("CROSSFIRE exception returning frame", e);
                 }
             }
             return null;
@@ -709,18 +709,36 @@ FBL.ns(function() {
         _enumBreakpoints: function(context, scope) {
             var self = scope;
             for (var url in context.sourceFileMap) {
-                FBL.fbs.enumerateBreakpoints(url, {"call": function(url, line, props, script) {
-                    var l = props.lineNo;
-                    var u = props.href;
-                    var loc = {"line":l, "url":u};
-                    bp = self._findBreakpoint(loc);
-                    if(!bp) {
-                        bp = self._newBreakpoint("line",{"line":l,"url":u},{"enabled":!props.disabled,"condition":null});
-                    } else if (bp.enabled == props.disabled){
-                        bp.enabled = !props.disabled;
-                        self.breakpoints[self.breakpoints.indexOf(bp)] = bp;
-                    }
-                }});
+            	try{
+	                FBL.fbs.enumerateBreakpoints(url, {"call": function(url, line, props, script) {
+	                    var l = props.lineNo;
+	                    var u = props.href;
+	                    var loc = {"line":l, "url":u};
+	                    bp = self._findBreakpoint(loc);
+	                    if(!bp) {
+	                        bp = self._newBreakpoint("line",{"line":l,"url":u},{"enabled":!props.disabled,"condition":null});
+	                    } else if (bp.enabled == props.disabled){
+	                        bp.enabled = !props.disabled;
+	                        self.breakpoints[self.breakpoints.indexOf(bp)] = bp;
+	                    }
+	                }});
+	                FBL.fbs.enumerateErrorBreakpoints(url, {"call": function(url, line, props, script) {
+	                	var l = line;
+	                    var u = url;
+	                    var loc = {"line":l, "url":u};
+	                    bp = self._findBreakpoint(loc);
+	                    if(!bp) {
+	                    	bp = self._newBreakpoint("error",{"line":l,"url":u},{"enabled":!props.disabled,"condition":null});
+	                    } else if (bp.enabled == props.disabled){
+	                        bp.enabled = !props.disabled;
+	                        self.breakpoints[self.breakpoints.indexOf(bp)] = bp;
+	                    }
+	                }});
+            	} catch(e) {
+            		if (FBTrace.DBG_CROSSFIRE_SERVER) {
+            			FBTrace.sysout("CROSSFIRE _enumerateBreakpoints exception", e);
+            		}
+            	}
             }
         },
 
@@ -760,8 +778,8 @@ FBL.ns(function() {
 	                                }
 	                            }
 	                            catch(e) {
-	                                 if (FBTrace.DBG_CROSSFIRE) {
-	                                     FBTrace.sysout("CROSSFIRE doLookup: exception => " + e);
+	                                 if (FBTrace.DBG_CROSSFIRE_SERVER) {
+	                                     FBTrace.sysout("CROSSFIRE doLookup exception" + e);
 	                                 }
 	                            }
 	                        }
@@ -826,7 +844,9 @@ FBL.ns(function() {
 	            }
         	}
         	catch(e) {
-        		FBTrace.sysout("CROSSFIRE getScopes exception computing scopes"+e.getMessage(), e);
+        		if (FBTrace.DBG_CROSSFIRE_SERVER) {
+        			FBTrace.sysout("CROSSFIRE getScopes exception computing scopes", e);
+        		}
         	}
             return null;
         },
@@ -877,7 +897,9 @@ FBL.ns(function() {
 	            }
         	}
             catch(e) {
-            	FBTrace.sysout("CROSSFIRE getScope exception computing scope at index: "+index+" for frame: "+frameIndex+" "+e.getMessage(), e);
+            	if (FBTrace.DBG_CROSSFIRE_SERVER) {
+            		FBTrace.sysout("CROSSFIRE getScope exception computing scope at index: "+index+" for frame: "+frameIndex, e);
+            	}
             }
             return null;
         },
@@ -1470,12 +1492,11 @@ FBL.ns(function() {
          * @extends Firebug.Debugger
          * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/js/debugger.js
          */
-        onToggleErrorBreakpoint: function(context, url, lineNo, isSet, props) {
+        onToggleErrorBreakpoint: function(context, url, lineNo, isSet) {
             if (FBTrace.DBG_CROSSFIRE) {
                 FBTrace.sysout("CROSSFIRE: onToggleErrorBreakpoint");
             }
-            props.bp_type = "error";
-            this.onToggleBreakpoint(context, url, lineNo, isSet, props);
+            this.handleBreakpointToggled(context, url, lineNo, isSet, "error");
         },
         
         /**
@@ -1500,6 +1521,31 @@ FBL.ns(function() {
             if (FBTrace.DBG_CROSSFIRE_BPS) {
                 FBTrace.sysout("CROSSFIRE: onToggleBreakpoint", context);
             }
+            this.handleBreakpointToggled(context, url, lineNo, isSet, "line");
+        },
+
+        /**
+         * @name handleBreakpointToggled
+         * @description Handles a breakpoint being toggled
+         * <br><br>
+         * Fires an <code>onToggleBreakpoint</code> event.
+         * @function
+         * @private
+         * @memberOf Crossfire.CrossfireServer
+         * @param context the current Crossfire context
+         * @param url the URL that the breakpoint was toggled within
+         * @param lineNo the number of the line the breakpoint was toggled on
+         * @param isSet the toggled state of the breakpoint.
+         * <code>true</code> if the breakpoint was toggled on (created), <code>false</code> otherwise
+         * @param type the type of the breakpoint that was toggled
+         * @extends Firebug.Debugger
+         * @see https://github.com/firebug/firebug/blob/master/extension/content/firebug/js/debugger.js
+		 * @since 0.3a12
+         */
+        handleBreakpointToggled: function(context, url, lineNo, isSet, type) {
+        	if (FBTrace.DBG_CROSSFIRE_BPS) {
+                FBTrace.sysout("CROSSFIRE: handleBreakpointToggled", context);
+            }
             var loc = {"url":url,"line":lineNo};
             var bp = this._findBreakpoint(loc);
             if(isSet) {
@@ -1512,7 +1558,6 @@ FBL.ns(function() {
 	            	bp.attributes.condition = fbsbp.condition;
 	            }
 	            else {
-	                var type = "line";
 	                var attributes = {"enabled":fbsbp.disabled == 0, "condition": fbsbp.condition};
 	                bp = this._newBreakpoint(type, loc, attributes);
 	            } 
@@ -1524,7 +1569,7 @@ FBL.ns(function() {
             var data = {"breakpoint":bp,"set":isSet};
             this._sendEvent("onToggleBreakpoint", {"contextId":context.Crossfire.crossfire_id,"body": data});
         },
-
+        
 //HTML MODULE MUTATION BREAKPOINTS LISTENER FUNCTIONS ################################################################################### 
         
         /**
