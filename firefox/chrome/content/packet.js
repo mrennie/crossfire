@@ -1,11 +1,6 @@
 /* See license.txt for terms of usage */
 
 /**
- * @ignore
- */
-var EXPORTED_SYMBOLS = ["EventPacket", "RequestPacket", "ResponsePacket"];
-
-/**
  * @name Packet
  * @description The prototype object for all other packet types.
  * Handles parsing packet strings and JSON, and generating sequence numbers.
@@ -28,7 +23,6 @@ var Packet = {
      * @returns the given object as a JSON {@link String}
      */
     toJSON: function( obj) {
-        //FIXME: only works for FF3.5 native JSON
         return JSON.stringify(obj);
     },
 
@@ -44,7 +38,6 @@ var Packet = {
      */
     parseJSON: function( str) {
         if (str) {
-            //return eval('(' + str + ')'); //FIXME: dangerous
             return JSON.parse(str);
         }
         return null;
@@ -89,20 +82,20 @@ function EventPacket( event, data, headers) {
                 "type": "event",
                 "event": event
         };
-        for (var prop in data) {
-            packet[prop] = data[prop];
-        }
-        var json = this.toJSON(packet);
-        this.data = this.toPacketString(json, headers);
+        Object.keys(data).forEach(function(property) {
+		    packet[property] = data[property];
+		});
+        this.data = this.toPacketString(this.toJSON(packet), headers);
         this.length = this.data.length;
     } else {
         //FIXME: incoming event hack
         var json = this.parseJSON(event);
-        for (var prop in json) {
-            this[prop] = json[prop];
-        }
-        if (json && json.seq)
+        Object.keys(json).forEach(function(property) {
+		    this[property] = json[property];
+		});
+        if (json && json.seq) {
             Packet.seq = json.seq+1;
+        }
     }
 }
 
@@ -119,13 +112,14 @@ EventPacket.prototype = Packet;
  */
 function RequestPacket( packetString) {
     var json,command,args,headers,packet;
-    if (arguments.length == 1) {
+    if (arguments.length === 1) {
         json = this.parseJSON(packetString);
-        for (var prop in json) {
-            this[prop] = json[prop];
-        }
-        if (json && json.seq)
+        Object.keys(json).forEach(function(property) {
+		    this[property] = json[property];
+		});
+        if (json && json.seq) {
             Packet.seq = json.seq+1;
+        }
     } else if (arguments.length > 2){
         command = arguments[0];
         args = arguments[1];
@@ -137,15 +131,17 @@ function RequestPacket( packetString) {
         };
 
         if (args) {
-            if (args["contextId"]) {
-                packet["contextId"] = args["contextId"];
-                delete args["contextId"];
+            if (args.contextId) {
+                packet.contextId = args.contextId;
+                delete args.contextId;
             }
 
-            for (var arg in args) {
-                if (!packet["arguments"]) packet["arguments"] = {};
-                packet["arguments"][arg] = args[arg];
-            }
+			if (!packet.arguments) {
+				packet.arguments = {};
+			}
+			Object.keys(args).forEach(function(property) {
+				packet.arguments[property] = args[property];
+			});
         }
 
         json = this.toJSON(packet);
@@ -180,7 +176,7 @@ function ResponsePacket( command, requestSeq, contextid, body, status, headers) 
             "status": status
     };
     if(contextid) {
-        packet["contextId"] = contextid;
+        packet.contextId = contextid;
     }
     var json = this.toJSON(packet);
     this.data = this.toPacketString(json, headers);
