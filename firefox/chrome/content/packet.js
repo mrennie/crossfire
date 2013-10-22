@@ -17,7 +17,7 @@ var Packet = {
      * @description Converts the given object to a JSON {@link String}.
      * @function
      * @public
-     * @memberOf Packet
+     * @memberof Packet
      * @param obj the object to convert to a JSON {@link String}
      * @type String
      * @returns the given object as a JSON {@link String}
@@ -31,7 +31,7 @@ var Packet = {
      * @description Parses the {@link Object} from the given JSON {@link String}.
      * @function
      * @public
-     * @memberOf Packet
+     * @memberof Packet
      * @param str the JSON {@link String} to parse
      * @type Object
      * @returns the {@link Object} value from the JSON {@link String}

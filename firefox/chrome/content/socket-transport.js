@@ -8,7 +8,7 @@
  * @memberOf CrossfireSocketTransport
  * @type String
  */
-const CROSSFIRE_HANDSHAKE = "CrossfireHandshake";
+var CROSSFIRE_HANDSHAKE = "CrossfireHandshake";
 /**
  * @name HANDSHAKE_RETRY
  * @description The default time-out in milliseconds to re-try a handshake
@@ -17,7 +17,7 @@ const CROSSFIRE_HANDSHAKE = "CrossfireHandshake";
  * @memberOf CrossfireSocketTransport
  * @type Integer
  */
-const HANDSHAKE_RETRY = 1007;
+var HANDSHAKE_RETRY = 1007;
 
 /**
  * @ignore
@@ -31,7 +31,7 @@ try {
     FBTrace = {};
 }
 
-const PrefService = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService);
+var PrefService = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService);
 
 /**
  * @name CROSSFIRE_STATUS
