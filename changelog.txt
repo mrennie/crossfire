@@ -14,6 +14,7 @@
   * 4108 accessing a context's content protocol review
   * Backported 'Remote Panel' panel UI for Crossfire - still needs work.
 
+
 0.3a6 - 2011-04-25
   * updated install.rdf and update.rdf to use https link.
   * 3928    breakpoints protocol review redux.
